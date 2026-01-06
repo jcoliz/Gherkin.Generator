@@ -7,8 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <!-- Common package metadata for packable projects -->
-  <PropertyGroup Condition="'$(IsPackable)' == 'true'">
+  <!-- Common package metadata for all projects -->
+  <PropertyGroup>
     <Version>0.0.1</Version>
     <Authors>jcoliz</Authors>
     <Company>jcoliz</Company>
