@@ -1,6 +1,6 @@
 # Gherkin.Generator
 
-[![.NET](https://github.com/jcoliz/Gherkin.Generator/actions/workflows/build/badge.svg)](https://github.com/jcoliz/Gherkin.Generator/actions/workflows/build)
+[![.NET](https://github.com/jcoliz/Gherkin.Generator/actions/workflows/build/ci.yml.svg)](https://github.com/jcoliz/Gherkin.Generator/actions/workflows/ci.yml)
 
 Generate running C# test code from Gherkin feature files.
 
@@ -17,19 +17,45 @@ Gherkin.Generator converts Gherkin `.feature` files into executable C# test meth
 
 ## Components
 
+- **[`Gherkin.Generator`](src/Analyzer/)** - Roslyn source generator and analyzer for automatic code generation
 - **[`Gherkin.Generator.Lib`](src/Lib/)** - Core parsing and generation logic
 - **[`templates/`](templates/)** - Mustache templates for code generation
 
 ## Usage
 
-The library provides two main classes:
+### For End Users (Coming Soon)
 
-- [`GherkinToCrifConverter`](src/Lib/GherkinToCrifConverter.cs) - Parses Gherkin and produces CRIF YAML
-- [`FunctionalTestGenerator`](src/Lib/FunctionalTestGenerator.cs) - Generates C# code from CRIF using templates
+Once published to NuGet, add the analyzer to your test project:
+
+```xml
+<PackageReference Include="Gherkin.Generator" Version="0.0.1" />
+```
+
+Then:
+
+1. **Write feature files** - Create `.feature` files with your Gherkin scenarios
+2. **Add to project** - Include them as AdditionalFiles in your `.csproj`:
+   ```xml
+   <ItemGroup>
+     <AdditionalFiles Include="Features\*.feature" />
+     <AdditionalFiles Include="Features\YourTemplate.mustache" />
+   </ItemGroup>
+   ```
+3. **Define step implementations** - Write step methods with `[Given]`, `[When]`, `[Then]` attributes
+4. **Build** - The generator automatically creates test methods at build time
+
+### For Developers
+
+The project contains:
+
+- **[`Gherkin.Generator`](src/Analyzer/)** - Source generator and analyzer
+  - [`GherkinSourceGenerator`](src/Analyzer/GherkinSourceGenerator.cs) - Incremental source generator
+  - [`StepMethodAnalyzer`](src/Analyzer/StepMethodAnalyzer.cs) - Discovers step definitions
+- **[`Gherkin.Generator.Lib`](src/Lib/)** - Core library
+  - [`GherkinToCrifConverter`](src/Lib/GherkinToCrifConverter.cs) - Parses Gherkin to CRIF
+  - [`FunctionalTestGenerator`](src/Lib/FunctionalTestGenerator.cs) - Generates C# from CRIF
 
 See [`tests/Unit/`](tests/Unit/) for usage examples.
-
-## Getting Started
 
 ```bash
 # Build the solution
