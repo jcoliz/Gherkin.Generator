@@ -6,7 +6,7 @@ namespace Gherkin.Generator.Tests.Unit;
 /// Tests for And step handling in Gherkin-to-CRIF conversion.
 /// </summary>
 [TestFixture]
-public class AndStepTests : StepMatchingTestsBase
+public class AndStepTests
 {
     [Test]
     public void Convert_WithAndStep_AddsClassAndNamespaceCorrectly()
@@ -44,7 +44,7 @@ public class AndStepTests : StepMatchingTestsBase
               Given I am logged in
               And I have a workspace
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);
@@ -104,7 +104,7 @@ public class AndStepTests : StepMatchingTestsBase
               And I have a workspace
               And I have permissions
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);

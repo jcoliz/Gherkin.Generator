@@ -6,7 +6,7 @@ namespace Gherkin.Generator.Tests.Unit;
 /// Tests for scenarios with mixed matched and unmatched steps in Gherkin-to-CRIF conversion.
 /// </summary>
 [TestFixture]
-public class MixedMatchedAndUnmatchedStepTests : StepMatchingTestsBase
+public class MixedMatchedAndUnmatchedStepTests
 {
     [Test]
     public void Convert_WithMatchedAndUnmatchedSteps_HandlesCorrectly()
@@ -33,7 +33,7 @@ public class MixedMatchedAndUnmatchedStepTests : StepMatchingTestsBase
               Given I am logged in
               When I do something unimplemented
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);
@@ -88,7 +88,7 @@ public class MixedMatchedAndUnmatchedStepTests : StepMatchingTestsBase
               Given I am logged in
               When I navigate to the page
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);
@@ -134,7 +134,7 @@ public class MixedMatchedAndUnmatchedStepTests : StepMatchingTestsBase
               Given I am logged in
               When I create a transaction
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);

@@ -6,7 +6,7 @@ namespace Gherkin.Generator.Tests.Unit;
 /// Tests for parameterized step matching in Gherkin-to-CRIF conversion.
 /// </summary>
 [TestFixture]
-public class ParameterizedStepTests : StepMatchingTestsBase
+public class ParameterizedStepTests
 {
     [Test]
     public void Convert_WithParameterizedStep_ExtractsArguments()
@@ -32,7 +32,7 @@ public class ParameterizedStepTests : StepMatchingTestsBase
             Scenario: User has money
               Given I have 100 dollars
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);
@@ -71,7 +71,7 @@ public class ParameterizedStepTests : StepMatchingTestsBase
             Scenario: User has money
               Given I have 100 dollars in Savings
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);
@@ -109,7 +109,7 @@ public class ParameterizedStepTests : StepMatchingTestsBase
             Scenario: User has account
               Given I have an account named "Ski Village"
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);

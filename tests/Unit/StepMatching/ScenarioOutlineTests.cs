@@ -6,7 +6,7 @@ namespace Gherkin.Generator.Tests.Unit;
 /// Tests for scenario outline handling in Gherkin-to-CRIF conversion.
 /// </summary>
 [TestFixture]
-public class ScenarioOutlineTests : StepMatchingTestsBase
+public class ScenarioOutlineTests
 {
     [Test]
     public void Convert_ScenarioOutlineWithMatchedStep_ExtractsParametersAndMatchesSteps()
@@ -39,7 +39,7 @@ public class ScenarioOutlineTests : StepMatchingTestsBase
               | 100    |
               | 200    |
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);
@@ -104,7 +104,7 @@ public class ScenarioOutlineTests : StepMatchingTestsBase
               | 100    | Savings  |
               | 200    | Checking |
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);

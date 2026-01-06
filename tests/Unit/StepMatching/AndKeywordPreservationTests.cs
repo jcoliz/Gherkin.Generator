@@ -6,7 +6,7 @@ namespace Gherkin.Generator.Tests.Unit;
 /// Tests for And keyword preservation in Gherkin-to-CRIF conversion.
 /// </summary>
 [TestFixture]
-public class AndKeywordPreservationTests : StepMatchingTestsBase
+public class AndKeywordPreservationTests
 {
     [Test]
     public void Convert_WithAndStep_PreservesAndKeywordInCrif()
@@ -44,7 +44,7 @@ public class AndKeywordPreservationTests : StepMatchingTestsBase
               Given I am logged in
               And I have a workspace
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);
@@ -110,7 +110,7 @@ public class AndKeywordPreservationTests : StepMatchingTestsBase
               And the session should be active
               And the user should have access
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);
@@ -177,7 +177,7 @@ public class AndKeywordPreservationTests : StepMatchingTestsBase
               Then the user should be logged in
               And the session should be active
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);

@@ -6,7 +6,7 @@ namespace Gherkin.Generator.Tests.Unit;
 /// Tests for quote handling in parameter extraction for Gherkin-to-CRIF conversion.
 /// </summary>
 [TestFixture]
-public class QuoteHandlingTests : StepMatchingTestsBase
+public class QuoteHandlingTests
 {
     [Test]
     public void Convert_WithMultipleUnquotedParameters_PreservesQuotesOnAllArguments()
@@ -35,7 +35,7 @@ public class QuoteHandlingTests : StepMatchingTestsBase
             Scenario: View transaction field
               Then I should see "Chase Visa" as the Source
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);

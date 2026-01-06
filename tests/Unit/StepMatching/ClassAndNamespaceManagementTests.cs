@@ -6,7 +6,7 @@ namespace Gherkin.Generator.Tests.Unit;
 /// Tests for class and namespace management in Gherkin-to-CRIF conversion.
 /// </summary>
 [TestFixture]
-public class ClassAndNamespaceManagementTests : StepMatchingTestsBase
+public class ClassAndNamespaceManagementTests
 {
     [Test]
     public void Convert_WithMultipleStepsFromSameClass_AddsClassOnce()
@@ -44,7 +44,7 @@ public class ClassAndNamespaceManagementTests : StepMatchingTestsBase
               Given I am logged in
               When I log out
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);
@@ -89,7 +89,7 @@ public class ClassAndNamespaceManagementTests : StepMatchingTestsBase
               Given I am logged in
               When I create a transaction
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);

@@ -6,7 +6,7 @@ namespace Gherkin.Generator.Tests.Unit;
 /// Tests for background step handling in Gherkin-to-CRIF conversion.
 /// </summary>
 [TestFixture]
-public class BackgroundStepTests : StepMatchingTestsBase
+public class BackgroundStepTests
 {
     [Test]
     public void Convert_WithBackground_AddsBackgroundStepClassesAndNamespaces()
@@ -47,7 +47,7 @@ public class BackgroundStepTests : StepMatchingTestsBase
             Scenario: Do something
               When I do something
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);

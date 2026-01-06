@@ -6,7 +6,7 @@ namespace Gherkin.Generator.Tests.Unit;
 /// Tests for basic step matching functionality in Gherkin-to-CRIF conversion.
 /// </summary>
 [TestFixture]
-public class BasicStepMatchingTests : StepMatchingTestsBase
+public class BasicStepMatchingTests
 {
     [Test]
     public void Convert_WithMatchedStep_EmitsOwnerAndMethod()
@@ -34,7 +34,7 @@ public class BasicStepMatchingTests : StepMatchingTestsBase
             Scenario: User logs in
               Given I am logged in
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);
@@ -69,7 +69,7 @@ public class BasicStepMatchingTests : StepMatchingTestsBase
             Scenario: User logs in
               Given I am logged in
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);
@@ -102,7 +102,7 @@ public class BasicStepMatchingTests : StepMatchingTestsBase
             Scenario: User logs in
               Given I am logged in
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);

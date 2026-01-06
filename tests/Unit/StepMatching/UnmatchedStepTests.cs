@@ -6,7 +6,7 @@ namespace Gherkin.Generator.Tests.Unit;
 /// Tests for handling unmatched steps in Gherkin-to-CRIF conversion.
 /// </summary>
 [TestFixture]
-public class UnmatchedStepTests : StepMatchingTestsBase
+public class UnmatchedStepTests
 {
     [Test]
     public void Convert_WithUnmatchedStep_StaysInUnimplementedList()
@@ -22,7 +22,7 @@ public class UnmatchedStepTests : StepMatchingTestsBase
             Scenario: User logs in
               Given I am logged in
             """;
-        var feature = ParseGherkin(gherkin);
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
         var crif = converter.Convert(feature);
