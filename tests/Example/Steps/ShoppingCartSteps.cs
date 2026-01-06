@@ -59,6 +59,16 @@ public class ShoppingCartSteps
     }
 
     /// <summary>
+    /// When I clear the cart
+    /// </summary>
+    [When("I clear the cart")]
+    public async Task IClearTheCart()
+    {
+        _context.Cart.Clear();
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
     /// Verifies the cart contains the expected number of items.
     /// </summary>
     /// <param name="quantity">The expected number of items.</param>

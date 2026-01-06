@@ -37,3 +37,13 @@ Scenario: Remove item from cart
   When I remove "Widget" from the cart
   Then the cart should contain 1 item
   And the cart should not contain "Widget"
+
+Scenario: Clear cart
+  This shows an example of a scenario that is missing a step definition.
+
+  Given the cart contains:
+    | Item   | Quantity |
+    | Widget | 2        |
+    | Gadget | 1        |
+  When I clear the cart
+  Then the cart should be empty
