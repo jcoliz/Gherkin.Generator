@@ -1,7 +1,5 @@
 @namespace:Gherkin.Generator.Tests.Example.Features
 @baseclass:Gherkin.Generator.Tests.Example.FunctionalTestBase
-@using:NUnit.Framework
-@using:Gherkin.Generator.Utils
 Feature: Shopping Cart
   As a customer
   I want to add items to my cart
