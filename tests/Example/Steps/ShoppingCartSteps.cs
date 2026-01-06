@@ -37,7 +37,8 @@ public class ShoppingCartSteps
     [When("I add {quantity} {item} to the cart")]
     public async Task AddMultipleToCart(string quantity, string item)
     {
-        // TODO: Generator has issue with scenario outline parameter substitution
+        // TODO: Scenario outlines only accept string parameters currently
+        // Would be better to accept int parameters directly
         var count = int.Parse(quantity);
         for (int i = 0; i < count; i++)
         {
@@ -74,11 +75,16 @@ public class ShoppingCartSteps
     /// <summary>
     /// Verifies the cart total matches the expected amount.
     /// </summary>
+    /// <remarks>
+    /// Uses string parameter to avoid having to force gherkin-writing user to specify decimal literals
+    /// e.g. this allows "9.99" instead of "9.99m".
+    /// </remarks>
     /// <param name="total">The expected total.</param>
     [Then("the cart total should be {total}")]
     public async Task CartTotalShouldBe(string total)
     {
-        // TODO: Generator should support decimal parameters directly instead of requiring string parsing
+        // TODO: Could be an interesting feature to have the generator convert to decimal automatically
+        // when it detects a decimal parameter type from the method signature.
         var expectedTotal = decimal.Parse(total);
         Assert.That(_context.Cart.Total, Is.EqualTo(expectedTotal));
         await Task.CompletedTask;

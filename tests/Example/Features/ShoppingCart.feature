@@ -19,7 +19,7 @@ Scenario: Add single item to empty cart
   And the cart total should be 9.99
 
 Scenario Outline: Add multiple items
-  When I add <quantity> "<item>" to the cart
+  When I add <quantity> <item> to the cart
   Then the cart should contain <quantity> items
 
 Examples:
