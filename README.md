@@ -44,3 +44,7 @@ Customize the template to match your test infrastructure and conventions.
 ## Status
 
 In active development. Core features complete, preparing for initial NuGet release.
+
+## Acknowledgments
+
+This project was developed with assistance from [Roo Code](https://roo.dev/), an AI coding assistant.
