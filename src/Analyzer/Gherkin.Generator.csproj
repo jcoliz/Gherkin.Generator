@@ -22,7 +22,6 @@
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Initial release with Gherkin feature file parsing and test generation.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
