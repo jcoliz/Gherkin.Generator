@@ -3,6 +3,7 @@
 [![CI](https://github.com/jcoliz/Gherkin.Generator/actions/workflows/ci.yml/badge.svg)](https://github.com/jcoliz/Gherkin.Generator/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jcoliz/Gherkin.Generator/branch/main/graph/badge.svg)](https://codecov.io/gh/jcoliz/Gherkin.Generator)
 [![NuGet](https://img.shields.io/nuget/v/Gherkin.Generator.svg)](https://www.nuget.org/packages/Gherkin.Generator/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A source generator that converts Gherkin `.feature` files into executable C# test methods, enabling behavior-driven development with automatic test code generation.
 
