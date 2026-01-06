@@ -718,11 +718,11 @@ public class GherkinToCrifIntegrationTests
 
         // Then: First step should have "Given" keyword
         var step1 = crif.Rules[0].Scenarios[0].Steps[0];
-        Assert.That(step1.Keyword, Is.EqualTo("Given"));
+        Assert.That(step1.Keyword, Is.EqualTo(DisplayKeyword.Given));
 
         // And: Second step should preserve "And" keyword in CRIF
         var step2 = crif.Rules[0].Scenarios[0].Steps[1];
-        Assert.That(step2.Keyword, Is.EqualTo("And"));
+        Assert.That(step2.Keyword, Is.EqualTo(DisplayKeyword.And));
 
         // And: Both steps should be matched correctly
         Assert.That(step1.Owner, Is.EqualTo("AuthSteps"));
@@ -784,19 +784,19 @@ public class GherkinToCrifIntegrationTests
 
         // Then: First assertion step should have "Then" keyword
         var step1 = crif.Rules[0].Scenarios[0].Steps[2];
-        Assert.That(step1.Keyword, Is.EqualTo("Then"));
+        Assert.That(step1.Keyword, Is.EqualTo(DisplayKeyword.Then));
         Assert.That(step1.Owner, Is.EqualTo("AuthSteps"));
         Assert.That(step1.Method, Is.EqualTo("TheUserShouldBeLoggedIn"));
 
         // And: Second step should preserve "And" keyword but match as "Then"
         var step2 = crif.Rules[0].Scenarios[0].Steps[3];
-        Assert.That(step2.Keyword, Is.EqualTo("And"));
+        Assert.That(step2.Keyword, Is.EqualTo(DisplayKeyword.And));
         Assert.That(step2.Owner, Is.EqualTo("SessionSteps"));
         Assert.That(step2.Method, Is.EqualTo("TheSessionShouldBeActive"));
 
         // And: Third step should also preserve "And" keyword and match as "Then"
         var step3 = crif.Rules[0].Scenarios[0].Steps[4];
-        Assert.That(step3.Keyword, Is.EqualTo("And"));
+        Assert.That(step3.Keyword, Is.EqualTo(DisplayKeyword.And));
         Assert.That(step3.Owner, Is.EqualTo("AccessSteps"));
         Assert.That(step3.Method, Is.EqualTo("TheUserShouldHaveAccess"));
 
@@ -854,25 +854,25 @@ public class GherkinToCrifIntegrationTests
 
         // And: First Given step should be unimplemented
         var givenStep = crif.Rules[0].Scenarios[0].Steps[0];
-        Assert.That(givenStep.Keyword, Is.EqualTo("Given"));
+        Assert.That(givenStep.Keyword, Is.EqualTo(DisplayKeyword.Given));
         Assert.That(givenStep.Text, Is.EqualTo("I am on the login page"));
         Assert.That(givenStep.Owner, Is.EqualTo("this"));
 
         // And: When step should be unimplemented
         var whenStep = crif.Rules[0].Scenarios[0].Steps[1];
-        Assert.That(whenStep.Keyword, Is.EqualTo("When"));
+        Assert.That(whenStep.Keyword, Is.EqualTo(DisplayKeyword.When));
         Assert.That(whenStep.Text, Is.EqualTo("I log in"));
         Assert.That(whenStep.Owner, Is.EqualTo("this"));
 
         // And: Then step should be matched
         var thenStep = crif.Rules[0].Scenarios[0].Steps[2];
-        Assert.That(thenStep.Keyword, Is.EqualTo("Then"));
+        Assert.That(thenStep.Keyword, Is.EqualTo(DisplayKeyword.Then));
         Assert.That(thenStep.Owner, Is.EqualTo("AuthSteps"));
         Assert.That(thenStep.Method, Is.EqualTo("TheUserShouldBeLoggedIn"));
 
         // And: And step should preserve "And" keyword and be matched
         var andStep = crif.Rules[0].Scenarios[0].Steps[3];
-        Assert.That(andStep.Keyword, Is.EqualTo("And"));
+        Assert.That(andStep.Keyword, Is.EqualTo(DisplayKeyword.And));
         Assert.That(andStep.Owner, Is.EqualTo("SessionSteps"));
         Assert.That(andStep.Method, Is.EqualTo("TheSessionShouldBeActive"));
 

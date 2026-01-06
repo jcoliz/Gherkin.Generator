@@ -314,9 +314,9 @@ public class GherkinToCrifConverterTests
         var crif = _converter.Convert(feature);
 
         // Then: Each step should preserve its original keyword
-        Assert.That(crif.Background!.Steps[0].Keyword, Is.EqualTo("Given"));
-        Assert.That(crif.Background!.Steps[1].Keyword, Is.EqualTo("And"));
-        Assert.That(crif.Background!.Steps[2].Keyword, Is.EqualTo("But"));
+        Assert.That(crif.Background!.Steps[0].Keyword, Is.EqualTo(DisplayKeyword.Given));
+        Assert.That(crif.Background!.Steps[1].Keyword, Is.EqualTo(DisplayKeyword.And));
+        Assert.That(crif.Background!.Steps[2].Keyword, Is.EqualTo(DisplayKeyword.But));
     }
 
     [Test]
@@ -367,9 +367,9 @@ public class GherkinToCrifConverterTests
 
         // Then: Keywords should be extracted
         var steps = crif.Rules[0].Scenarios[0].Steps;
-        Assert.That(steps[0].Keyword, Is.EqualTo("Given"));
-        Assert.That(steps[1].Keyword, Is.EqualTo("When"));
-        Assert.That(steps[2].Keyword, Is.EqualTo("Then"));
+        Assert.That(steps[0].Keyword, Is.EqualTo(DisplayKeyword.Given));
+        Assert.That(steps[1].Keyword, Is.EqualTo(DisplayKeyword.When));
+        Assert.That(steps[2].Keyword, Is.EqualTo(DisplayKeyword.Then));
     }
 
     [Test]

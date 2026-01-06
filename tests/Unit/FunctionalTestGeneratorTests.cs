@@ -110,7 +110,7 @@ public class FunctionalTestGeneratorTests
             [
                 new StepCrif
                 {
-                    Keyword = "Given",
+                    Keyword = DisplayKeyword.Given,
                     Text = "the application is running",
                     Owner = "NavigationSteps",
                     Method = "GivenLaunchedSite",
@@ -157,7 +157,7 @@ public class FunctionalTestGeneratorTests
                         [
                             new StepCrif
                             {
-                                Keyword = "Given",
+                                Keyword = DisplayKeyword.Given,
                                 Text = "I have a transaction:",
                                 Owner = "TransactionSteps",
                                 Method = "GivenIHaveATransaction",
@@ -224,7 +224,7 @@ public class FunctionalTestGeneratorTests
                         [
                             new StepCrif
                             {
-                                Keyword = "Given",
+                                Keyword = DisplayKeyword.Given,
                                 Text = "test",
                                 Owner = "Steps",
                                 Method = "Test",
@@ -305,7 +305,7 @@ public class FunctionalTestGeneratorTests
                         [
                             new StepCrif
                             {
-                                Keyword = "When",
+                                Keyword = DisplayKeyword.When,
                                 Text = "I navigate to <page>",
                                 Owner = "NavSteps",
                                 Method = "Navigate",

@@ -27,6 +27,41 @@ public enum NormalizedKeyword
 }
 
 /// <summary>
+/// Displayed Gherkin step keyword as it appears in the feature file.
+/// </summary>
+/// <remarks>
+/// This preserves the original keyword (including And/But) for documentation purposes.
+/// For step matching, use NormalizedKeyword instead.
+/// </remarks>
+public enum DisplayKeyword
+{
+    /// <summary>
+    /// Given keyword (preconditions/setup).
+    /// </summary>
+    Given,
+
+    /// <summary>
+    /// When keyword (action/event).
+    /// </summary>
+    When,
+
+    /// <summary>
+    /// Then keyword (assertions/outcomes).
+    /// </summary>
+    Then,
+
+    /// <summary>
+    /// And keyword (continuation of previous step type).
+    /// </summary>
+    And,
+
+    /// <summary>
+    /// But keyword (negative continuation of previous step type).
+    /// </summary>
+    But
+}
+
+/// <summary>
 /// Code-Ready Intermediate Form (CRIF) of a test feature.
 /// </summary>
 /// <remarks>
@@ -263,7 +298,7 @@ public class StepCrif
     /// This is the keyword as it appears in the Gherkin file for documentation purposes.
     /// Normalized step name will be used for step matching (e.g. "And" would match "Given" steps if the previous step was a Given).
     /// </remarks>
-    public string Keyword { get; set; } = string.Empty;
+    public DisplayKeyword Keyword { get; set; }
 
     /// <summary>
     /// Step text (human-readable description).

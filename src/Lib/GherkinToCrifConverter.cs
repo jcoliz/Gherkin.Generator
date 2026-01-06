@@ -334,7 +334,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     {
         var stepCrif = new StepCrif
         {
-            Keyword = step.Keyword.Trim(),
+            Keyword = ParseDisplayKeyword(step.Keyword.Trim()),
             Text = step.Text,
             Owner = "this", // Default for unimplemented steps
             Method = string.Empty // Will be set during step matching
@@ -347,6 +347,25 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         }
 
         return stepCrif;
+    }
+
+    /// <summary>
+    /// Parses a keyword string into a DisplayKeyword enum value.
+    /// </summary>
+    /// <param name="keyword">The keyword string (e.g., "Given", "When", "And").</param>
+    /// <returns>The corresponding DisplayKeyword enum value.</returns>
+    /// <exception cref="ArgumentException">Thrown when the keyword is not a valid Gherkin keyword.</exception>
+    private static DisplayKeyword ParseDisplayKeyword(string keyword)
+    {
+        return keyword switch
+        {
+            "Given" => DisplayKeyword.Given,
+            "When" => DisplayKeyword.When,
+            "Then" => DisplayKeyword.Then,
+            "And" => DisplayKeyword.And,
+            "But" => DisplayKeyword.But,
+            _ => throw new ArgumentException($"Unknown Gherkin keyword: '{keyword}'", nameof(keyword))
+        };
     }
 
     private DataTableCrif ConvertDataTable(DataTable dataTable)
@@ -420,35 +439,19 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <summary>
     /// Normalizes And/But keywords to the current keyword context.
     /// </summary>
-    /// <param name="keyword">The keyword to normalize.</param>
+    /// <param name="keyword">The display keyword to normalize.</param>
     /// <param name="currentKeyword">The current keyword context (Given, When, or Then).</param>
     /// <returns>The normalized keyword.</returns>
-    private static NormalizedKeyword NormalizeKeyword(string keyword, ref NormalizedKeyword currentKeyword)
+    private static NormalizedKeyword NormalizeKeyword(DisplayKeyword keyword, ref NormalizedKeyword currentKeyword)
     {
-        if (keyword == "And" || keyword == "But")
+        return keyword switch
         {
-            return currentKeyword;
-        }
-
-        if (keyword == "Given")
-        {
-            currentKeyword = NormalizedKeyword.Given;
-            return NormalizedKeyword.Given;
-        }
-
-        if (keyword == "When")
-        {
-            currentKeyword = NormalizedKeyword.When;
-            return NormalizedKeyword.When;
-        }
-
-        if (keyword == "Then")
-        {
-            currentKeyword = NormalizedKeyword.Then;
-            return NormalizedKeyword.Then;
-        }
-
-        return currentKeyword;
+            DisplayKeyword.Given => currentKeyword = NormalizedKeyword.Given,
+            DisplayKeyword.When => currentKeyword = NormalizedKeyword.When,
+            DisplayKeyword.Then => currentKeyword = NormalizedKeyword.Then,
+            DisplayKeyword.And or DisplayKeyword.But => currentKeyword,
+            _ => currentKeyword
+        };
     }
 
     /// <summary>
