@@ -394,7 +394,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         return tableCrif;
     }
 
-    private string ConvertToMethodName(string name)
+    private static string ConvertToMethodName(string name)
     {
         // Convert scenario name to PascalCase method name
         var words = name.Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
@@ -454,7 +454,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="crif">The CRIF object to update.</param>
     /// <param name="step">The step to process.</param>
     /// <param name="matchedStep">The matched step metadata.</param>
-    private void ProcessImplementedStep(FunctionalTestCrif crif, StepCrif step, StepMetadata matchedStep)
+    private static void ProcessImplementedStep(FunctionalTestCrif crif, StepCrif step, StepMetadata matchedStep)
     {
         step.Owner = matchedStep.Class;
         step.Method = matchedStep.Method;
@@ -487,7 +487,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="step">The step to add arguments to.</param>
     /// <param name="matchedStep">The matched step metadata.</param>
-    private void ExtractStepArguments(StepCrif step, StepMetadata matchedStep)
+    private static void ExtractStepArguments(StepCrif step, StepMetadata matchedStep)
     {
         var textParameters = matchedStep.Parameters.Where(p => p.Type != "DataTable").ToList();
         if (textParameters.Count > 0)
@@ -586,33 +586,10 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         }
     }
 
-    private List<ArgumentCrif> ExtractArguments(string pattern, string text, List<StepParameter> parameters)
+    private static List<ArgumentCrif> ExtractArguments(string pattern, string text, List<StepParameter> parameters)
     {
         var arguments = new List<ArgumentCrif>();
-
-        // Build a regex pattern from the step definition text using same approach as MatchesWithPlaceholders:
-        // 1. Replace {placeholder} with temporary markers BEFORE escaping
-        // 2. Escape the pattern for regex special characters
-        // 3. Replace markers with capture groups AFTER escaping
-
-        // First, replace placeholders with temporary markers BEFORE escaping
-        var regexPattern = System.Text.RegularExpressions.Regex.Replace(
-            pattern,
-            @"\{[^}]+\}",  // Match {placeholder} pattern
-            "<<<PLACEHOLDER>>>"  // Temporary placeholder marker
-        );
-
-        // Now escape the pattern for regex
-        regexPattern = System.Text.RegularExpressions.Regex.Escape(regexPattern);
-
-        // Replace our markers with capture groups (note: using capturing group, not non-capturing)
-        regexPattern = regexPattern.Replace(
-            "<<<PLACEHOLDER>>>",
-            @"((?:""[^""]*""|\S+))"  // Capture group that matches quoted or unquoted values
-        );
-
-        // Add anchors for full string match
-        regexPattern = "^" + regexPattern + "$";
+        var regexPattern = BuildRegexPattern(pattern);
 
         try
         {
@@ -624,44 +601,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
 
             if (match.Success)
             {
-                // Groups[0] is the entire match, Groups[1..n] are capture groups
-                for (int i = 1; i < match.Groups.Count; i++)
-                {
-                    var value = match.Groups[i].Value;
-
-                    // Check if this is a Scenario Outline parameter (e.g., <amount>)
-                    // If so, extract just the parameter name without angle brackets
-                    if (value.StartsWith("<") && value.EndsWith(">"))
-                    {
-                        // This is a Scenario Outline parameter - use parameter name only
-                        value = value.Substring(1, value.Length - 2);
-                    }
-                    else
-                    {
-                        // This is a concrete value - determine if we need to add quotes
-                        // String parameters need quotes (unless already quoted)
-                        // Numeric types (int, decimal, double, etc.) should not have quotes
-                        var paramIndex = i - 1; // Parameter index (0-based)
-                        if (paramIndex < parameters.Count)
-                        {
-                            var paramType = parameters[paramIndex].Type;
-                            var isStringType = paramType.Equals("string", StringComparison.OrdinalIgnoreCase);
-
-                            // If it's a string type and not already quoted, add quotes
-                            if (isStringType && !value.StartsWith("\""))
-                            {
-                                value = $"\"{value}\"";
-                            }
-                            // For non-string types, keep the value as-is (no quotes for numbers)
-                        }
-                    }
-
-                    arguments.Add(new ArgumentCrif
-                    {
-                        Value = value,
-                        Last = false
-                    });
-                }
+                ExtractArgumentsFromMatch(match, parameters, arguments);
             }
         }
         catch
@@ -670,6 +610,101 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         }
 
         return arguments;
+    }
+
+    /// <summary>
+    /// Builds a regex pattern from step definition text by replacing placeholders with capture groups.
+    /// </summary>
+    /// <param name="pattern">Step definition pattern with {placeholder} markers.</param>
+    /// <returns>Regex pattern string.</returns>
+    private static string BuildRegexPattern(string pattern)
+    {
+        // Replace {placeholder} with temporary markers BEFORE escaping
+        var regexPattern = System.Text.RegularExpressions.Regex.Replace(
+            pattern,
+            @"\{[^}]+\}",
+            "<<<PLACEHOLDER>>>"
+        );
+
+        // Escape the pattern for regex special characters
+        regexPattern = System.Text.RegularExpressions.Regex.Escape(regexPattern);
+
+        // Replace markers with capture groups
+        regexPattern = regexPattern.Replace(
+            "<<<PLACEHOLDER>>>",
+            @"((?:""[^""]*""|\S+))"
+        );
+
+        // Add anchors for full string match
+        return "^" + regexPattern + "$";
+    }
+
+    /// <summary>
+    /// Extracts arguments from a successful regex match.
+    /// </summary>
+    /// <param name="match">The successful regex match.</param>
+    /// <param name="parameters">List of step parameters.</param>
+    /// <param name="arguments">List to add extracted arguments to.</param>
+    private static void ExtractArgumentsFromMatch(System.Text.RegularExpressions.Match match, List<StepParameter> parameters, List<ArgumentCrif> arguments)
+    {
+        // Groups[0] is the entire match, Groups[1..n] are capture groups
+        for (int i = 1; i < match.Groups.Count; i++)
+        {
+            var value = match.Groups[i].Value;
+            var processedValue = ProcessArgumentValue(value, i - 1, parameters);
+
+            arguments.Add(new ArgumentCrif
+            {
+                Value = processedValue,
+                Last = false
+            });
+        }
+    }
+
+    /// <summary>
+    /// Processes an argument value, handling scenario outline parameters and quote formatting.
+    /// </summary>
+    /// <param name="value">The extracted value.</param>
+    /// <param name="paramIndex">The parameter index (0-based).</param>
+    /// <param name="parameters">List of step parameters.</param>
+    /// <returns>Processed argument value.</returns>
+    private static string ProcessArgumentValue(string value, int paramIndex, List<StepParameter> parameters)
+    {
+        // Check if this is a Scenario Outline parameter (e.g., <amount>)
+        if (value.StartsWith("<") && value.EndsWith(">"))
+        {
+            return value.Substring(1, value.Length - 2);
+        }
+
+        // This is a concrete value - determine if we need to add quotes
+        return FormatConcreteValue(value, paramIndex, parameters);
+    }
+
+    /// <summary>
+    /// Formats a concrete value by adding quotes for string types if needed.
+    /// </summary>
+    /// <param name="value">The value to format.</param>
+    /// <param name="paramIndex">The parameter index.</param>
+    /// <param name="parameters">List of step parameters.</param>
+    /// <returns>Formatted value.</returns>
+    private static string FormatConcreteValue(string value, int paramIndex, List<StepParameter> parameters)
+    {
+        if (paramIndex >= parameters.Count)
+        {
+            return value;
+        }
+
+        var paramType = parameters[paramIndex].Type;
+        var isStringType = paramType.Equals("string", StringComparison.OrdinalIgnoreCase);
+
+        // If it's a string type and not already quoted, add quotes
+        if (isStringType && !value.StartsWith("\""))
+        {
+            return $"\"{value}\"";
+        }
+
+        // For non-string types, keep the value as-is (no quotes for numbers)
+        return value;
     }
 }
 
@@ -711,27 +746,22 @@ public class StepMetadataCollection
             s.NormalizedKeyword.Equals(normalizedKeyword, StringComparison.OrdinalIgnoreCase));
 
         // Try to find exact match first (no parameters)
-        foreach (var candidate in candidates.Where(c => c.Parameters.Count == 0))
+        var exactMatch = candidates
+            .Where(c => c.Parameters.Count == 0)
+            .FirstOrDefault(c => c.Text.Equals(stepText, StringComparison.OrdinalIgnoreCase));
+        
+        if (exactMatch != null)
         {
-            if (candidate.Text.Equals(stepText, StringComparison.OrdinalIgnoreCase))
-            {
-                return candidate;
-            }
+            return exactMatch;
         }
 
         // Try to find match with placeholders
-        foreach (var candidate in candidates.Where(c => c.Parameters.Count > 0))
-        {
-            if (MatchesWithPlaceholders(candidate.Text, stepText))
-            {
-                return candidate;
-            }
-        }
-
-        return null;
+        return candidates
+            .Where(c => c.Parameters.Count > 0)
+            .FirstOrDefault(c => MatchesWithPlaceholders(c.Text, stepText));
     }
 
-    private bool MatchesWithPlaceholders(string pattern, string text)
+    private static bool MatchesWithPlaceholders(string pattern, string text)
     {
         // Build a regex pattern from the step definition text
         // Replace {placeholder} with a pattern that matches:
