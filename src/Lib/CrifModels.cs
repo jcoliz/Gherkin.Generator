@@ -223,9 +223,21 @@ public class ScenarioCrif
     /// Whether this scenario should be marked with [Explicit] attribute.
     /// </summary>
     /// <remarks>
-    /// Set by a tag on the scenario: `@explicit`.
+    /// Set by a tag on the scenario: `@explicit` or `@explicit:reason`.
     /// </remarks>
-    public bool ExplicitTag
+    public bool IsExplicit
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Optional reason for why this scenario is marked explicit.
+    /// </summary>
+    /// <remarks>
+    /// Set by a tag on the scenario: `@explicit:reason`.
+    /// When null or empty, no reason is provided.
+    /// </remarks>
+    public string? ExplicitReason
     {
         get; set;
     }

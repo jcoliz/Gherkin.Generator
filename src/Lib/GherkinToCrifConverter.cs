@@ -300,13 +300,14 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             };
         }
 
-        // Check for @explicit tag
-        foreach (var tag in scenario.Tags)
+        // Check for @explicit tag with optional reason
+        var explicitTag = scenario.Tags.FirstOrDefault(t => t.Name == "@explicit" || t.Name.StartsWith("@explicit:"));
+        if (explicitTag != null)
         {
-            if (tag.Name == "@explicit")
+            scenarioCrif.IsExplicit = true;
+            if (explicitTag.Name.StartsWith("@explicit:"))
             {
-                scenarioCrif.ExplicitTag = true;
-                break;
+                scenarioCrif.ExplicitReason = explicitTag.Name.Substring("@explicit:".Length);
             }
         }
 

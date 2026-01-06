@@ -61,9 +61,9 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
     {{/Lines}}
     /// </remarks>
     {{/Remarks}}
-    {{#ExplicitTag}}
-    [Explicit]
-    {{/ExplicitTag}}
+    {{#IsExplicit}}
+    [Explicit{{#ExplicitReason}}("{{.}}"){{/ExplicitReason}}]
+    {{/IsExplicit}}
     {{#TestCases}}
     [TestCase({{{.}}})]
     {{/TestCases}}

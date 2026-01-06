@@ -28,7 +28,7 @@ Rules:
     Scenarios:
       - Name: Simple test
         Method: SimpleTest
-        ExplicitTag: false
+        IsExplicit: false
         Steps:
           - Keyword: Given
             Text: a transaction
@@ -54,7 +54,7 @@ Rules:
 
       - Name: Parameterized test
         Method: ParameterizedTest
-        ExplicitTag: false
+        IsExplicit: false
         TestCases:
           - '"/weather"'
           - '"/counter"'
@@ -73,7 +73,7 @@ Rules:
 
       - Name: Explicit test
         Method: ExplicitTest
-        ExplicitTag: true
+        IsExplicit: true
         Steps:
           - Keyword: Given
             Text: something

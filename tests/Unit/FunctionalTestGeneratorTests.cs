@@ -418,12 +418,12 @@ public class FunctionalTestGeneratorTests
     #region Explicit Tag Tests
 
     /// <summary>
-    /// Generator produces Explicit attribute when flag is set.
+    /// Generator produces Explicit attribute when IsExplicit is true with no reason.
     /// </summary>
     [Test]
-    public void GenerateFromFile_WithExplicitTag_ProducesExplicitAttribute()
+    public void GenerateFromFile_WithIsExplicitNoReason_ProducesExplicitAttribute()
     {
-        // Given: A CRIF with ExplicitTag set to true
+        // Given: A CRIF with IsExplicit true and no reason
         var crif = CreateMinimalCrif();
         crif.Rules =
         [
@@ -437,7 +437,8 @@ public class FunctionalTestGeneratorTests
                     {
                         Name = "Explicit test",
                         Method = "ExplicitTest",
-                        ExplicitTag = true,
+                        IsExplicit = true,
+                        ExplicitReason = null,
                         Steps = []
                     }
                 ]
@@ -447,17 +448,55 @@ public class FunctionalTestGeneratorTests
         // When: Generating from file
         var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
-        // Then: Explicit attribute is generated
+        // Then: Explicit attribute is generated without reason
         Assert.That(result, Does.Contain("[Explicit]"));
+
+        // And: Should not contain parentheses (no reason)
+        Assert.That(result, Does.Not.Contain("[Explicit(\""));
     }
 
     /// <summary>
-    /// Generator does not produce Explicit attribute when flag is false.
+    /// Generator produces Explicit attribute with reason when both IsExplicit and ExplicitReason are set.
     /// </summary>
     [Test]
-    public void GenerateFromFile_WithoutExplicitTag_DoesNotProduceExplicitAttribute()
+    public void GenerateFromFile_WithExplicitReason_ProducesExplicitAttributeWithReason()
     {
-        // Given: A CRIF with ExplicitTag set to false
+        // Given: A CRIF with IsExplicit true and a reason
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Test",
+                Description = "Test",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "Explicit test with reason",
+                        Method = "ExplicitTestWithReason",
+                        IsExplicit = true,
+                        ExplicitReason = "work_in_progress",
+                        Steps = []
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: Explicit attribute is generated with reason
+        Assert.That(result, Does.Contain("[Explicit(\"work_in_progress\")]"));
+    }
+
+    /// <summary>
+    /// Generator does not produce Explicit attribute when IsExplicit is false.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithoutIsExplicit_DoesNotProduceExplicitAttribute()
+    {
+        // Given: A CRIF with IsExplicit false
         var crif = CreateMinimalCrif();
         crif.Rules =
         [
@@ -471,7 +510,8 @@ public class FunctionalTestGeneratorTests
                     {
                         Name = "Normal test",
                         Method = "NormalTest",
-                        ExplicitTag = false,
+                        IsExplicit = false,
+                        ExplicitReason = null,
                         Steps = []
                     }
                 ]

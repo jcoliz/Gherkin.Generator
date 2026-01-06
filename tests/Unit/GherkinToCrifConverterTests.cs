@@ -220,9 +220,9 @@ public class GherkinToCrifConverterTests
     }
 
     [Test]
-    public void Convert_ScenarioWithExplicitTag_SetsExplicitFlag()
+    public void Convert_ScenarioWithExplicitTag_SetsIsExplicitTrue()
     {
-        // Given: A scenario with @explicit tag
+        // Given: A scenario with @explicit tag (no reason)
         var gherkin = """
             Feature: Transaction Management
 
@@ -237,8 +237,60 @@ public class GherkinToCrifConverterTests
         // When: Feature is converted to CRIF
         var crif = _converter.Convert(feature);
 
-        // Then: ExplicitTag should be set to true
-        Assert.That(crif.Rules[0].Scenarios[0].ExplicitTag, Is.True);
+        // Then: IsExplicit should be true
+        Assert.That(crif.Rules[0].Scenarios[0].IsExplicit, Is.True);
+
+        // And: ExplicitReason should be null (no reason provided)
+        Assert.That(crif.Rules[0].Scenarios[0].ExplicitReason, Is.Null);
+    }
+
+    [Test]
+    public void Convert_ScenarioWithExplicitReasonTag_ExtractsReason()
+    {
+        // Given: A scenario with @explicit:reason tag (using underscores since tags cannot contain spaces)
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            @explicit:work_in_progress
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: IsExplicit should be true
+        Assert.That(crif.Rules[0].Scenarios[0].IsExplicit, Is.True);
+
+        // And: ExplicitReason should contain the reason
+        Assert.That(crif.Rules[0].Scenarios[0].ExplicitReason, Is.EqualTo("work_in_progress"));
+    }
+
+    [Test]
+    public void Convert_ScenarioWithoutExplicitTag_IsExplicitFalse()
+    {
+        // Given: A scenario without @explicit tag
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: IsExplicit should be false
+        Assert.That(crif.Rules[0].Scenarios[0].IsExplicit, Is.False);
+
+        // And: ExplicitReason should be null
+        Assert.That(crif.Rules[0].Scenarios[0].ExplicitReason, Is.Null);
     }
 
     [Test]
