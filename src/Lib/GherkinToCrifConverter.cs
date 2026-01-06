@@ -37,112 +37,196 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
 
         if (feature.Feature != null)
         {
-            // Extract feature name
-            crif.FeatureName = feature.Feature.Name;
-
-            // Extract feature description lines
-            if (feature.Feature.Description != null)
-            {
-                var lines = feature.Feature.Description.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (var line in lines)
-                {
-                    crif.DescriptionLines.Add(line.Trim());
-                }
-            }
-
-            // Process feature tags
-            foreach (var tag in feature.Feature.Tags)
-            {
-                if (tag.Name.StartsWith("@namespace:"))
-                {
-                    crif.Namespace = tag.Name.Substring("@namespace:".Length);
-                }
-                else if (tag.Name.StartsWith("@baseclass:"))
-                {
-                    var baseClassValue = tag.Name.Substring("@baseclass:".Length);
-                    // Check if base class includes namespace (contains dots)
-                    var lastDotIndex = baseClassValue.LastIndexOf('.');
-                    if (lastDotIndex >= 0)
-                    {
-                        var ns = baseClassValue.Substring(0, lastDotIndex);
-                        crif.BaseClass = baseClassValue.Substring(lastDotIndex + 1);
-                        if (!crif.Usings.Contains(ns))
-                        {
-                            crif.Usings.Add(ns);
-                        }
-                    }
-                    else
-                    {
-                        crif.BaseClass = baseClassValue;
-                    }
-                }
-                else if (tag.Name.StartsWith("@using:"))
-                {
-                    var usingValue = tag.Name.Substring("@using:".Length);
-                    if (!crif.Usings.Contains(usingValue))
-                    {
-                        crif.Usings.Add(usingValue);
-                    }
-                }
-            }
-
-            // Extract background if present
-            var background = feature.Feature.Children.OfType<Background>().FirstOrDefault();
-            if (background != null)
-            {
-                crif.Background = ConvertBackground(background);
-                // Track unimplemented steps from background
-                TrackUnimplementedSteps(crif, crif.Background.Steps);
-            }
-
-            // Process feature children (Rules and Scenarios)
-            RuleCrif? defaultRule = null;
-
-            foreach (var child in feature.Feature.Children)
-            {
-                if (child is Rule rule)
-                {
-                    var ruleCrif = new RuleCrif
-                    {
-                        Name = rule.Name,
-                        Description = rule.Description ?? string.Empty
-                    };
-
-                    foreach (var ruleChild in rule.Children)
-                    {
-                        if (ruleChild is Scenario scenario)
-                        {
-                            var scenarioCrif = ConvertScenario(scenario);
-                            ruleCrif.Scenarios.Add(scenarioCrif);
-                            // Track unimplemented steps
-                            TrackUnimplementedSteps(crif, scenarioCrif.Steps);
-                        }
-                    }
-
-                    crif.Rules.Add(ruleCrif);
-                }
-                else if (child is Scenario scenarioWithoutRule)
-                {
-                    // Create default rule if needed
-                    if (defaultRule == null)
-                    {
-                        defaultRule = new RuleCrif
-                        {
-                            Name = "All scenarios",
-                            Description = string.Empty
-                        };
-                        crif.Rules.Add(defaultRule);
-                    }
-
-                    var scenarioCrif = ConvertScenario(scenarioWithoutRule);
-                    defaultRule.Scenarios.Add(scenarioCrif);
-                    // Track unimplemented steps
-                    TrackUnimplementedSteps(crif, scenarioCrif.Steps);
-                }
-            }
+            ProcessFeatureMetadata(feature.Feature, crif);
+            ProcessFeatureTags(feature.Feature.Tags, crif);
+            ProcessBackground(feature.Feature, crif);
+            ProcessFeatureChildren(feature.Feature.Children, crif);
         }
 
         return crif;
+    }
+
+    /// <summary>
+    /// Processes feature metadata including name and description.
+    /// </summary>
+    /// <param name="feature">The Gherkin feature.</param>
+    /// <param name="crif">The CRIF object to populate.</param>
+    private static void ProcessFeatureMetadata(Feature feature, FunctionalTestCrif crif)
+    {
+        crif.FeatureName = feature.Name;
+
+        if (feature.Description != null)
+        {
+            var lines = feature.Description.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
+            {
+                crif.DescriptionLines.Add(line.Trim());
+            }
+        }
+    }
+
+    /// <summary>
+    /// Processes feature-level tags for namespace, base class, and using directives.
+    /// </summary>
+    /// <param name="tags">Collection of feature tags.</param>
+    /// <param name="crif">The CRIF object to populate.</param>
+    private static void ProcessFeatureTags(IEnumerable<Tag> tags, FunctionalTestCrif crif)
+    {
+        foreach (var tag in tags)
+        {
+            if (tag.Name.StartsWith("@namespace:"))
+            {
+                ProcessNamespaceTag(tag, crif);
+            }
+            else if (tag.Name.StartsWith("@baseclass:"))
+            {
+                ProcessBaseClassTag(tag, crif);
+            }
+            else if (tag.Name.StartsWith("@using:"))
+            {
+                ProcessUsingTag(tag, crif);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Processes a namespace tag.
+    /// </summary>
+    /// <param name="tag">The namespace tag.</param>
+    /// <param name="crif">The CRIF object to populate.</param>
+    private static void ProcessNamespaceTag(Tag tag, FunctionalTestCrif crif)
+    {
+        crif.Namespace = tag.Name.Substring("@namespace:".Length);
+    }
+
+    /// <summary>
+    /// Processes a base class tag, extracting namespace if present.
+    /// </summary>
+    /// <param name="tag">The base class tag.</param>
+    /// <param name="crif">The CRIF object to populate.</param>
+    private static void ProcessBaseClassTag(Tag tag, FunctionalTestCrif crif)
+    {
+        var baseClassValue = tag.Name.Substring("@baseclass:".Length);
+        var lastDotIndex = baseClassValue.LastIndexOf('.');
+        
+        if (lastDotIndex >= 0)
+        {
+            var ns = baseClassValue.Substring(0, lastDotIndex);
+            crif.BaseClass = baseClassValue.Substring(lastDotIndex + 1);
+            if (!crif.Usings.Contains(ns))
+            {
+                crif.Usings.Add(ns);
+            }
+        }
+        else
+        {
+            crif.BaseClass = baseClassValue;
+        }
+    }
+
+    /// <summary>
+    /// Processes a using directive tag.
+    /// </summary>
+    /// <param name="tag">The using tag.</param>
+    /// <param name="crif">The CRIF object to populate.</param>
+    private static void ProcessUsingTag(Tag tag, FunctionalTestCrif crif)
+    {
+        var usingValue = tag.Name.Substring("@using:".Length);
+        if (!crif.Usings.Contains(usingValue))
+        {
+            crif.Usings.Add(usingValue);
+        }
+    }
+
+    /// <summary>
+    /// Processes the background section if present.
+    /// </summary>
+    /// <param name="feature">The Gherkin feature.</param>
+    /// <param name="crif">The CRIF object to populate.</param>
+    private void ProcessBackground(Feature feature, FunctionalTestCrif crif)
+    {
+        var background = feature.Children.OfType<Background>().FirstOrDefault();
+        if (background != null)
+        {
+            crif.Background = ConvertBackground(background);
+            TrackUnimplementedSteps(crif, crif.Background.Steps);
+        }
+    }
+
+    /// <summary>
+    /// Processes feature children including rules and scenarios.
+    /// </summary>
+    /// <param name="children">Collection of feature children.</param>
+    /// <param name="crif">The CRIF object to populate.</param>
+    private void ProcessFeatureChildren(IEnumerable<IHasLocation> children, FunctionalTestCrif crif)
+    {
+        RuleCrif? defaultRule = null;
+
+        foreach (var child in children)
+        {
+            if (child is Rule rule)
+            {
+                ProcessRule(rule, crif);
+            }
+            else if (child is Scenario scenario)
+            {
+                defaultRule ??= CreateDefaultRule(crif);
+                ProcessScenarioInRule(scenario, defaultRule, crif);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Processes a rule and its scenarios.
+    /// </summary>
+    /// <param name="rule">The rule to process.</param>
+    /// <param name="crif">The CRIF object to populate.</param>
+    private void ProcessRule(Rule rule, FunctionalTestCrif crif)
+    {
+        var ruleCrif = new RuleCrif
+        {
+            Name = rule.Name,
+            Description = rule.Description ?? string.Empty
+        };
+
+        foreach (var ruleChild in rule.Children)
+        {
+            if (ruleChild is Scenario scenario)
+            {
+                ProcessScenarioInRule(scenario, ruleCrif, crif);
+            }
+        }
+
+        crif.Rules.Add(ruleCrif);
+    }
+
+    /// <summary>
+    /// Creates a default rule for scenarios not under an explicit rule.
+    /// </summary>
+    /// <param name="crif">The CRIF object to populate.</param>
+    /// <returns>The created default rule.</returns>
+    private static RuleCrif CreateDefaultRule(FunctionalTestCrif crif)
+    {
+        var defaultRule = new RuleCrif
+        {
+            Name = "All scenarios",
+            Description = string.Empty
+        };
+        crif.Rules.Add(defaultRule);
+        return defaultRule;
+    }
+
+    /// <summary>
+    /// Processes a scenario within a rule.
+    /// </summary>
+    /// <param name="scenario">The scenario to process.</param>
+    /// <param name="ruleCrif">The rule to add the scenario to.</param>
+    /// <param name="crif">The CRIF object for tracking unimplemented steps.</param>
+    private void ProcessScenarioInRule(Scenario scenario, RuleCrif ruleCrif, FunctionalTestCrif crif)
+    {
+        var scenarioCrif = ConvertScenario(scenario);
+        ruleCrif.Scenarios.Add(scenarioCrif);
+        TrackUnimplementedSteps(crif, scenarioCrif.Steps);
     }
 
     private BackgroundCrif ConvertBackground(Background background)
