@@ -23,12 +23,12 @@ Add to your test project:
 ## Quick Start
 
 1. **Write feature files** - Create `.feature` files with Gherkin scenarios
-2. **Get template** - Copy [`Default.mustache`](templates/Default.mustache) to your Features folder
+2. **Get template** - Copy [`Default.mustache`](templates/Default.mustache) to your project
 3. **Add to project** - Include as AdditionalFiles in `.csproj`:
    ```xml
    <ItemGroup>
      <AdditionalFiles Include="Features\*.feature" />
-     <AdditionalFiles Include="Features\Default.mustache" />
+     <AdditionalFiles Include="path\to\Default.mustache" />
    </ItemGroup>
    ```
 4. **Define step methods** - Write step implementations with `[Given]`, `[When]`, `[Then]` attributes
@@ -39,11 +39,10 @@ Customize the template to match your test infrastructure and conventions.
 ## Documentation
 
 - [Developer Guide](docs/DEVELOPER.md) - For contributors working on this project
-- [Commit Conventions](docs/COMMIT-CONVENTIONS.md) - Contribution guidelines
 
 ## Status
 
-In active development. Core features complete, preparing for initial NuGet release.
+In active development. Core features complete. Preparing to test released version internally.
 
 ## Acknowledgments
 
