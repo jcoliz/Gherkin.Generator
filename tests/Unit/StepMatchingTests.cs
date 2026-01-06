@@ -255,8 +255,7 @@ public class StepMatchingTests
         // Given: Multiple step definitions
         var steps = new List<StepMetadata>
         {
-            new StepMetadata
-            {
+            new() {
                 NormalizedKeyword = "Given",
                 Text = "I am logged in",
                 Method = "IAmLoggedIn",
@@ -264,8 +263,7 @@ public class StepMatchingTests
                 Namespace = "YoFi.V3.Tests.Functional.Steps",
                 Parameters = []
             },
-            new StepMetadata
-            {
+            new() {
                 NormalizedKeyword = "When",
                 Text = "I create a transaction",
                 Method = "ICreateATransaction",

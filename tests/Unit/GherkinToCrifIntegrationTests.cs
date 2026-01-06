@@ -1,4 +1,3 @@
-using Gherkin;
 using Gherkin.Ast;
 using Gherkin.Generator.Lib;
 

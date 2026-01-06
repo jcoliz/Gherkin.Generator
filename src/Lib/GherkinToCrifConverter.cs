@@ -108,7 +108,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     {
         var baseClassValue = tag.Name.Substring("@baseclass:".Length);
         var lastDotIndex = baseClassValue.LastIndexOf('.');
-        
+
         if (lastDotIndex >= 0)
         {
             var ns = baseClassValue.Substring(0, lastDotIndex);
@@ -359,36 +359,26 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             // First row is headers
             var headerRow = rows[0];
             var headerCells = headerRow.Cells.ToList();
-            for (int i = 0; i < headerCells.Count; i++)
+            tableCrif.Headers = headerCells.Select((cell, index) => new HeaderCellCrif
             {
-                tableCrif.Headers.Add(new HeaderCellCrif
-                {
-                    Value = headerCells[i].Value,
-                    Last = i == headerCells.Count - 1
-                });
-            }
+                Value = cell.Value,
+                Last = index == headerCells.Count - 1
+            }).ToList();
 
             // Remaining rows are data
-            for (int rowIdx = 1; rowIdx < rows.Count; rowIdx++)
+            tableCrif.Rows = rows.Skip(1).Select((row, rowIndex) =>
             {
-                var row = rows[rowIdx];
                 var cells = row.Cells.ToList();
-                var rowCrif = new DataRowCrif
+                return new DataRowCrif
                 {
-                    Last = rowIdx == rows.Count - 1
-                };
-
-                for (int cellIdx = 0; cellIdx < cells.Count; cellIdx++)
-                {
-                    rowCrif.Cells.Add(new DataCellCrif
+                    Last = rowIndex == rows.Count - 2, // rows.Count - 2 because we skipped first row
+                    Cells = cells.Select((cell, cellIndex) => new DataCellCrif
                     {
-                        Value = cells[cellIdx].Value,
-                        Last = cellIdx == cells.Count - 1
-                    });
-                }
-
-                tableCrif.Rows.Add(rowCrif);
-            }
+                        Value = cell.Value,
+                        Last = cellIndex == cells.Count - 1
+                    }).ToList()
+                };
+            }).ToList();
         }
 
         return tableCrif;
@@ -409,7 +399,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
 
     private void TrackUnimplementedSteps(FeatureCrif crif, List<StepCrif> steps)
     {
-        string currentKeyword = "Given";
+        var currentKeyword = "Given";
 
         foreach (var step in steps)
         {
@@ -439,12 +429,12 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         {
             return currentKeyword;
         }
-        
+
         if (keyword == "Given" || keyword == "When" || keyword == "Then")
         {
             currentKeyword = keyword;
         }
-        
+
         return keyword;
     }
 
@@ -538,7 +528,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     private void ProcessUnimplementedStep(FeatureCrif crif, StepCrif step, string normalizedKeyword)
     {
         AddToUnimplementedList(crif, step, normalizedKeyword);
-        
+
         step.Method = ConvertToMethodName(step.Text);
 
         if (step.DataTable != null)
@@ -648,17 +638,16 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     private static void ExtractArgumentsFromMatch(System.Text.RegularExpressions.Match match, List<StepParameter> parameters, List<ArgumentCrif> arguments)
     {
         // Groups[0] is the entire match, Groups[1..n] are capture groups
-        for (int i = 1; i < match.Groups.Count; i++)
-        {
-            var value = match.Groups[i].Value;
-            var processedValue = ProcessArgumentValue(value, i - 1, parameters);
-
-            arguments.Add(new ArgumentCrif
+        var extractedArgs = match.Groups
+            .Cast<System.Text.RegularExpressions.Group>()
+            .Skip(1) // Skip Groups[0] which is the full match
+            .Select((group, index) => new ArgumentCrif
             {
-                Value = processedValue,
+                Value = ProcessArgumentValue(group.Value, index, parameters),
                 Last = false
             });
-        }
+
+        arguments.AddRange(extractedArgs);
     }
 
     /// <summary>
@@ -749,7 +738,7 @@ public class StepMetadataCollection
         var exactMatch = candidates
             .Where(c => c.Parameters.Count == 0)
             .FirstOrDefault(c => c.Text.Equals(stepText, StringComparison.OrdinalIgnoreCase));
-        
+
         if (exactMatch != null)
         {
             return exactMatch;

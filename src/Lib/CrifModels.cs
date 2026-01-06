@@ -71,7 +71,10 @@ public class FeatureCrif
     /// <summary>
     /// Background section (setup steps that run before each test).
     /// </summary>
-    public BackgroundCrif? Background { get; set; }
+    public BackgroundCrif? Background
+    {
+        get; set;
+    }
 
     /// <summary>
     /// List of rules containing scenarios.
@@ -152,7 +155,10 @@ public class ScenarioCrif
     /// <remarks>
     /// Comes from Gherkin description of scenarios
     /// </remarks>
-    public RemarksCrif? Remarks { get; set; }
+    public RemarksCrif? Remarks
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Whether this scenario should be marked with [Explicit] attribute.
@@ -160,7 +166,10 @@ public class ScenarioCrif
     /// <remarks>
     /// Set by a tag on the scenario: `@explicit`.
     /// </remarks>
-    public bool ExplicitTag { get; set; }
+    public bool ExplicitTag
+    {
+        get; set;
+    }
 
     /// <summary>
     /// List of test case parameters for parameterized tests (e.g., ["\"value1\"", "123"]).
@@ -207,7 +216,10 @@ public class ParameterCrif
     /// <summary>
     /// Whether this is the last parameter (for comma placement).
     /// </summary>
-    public bool Last { get; set; }
+    public bool Last
+    {
+        get; set;
+    }
 }
 
 /// <summary>
@@ -259,7 +271,10 @@ public class StepCrif
     /// <summary>
     /// Optional data table associated with this step.
     /// </summary>
-    public DataTableCrif? DataTable { get; set; }
+    public DataTableCrif? DataTable
+    {
+        get; set;
+    }
 }
 
 /// <summary>
@@ -275,7 +290,10 @@ public class ArgumentCrif
     /// <summary>
     /// Whether this is the last argument (for comma placement).
     /// </summary>
-    public bool Last { get; set; }
+    public bool Last
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Returns the argument value for Mustache template rendering.
@@ -322,7 +340,10 @@ public class HeaderCellCrif
     /// <summary>
     /// Whether this is the last header cell (for comma placement).
     /// </summary>
-    public bool Last { get; set; }
+    public bool Last
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Returns the header value for Mustache template rendering.
@@ -343,7 +364,10 @@ public class DataRowCrif
     /// <summary>
     /// Whether this is the last row (for comma placement).
     /// </summary>
-    public bool Last { get; set; }
+    public bool Last
+    {
+        get; set;
+    }
 }
 
 /// <summary>
@@ -359,7 +383,10 @@ public class DataCellCrif
     /// <summary>
     /// Whether this is the last cell in the row (for comma placement).
     /// </summary>
-    public bool Last { get; set; }
+    public bool Last
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Returns the cell value for Mustache template rendering.

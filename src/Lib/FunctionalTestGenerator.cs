@@ -11,7 +11,7 @@ namespace Gherkin.Generator.Lib;
 /// This class combines a Code-Ready Intermediate Form (CRIF) object with a Mustache template
 /// to produce compiler-ready C# test files.
 /// </remarks>
-public class FunctionalTestGenerator
+public static class FunctionalTestGenerator
 {
     /// <summary>
     /// Generates test code from a CRIF object and Mustache template.
@@ -19,7 +19,7 @@ public class FunctionalTestGenerator
     /// <param name="template">Mustache template content as a string.</param>
     /// <param name="crif">Code-Ready Intermediate Form object containing test data.</param>
     /// <returns>Stream containing the generated C# code.</returns>
-    public Stream Generate(string template, FeatureCrif crif)
+    public static Stream Generate(string template, FeatureCrif crif)
     {
         var renderer = new StubbleBuilder()
             .Configure(settings => settings.SetIgnoreCaseOnKeyLookup(true))
@@ -39,7 +39,7 @@ public class FunctionalTestGenerator
     /// <param name="templateStream">Stream containing Mustache template content.</param>
     /// <param name="crif">Code-Ready Intermediate Form object containing test data.</param>
     /// <returns>Stream containing the generated C# code.</returns>
-    public Stream Generate(Stream templateStream, FeatureCrif crif)
+    public static Stream Generate(Stream templateStream, FeatureCrif crif)
     {
         using var reader = new StreamReader(templateStream);
         var template = reader.ReadToEnd();
@@ -57,7 +57,7 @@ public class FunctionalTestGenerator
     /// the Generate(string, FunctionalTestCrif) overload with template content from AdditionalFiles.
     /// </remarks>
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers - File IO is for testing only
-    public Stream GenerateFromFile(string templatePath, FeatureCrif crif)
+    public static Stream GenerateFromFile(string templatePath, FeatureCrif crif)
     {
         var template = File.ReadAllText(templatePath);
         return Generate(template, crif);
@@ -75,7 +75,7 @@ public class FunctionalTestGenerator
     /// the Generate(string, FunctionalTestCrif) overload and register output via context.
     /// </remarks>
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers - File IO is for testing only
-    public void GenerateToFile(string templatePath, FeatureCrif crif, string outputPath)
+    public static void GenerateToFile(string templatePath, FeatureCrif crif, string outputPath)
     {
         var template = File.ReadAllText(templatePath);
         var renderer = new StubbleBuilder()
@@ -92,7 +92,7 @@ public class FunctionalTestGenerator
     /// <param name="template">Mustache template content as a string.</param>
     /// <param name="crif">Code-Ready Intermediate Form object containing test data.</param>
     /// <returns>Generated C# code as a string.</returns>
-    public string GenerateString(string template, FeatureCrif crif)
+    public static string GenerateString(string template, FeatureCrif crif)
     {
         var renderer = new StubbleBuilder()
             .Configure(settings => settings.SetIgnoreCaseOnKeyLookup(true))
@@ -111,7 +111,7 @@ public class FunctionalTestGenerator
     /// the GenerateString(string, FunctionalTestCrif) overload with template content from AdditionalFiles.
     /// </remarks>
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers - File IO is for testing only
-    public string GenerateStringFromFile(string templatePath, FeatureCrif crif)
+    public static string GenerateStringFromFile(string templatePath, FeatureCrif crif)
     {
         var template = File.ReadAllText(templatePath);
         var renderer = new StubbleBuilder()

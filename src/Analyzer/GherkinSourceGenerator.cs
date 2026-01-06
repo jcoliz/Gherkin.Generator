@@ -1,13 +1,10 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
-using Gherkin;
-using Gherkin.Ast;
-using System.Collections.Immutable;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Gherkin.Ast;
 using Gherkin.Generator.Lib;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Gherkin.Generator;
 
@@ -191,8 +188,7 @@ public class GherkinSourceGenerator : IIncrementalGenerator
         context.AddSource($"{fileName}.crif.json.cs", jsonSourceText);
 
         // 5. Generate C# code from CRIF using template
-        var generator = new FunctionalTestGenerator();
-        var generatedCode = generator.GenerateString(template, crif);
+        var generatedCode = FunctionalTestGenerator.GenerateString(template, crif);
 
         // 6. Add generated source to compilation
         var sourceText = SourceText.From(generatedCode, Encoding.UTF8);

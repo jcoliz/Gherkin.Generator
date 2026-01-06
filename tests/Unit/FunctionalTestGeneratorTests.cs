@@ -7,13 +7,11 @@ namespace Gherkin.Generator.Tests.Unit;
 /// </summary>
 public class FunctionalTestGeneratorTests
 {
-    private FunctionalTestGenerator _generator = null!;
     private string _templatePath = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _generator = new FunctionalTestGenerator();
         _templatePath = "Default.mustache";
     }
 
@@ -35,7 +33,7 @@ public class FunctionalTestGeneratorTests
         };
 
         // When: Generating output
-        var result = _generator.GenerateString(template, crif);
+        var result = FunctionalTestGenerator.GenerateString(template, crif);
 
         // Then: Template variables are replaced
         Assert.That(result, Is.EqualTo("Hello World!"));
@@ -57,7 +55,7 @@ public class FunctionalTestGeneratorTests
         };
 
         // When: Generating output
-        var result = _generator.GenerateString(template, crif);
+        var result = FunctionalTestGenerator.GenerateString(template, crif);
 
         // Then: All usings are expanded
         Assert.That(result, Does.Contain("using System;"));
@@ -89,7 +87,7 @@ public class FunctionalTestGeneratorTests
         };
 
         // When: Generating from file
-        var result = _generator.GenerateStringFromFile(_templatePath, crif);
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
         // Then: Output contains expected elements
         Assert.That(result, Does.Contain("using NUnit.Framework;"));
@@ -122,7 +120,7 @@ public class FunctionalTestGeneratorTests
         };
 
         // When: Generating from file
-        var result = _generator.GenerateStringFromFile(_templatePath, crif);
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
         // Then: SetUp method is generated with background steps
         Assert.That(result, Does.Contain("[SetUp]"));
@@ -193,7 +191,7 @@ public class FunctionalTestGeneratorTests
         ];
 
         // When: Generating from file
-        var result = _generator.GenerateStringFromFile(_templatePath, crif);
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
         // Then: DataTable instantiation is generated correctly
         Assert.That(result, Does.Contain("var table = new DataTable("));
@@ -265,7 +263,7 @@ public class FunctionalTestGeneratorTests
         ];
 
         // When: Generating from file
-        var result = _generator.GenerateStringFromFile(_templatePath, crif);
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
         // Then: All rows are generated with correct comma placement
         Assert.That(result, Does.Contain("[\"First\"],"));
@@ -320,7 +318,7 @@ public class FunctionalTestGeneratorTests
         ];
 
         // When: Generating from file
-        var result = _generator.GenerateStringFromFile(_templatePath, crif);
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
         // Then: TestCase attributes are generated
         Assert.That(result, Does.Contain("[TestCase(\"/page1\")]"));
@@ -361,7 +359,7 @@ public class FunctionalTestGeneratorTests
         ];
 
         // When: Generating from file
-        var result = _generator.GenerateStringFromFile(_templatePath, crif);
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
         // Then: Method signature has both parameters
         Assert.That(result, Does.Contain("public async Task MultiParamTest(string name, int count)"));
@@ -406,7 +404,7 @@ public class FunctionalTestGeneratorTests
         ];
 
         // When: Generating from file
-        var result = _generator.GenerateStringFromFile(_templatePath, crif);
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
         // Then: Remarks are included in XML comments
         Assert.That(result, Does.Contain("/// <remarks>"));
@@ -447,7 +445,7 @@ public class FunctionalTestGeneratorTests
         ];
 
         // When: Generating from file
-        var result = _generator.GenerateStringFromFile(_templatePath, crif);
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
         // Then: Explicit attribute is generated
         Assert.That(result, Does.Contain("[Explicit]"));
@@ -481,7 +479,7 @@ public class FunctionalTestGeneratorTests
         ];
 
         // When: Generating from file
-        var result = _generator.GenerateStringFromFile(_templatePath, crif);
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
         // Then: No Explicit attribute (but [Test] should exist)
         Assert.That(result, Does.Contain("[Test]"));
@@ -522,7 +520,7 @@ public class FunctionalTestGeneratorTests
         ];
 
         // When: Generating from file
-        var result = _generator.GenerateStringFromFile(_templatePath, crif);
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
         // Then: Stub methods are generated
         Assert.That(result, Does.Contain("#region Unimplemented Steps"));
@@ -547,7 +545,7 @@ public class FunctionalTestGeneratorTests
         var crif = new FeatureCrif { FeatureName = "Example" };
 
         // When: Generating to stream
-        using var stream = _generator.Generate(template, crif);
+        using var stream = FunctionalTestGenerator.Generate(template, crif);
         using var reader = new StreamReader(stream);
         var result = reader.ReadToEnd();
 
@@ -573,7 +571,7 @@ public class FunctionalTestGeneratorTests
         var crif = new FeatureCrif { FeatureName = "StreamTest" };
 
         // When: Generating from stream
-        using var resultStream = _generator.Generate(templateStream, crif);
+        using var resultStream = FunctionalTestGenerator.Generate(templateStream, crif);
         using var reader = new StreamReader(resultStream);
         var result = reader.ReadToEnd();
 
@@ -607,7 +605,7 @@ public class FunctionalTestGeneratorTests
         var outputPath = Path.Combine(outputDir, "TransactionRecordFieldsFeature_Tests.cs");
 
         // When: Generating from template file
-        _generator.GenerateToFile(_templatePath, crif, outputPath);
+        FunctionalTestGenerator.GenerateToFile(_templatePath, crif, outputPath);
 
         // Then: Output file should exist
         Assert.That(File.Exists(outputPath), Is.True, "Generated file should exist");
