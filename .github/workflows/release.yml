@@ -37,10 +37,14 @@ jobs:
         echo "Publishing version: $VERSION"
       
     - name: Pack Gherkin.Generator.Utils
-      run: dotnet pack src/Utils/Gherkin.Generator.Utils.csproj --no-build --configuration Release -p:Version=${{ steps.get_version.outputs.version }} -p:PackageReleaseNotes="${{ github.event.release.body }}" --output ./artifacts
+      run: dotnet pack src/Utils/Gherkin.Generator.Utils.csproj --no-build --configuration Release -p:Version=${{ steps.get_version.outputs.version }} "-p:PackageReleaseNotes=$RELEASE_NOTES" --output ./artifacts
+      env:
+        RELEASE_NOTES: ${{ github.event.release.body }}
       
     - name: Pack Gherkin.Generator
-      run: dotnet pack src/Analyzer/Gherkin.Generator.csproj --no-build --configuration Release -p:Version=${{ steps.get_version.outputs.version }} -p:PackageReleaseNotes="${{ github.event.release.body }}" --output ./artifacts
+      run: dotnet pack src/Analyzer/Gherkin.Generator.csproj --no-build --configuration Release -p:Version=${{ steps.get_version.outputs.version }} "-p:PackageReleaseNotes=$RELEASE_NOTES" --output ./artifacts
+      env:
+        RELEASE_NOTES: ${{ github.event.release.body }}
       
     - name: Publish to NuGet
       run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
