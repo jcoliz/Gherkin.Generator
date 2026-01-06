@@ -812,6 +812,38 @@ public class GherkinToCrifConverterTests
         Assert.That(crif.FileName, Is.EqualTo("BankImport"));
     }
 
+    [Test]
+    public void Convert_ScenarioOutlineWithManyExampleRows_GeneratesAllTestCases()
+    {
+        // Given: A scenario outline with many example rows to ensure full coverage of test case generation
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            Scenario Outline: Create transaction
+              Given I have <amount> dollars
+
+            Examples:
+              | amount |
+              | 100    |
+              | 200    |
+              | 300    |
+              | 400    |
+              | 500    |
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: All test cases should be generated
+        var scenario = crif.Rules[0].Scenarios[0];
+        Assert.That(scenario.TestCases, Has.Count.EqualTo(5));
+        Assert.That(scenario.TestCases[0], Is.EqualTo("\"100\""));
+        Assert.That(scenario.TestCases[4], Is.EqualTo("\"500\""));
+    }
+
     /// <summary>
     /// Helper method to parse Gherkin text into a GherkinDocument.
     /// </summary>

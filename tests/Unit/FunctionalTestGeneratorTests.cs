@@ -555,6 +555,32 @@ public class FunctionalTestGeneratorTests
         Assert.That(result, Is.EqualTo("Test: Example"));
     }
 
+    /// <summary>
+    /// Generator produces stream from template stream input.
+    /// </summary>
+    [Test]
+    public void Generate_WithTemplateStream_ReturnsReadableStream()
+    {
+        // Given: A template provided as a stream
+        var template = "Feature: {{FeatureName}}";
+        var templateStream = new MemoryStream();
+        var writer = new StreamWriter(templateStream);
+        writer.Write(template);
+        writer.Flush();
+        templateStream.Position = 0;
+
+        // And: A CRIF with data
+        var crif = new FunctionalTestCrif { FeatureName = "StreamTest" };
+
+        // When: Generating from stream
+        using var resultStream = _generator.Generate(templateStream, crif);
+        using var reader = new StreamReader(resultStream);
+        var result = reader.ReadToEnd();
+
+        // Then: Output is correctly generated
+        Assert.That(result, Is.EqualTo("Feature: StreamTest"));
+    }
+
     #endregion
 
     #region Full Sample YAML Tests
