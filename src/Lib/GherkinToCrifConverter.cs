@@ -17,7 +17,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="feature">Parsed Gherkin feature document.</param>
     /// <returns>Code-Ready Intermediate Form ready for template rendering.</returns>
-    public FunctionalTestCrif Convert(GherkinDocument feature)
+    public FeatureCrif Convert(GherkinDocument feature)
     {
         return Convert(feature, string.Empty);
     }
@@ -28,9 +28,9 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="feature">Parsed Gherkin feature document.</param>
     /// <param name="fileName">Name of the feature file without extension (e.g., "BankImport").</param>
     /// <returns>Code-Ready Intermediate Form ready for template rendering.</returns>
-    public FunctionalTestCrif Convert(GherkinDocument feature, string fileName)
+    public FeatureCrif Convert(GherkinDocument feature, string fileName)
     {
-        var crif = new FunctionalTestCrif
+        var crif = new FeatureCrif
         {
             FileName = fileName
         };
@@ -51,7 +51,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="feature">The Gherkin feature.</param>
     /// <param name="crif">The CRIF object to populate.</param>
-    private static void ProcessFeatureMetadata(Feature feature, FunctionalTestCrif crif)
+    private static void ProcessFeatureMetadata(Feature feature, FeatureCrif crif)
     {
         crif.FeatureName = feature.Name;
 
@@ -70,7 +70,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="tags">Collection of feature tags.</param>
     /// <param name="crif">The CRIF object to populate.</param>
-    private static void ProcessFeatureTags(IEnumerable<Tag> tags, FunctionalTestCrif crif)
+    private static void ProcessFeatureTags(IEnumerable<Tag> tags, FeatureCrif crif)
     {
         foreach (var tag in tags)
         {
@@ -94,7 +94,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="tag">The namespace tag.</param>
     /// <param name="crif">The CRIF object to populate.</param>
-    private static void ProcessNamespaceTag(Tag tag, FunctionalTestCrif crif)
+    private static void ProcessNamespaceTag(Tag tag, FeatureCrif crif)
     {
         crif.Namespace = tag.Name.Substring("@namespace:".Length);
     }
@@ -104,7 +104,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="tag">The base class tag.</param>
     /// <param name="crif">The CRIF object to populate.</param>
-    private static void ProcessBaseClassTag(Tag tag, FunctionalTestCrif crif)
+    private static void ProcessBaseClassTag(Tag tag, FeatureCrif crif)
     {
         var baseClassValue = tag.Name.Substring("@baseclass:".Length);
         var lastDotIndex = baseClassValue.LastIndexOf('.');
@@ -129,7 +129,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="tag">The using tag.</param>
     /// <param name="crif">The CRIF object to populate.</param>
-    private static void ProcessUsingTag(Tag tag, FunctionalTestCrif crif)
+    private static void ProcessUsingTag(Tag tag, FeatureCrif crif)
     {
         var usingValue = tag.Name.Substring("@using:".Length);
         if (!crif.Usings.Contains(usingValue))
@@ -143,7 +143,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="feature">The Gherkin feature.</param>
     /// <param name="crif">The CRIF object to populate.</param>
-    private void ProcessBackground(Feature feature, FunctionalTestCrif crif)
+    private void ProcessBackground(Feature feature, FeatureCrif crif)
     {
         var background = feature.Children.OfType<Background>().FirstOrDefault();
         if (background != null)
@@ -158,7 +158,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="children">Collection of feature children.</param>
     /// <param name="crif">The CRIF object to populate.</param>
-    private void ProcessFeatureChildren(IEnumerable<IHasLocation> children, FunctionalTestCrif crif)
+    private void ProcessFeatureChildren(IEnumerable<IHasLocation> children, FeatureCrif crif)
     {
         RuleCrif? defaultRule = null;
 
@@ -181,7 +181,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="rule">The rule to process.</param>
     /// <param name="crif">The CRIF object to populate.</param>
-    private void ProcessRule(Rule rule, FunctionalTestCrif crif)
+    private void ProcessRule(Rule rule, FeatureCrif crif)
     {
         var ruleCrif = new RuleCrif
         {
@@ -205,7 +205,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="crif">The CRIF object to populate.</param>
     /// <returns>The created default rule.</returns>
-    private static RuleCrif CreateDefaultRule(FunctionalTestCrif crif)
+    private static RuleCrif CreateDefaultRule(FeatureCrif crif)
     {
         var defaultRule = new RuleCrif
         {
@@ -222,7 +222,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="scenario">The scenario to process.</param>
     /// <param name="ruleCrif">The rule to add the scenario to.</param>
     /// <param name="crif">The CRIF object for tracking unimplemented steps.</param>
-    private void ProcessScenarioInRule(Scenario scenario, RuleCrif ruleCrif, FunctionalTestCrif crif)
+    private void ProcessScenarioInRule(Scenario scenario, RuleCrif ruleCrif, FeatureCrif crif)
     {
         var scenarioCrif = ConvertScenario(scenario);
         ruleCrif.Scenarios.Add(scenarioCrif);
@@ -407,7 +407,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         return result;
     }
 
-    private void TrackUnimplementedSteps(FunctionalTestCrif crif, List<StepCrif> steps)
+    private void TrackUnimplementedSteps(FeatureCrif crif, List<StepCrif> steps)
     {
         string currentKeyword = "Given";
 
@@ -454,7 +454,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="crif">The CRIF object to update.</param>
     /// <param name="step">The step to process.</param>
     /// <param name="matchedStep">The matched step metadata.</param>
-    private static void ProcessImplementedStep(FunctionalTestCrif crif, StepCrif step, StepMetadata matchedStep)
+    private static void ProcessImplementedStep(FeatureCrif crif, StepCrif step, StepMetadata matchedStep)
     {
         step.Owner = matchedStep.Class;
         step.Method = matchedStep.Method;
@@ -470,7 +470,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="crif">The CRIF object to update.</param>
     /// <param name="matchedStep">The matched step metadata.</param>
-    private static void AddClassAndNamespace(FunctionalTestCrif crif, StepMetadata matchedStep)
+    private static void AddClassAndNamespace(FeatureCrif crif, StepMetadata matchedStep)
     {
         if (!crif.Classes.Contains(matchedStep.Class))
         {
@@ -535,7 +535,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="crif">The CRIF object to update.</param>
     /// <param name="step">The step to process.</param>
     /// <param name="normalizedKeyword">The normalized keyword.</param>
-    private void ProcessUnimplementedStep(FunctionalTestCrif crif, StepCrif step, string normalizedKeyword)
+    private void ProcessUnimplementedStep(FeatureCrif crif, StepCrif step, string normalizedKeyword)
     {
         AddToUnimplementedList(crif, step, normalizedKeyword);
         
@@ -557,7 +557,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="crif">The CRIF object to update.</param>
     /// <param name="step">The step to add.</param>
     /// <param name="normalizedKeyword">The normalized keyword.</param>
-    private void AddToUnimplementedList(FunctionalTestCrif crif, StepCrif step, string normalizedKeyword)
+    private void AddToUnimplementedList(FeatureCrif crif, StepCrif step, string normalizedKeyword)
     {
         var existingUnimplemented = crif.Unimplemented.FirstOrDefault(u =>
             u.Text == step.Text && u.Keyword == normalizedKeyword);

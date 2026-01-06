@@ -29,7 +29,7 @@ public class FunctionalTestGeneratorTests
         var template = "Hello {{FeatureName}}!";
 
         // And: A CRIF-like object with data
-        var crif = new FunctionalTestCrif
+        var crif = new FeatureCrif
         {
             FeatureName = "World"
         };
@@ -51,7 +51,7 @@ public class FunctionalTestGeneratorTests
         var template = "{{#Usings}}using {{.}};\n{{/Usings}}";
 
         // And: A CRIF with multiple usings
-        var crif = new FunctionalTestCrif
+        var crif = new FeatureCrif
         {
             Usings = ["System", "NUnit.Framework", "MyApp.Steps"]
         };
@@ -76,7 +76,7 @@ public class FunctionalTestGeneratorTests
     public void GenerateFromFile_WithMinimalCrif_ProducesValidCode()
     {
         // Given: A minimal CRIF
-        var crif = new FunctionalTestCrif
+        var crif = new FeatureCrif
         {
             Usings = ["NUnit.Framework"],
             Namespace = "TestNamespace",
@@ -544,7 +544,7 @@ public class FunctionalTestGeneratorTests
     {
         // Given: A simple template and CRIF
         var template = "Test: {{FeatureName}}";
-        var crif = new FunctionalTestCrif { FeatureName = "Example" };
+        var crif = new FeatureCrif { FeatureName = "Example" };
 
         // When: Generating to stream
         using var stream = _generator.Generate(template, crif);
@@ -570,7 +570,7 @@ public class FunctionalTestGeneratorTests
         templateStream.Position = 0;
 
         // And: A CRIF with data
-        var crif = new FunctionalTestCrif { FeatureName = "StreamTest" };
+        var crif = new FeatureCrif { FeatureName = "StreamTest" };
 
         // When: Generating from stream
         using var resultStream = _generator.Generate(templateStream, crif);
@@ -599,7 +599,7 @@ public class FunctionalTestGeneratorTests
         var yamlContent = File.ReadAllText(yamlPath);
         var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
             .Build();
-        var crif = deserializer.Deserialize<FunctionalTestCrif>(yamlContent);
+        var crif = deserializer.Deserialize<FeatureCrif>(yamlContent);
 
         // And: Output directory exists
         var outputDir = Path.Combine("bin", "GeneratedTests");
@@ -636,9 +636,9 @@ public class FunctionalTestGeneratorTests
 
     #region Helper Methods
 
-    private static FunctionalTestCrif CreateMinimalCrif()
+    private static FeatureCrif CreateMinimalCrif()
     {
-        return new FunctionalTestCrif
+        return new FeatureCrif
         {
             Usings = ["NUnit.Framework"],
             Namespace = "TestNamespace",

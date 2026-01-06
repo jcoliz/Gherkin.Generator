@@ -3,14 +3,14 @@ using System.Collections.Generic;
 namespace Gherkin.Generator.Lib;
 
 /// <summary>
-/// Code-Ready Intermediate Form (CRIF) for functional test generation.
+/// Code-Ready Intermediate Form (CRIF) of a test feature.
 /// </summary>
 /// <remarks>
 /// This is the root object that gets combined with the Mustache template
 /// to generate compiler-ready C# test files. It represents the fully resolved
 /// test structure after combining Gherkin features with step definitions metadata.
 /// </remarks>
-public class FunctionalTestCrif
+public class FeatureCrif
 {
     /// <summary>
     /// List of using namespaces (e.g., "NUnit.Framework", "YoFi.V3.Tests.Functional.Steps").
