@@ -520,113 +520,31 @@ Scenario outlines support only one examples table per scenario. For multiple tes
 
 ## Examples
 
-### Complete Feature File
+### Complete Working Example
 
-```gherkin
-@namespace:MyApp.Tests.Functional.Features
-@baseclass:MyApp.Tests.Functional.FunctionalTestBase
-@using:NUnit.Framework
-Feature: Shopping Cart
-  As a customer
-  I want to add items to my cart
-  So that I can purchase multiple items
+See [`tests/Example`](../tests/Example/) for a complete, working shopping cart example that demonstrates:
 
-Background:
-  Given the application is running
-  And I am logged in as customer
+- **Feature file** with background, rules, scenarios, and scenario outlines
+- **Step definitions** organized into multiple step classes
+- **Simple implementation** of a shopping cart
+- **Test base class** providing shared context
+- **Generated test code** (retained for inspection in `obj/GeneratedFiles/`)
 
-Rule: Adding Items
+The example builds and all tests pass. It's a great starting point for understanding how all the pieces fit together.
 
-Scenario: Add single item to empty cart
-  When I add "Widget" to the cart
-  Then the cart should contain 1 item
-  And the cart total should be 9.99
+**Key files:**
+- [`Features/ShoppingCart.feature`](../tests/Example/Features/ShoppingCart.feature) - Complete Gherkin scenarios
+- [`Steps/ShoppingCartSteps.cs`](../tests/Example/Steps/ShoppingCartSteps.cs) - Shopping cart step definitions
+- [`Steps/ApplicationSteps.cs`](../tests/Example/Steps/ApplicationSteps.cs) - Application setup steps
+- [`ShoppingCart.cs`](../tests/Example/ShoppingCart.cs) - Simple cart implementation
+- [`FunctionalTestBase.cs`](../tests/Example/FunctionalTestBase.cs) - Test base class
 
-Scenario Outline: Add multiple items
-  When I add <quantity> "<item>" to the cart
-  Then the cart should contain <quantity> items
+To run the example:
 
-Examples:
-  | quantity | item   |
-  | 2        | Widget |
-  | 5        | Gadget |
-
-Rule: Removing Items
-
-Scenario: Remove item from cart
-  Given the cart contains:
-    | Item   | Quantity |
-    | Widget | 2        |
-    | Gadget | 1        |
-  When I remove "Widget" from the cart
-  Then the cart should contain 1 item
-  And the cart should not contain "Widget"
-```
-
-### Complete Step Class
-
-```csharp
-using NUnit.Framework;
-
-namespace MyApp.Tests.Functional.Steps;
-
-public class ShoppingCartSteps
-{
-    private readonly FunctionalTestBase _context;
-
-    public ShoppingCartSteps(FunctionalTestBase context)
-    {
-        _context = context;
-    }
-
-    [When("I add {item} to the cart")]
-    public async Task AddToCart(string item)
-    {
-        await _context.Cart.AddItemAsync(item);
-    }
-
-    [When("I add {quantity} {item} to the cart")]
-    public async Task AddMultipleToCart(int quantity, string item)
-    {
-        for (int i = 0; i < quantity; i++)
-        {
-            await _context.Cart.AddItemAsync(item);
-        }
-    }
-
-    [When("I remove {item} from the cart")]
-    public async Task RemoveFromCart(string item)
-    {
-        await _context.Cart.RemoveItemAsync(item);
-    }
-
-    [Then("the cart should contain {quantity} items")]
-    public void CartShouldContainItems(int quantity)
-    {
-        Assert.That(_context.Cart.ItemCount, Is.EqualTo(quantity));
-    }
-
-    [Then("the cart should not contain {item}")]
-    public void CartShouldNotContainItem(string item)
-    {
-        Assert.That(_context.Cart.Contains(item), Is.False);
-    }
-
-    [Given("the cart contains:")]
-    public async Task CartContains(DataTable table)
-    {
-        foreach (var row in table.Rows)
-        {
-            var item = row["Item"];
-            var quantity = int.Parse(row["Quantity"]);
-            
-            for (int i = 0; i < quantity; i++)
-            {
-                await _context.Cart.AddItemAsync(item);
-            }
-        }
-    }
-}
+```bash
+cd tests/Example
+dotnet build
+dotnet test
 ```
 
 ## Next Steps

@@ -23,7 +23,7 @@ Project should contain the following:
    3. This will also be released to Nuget, using the same version, and at the same time as the analyzer.
 4. [ ] src/Tool. Gherkin.Generator.Tool. See [STANDALONE-TOOL-ALTERNATIVE](STANDALONE-TOOL-ALTERNATIVE.md) design. This will also be released to Nuget, as `dotnet tool global` installable.
 5. [x] tests/Unit. Gherkin.Generator.Tests.Unit. Current unit tests, but only consume the Lib
-6. [ ] tests/Example. Gherkin.Generator.Tests.Example. Test project which consumes the latest publicly release lib, and gives a complete example of how to use all the features. Would be great to use common sample reference gherkin examples (search web for Gherkin examples). Note the analyzer CANNOT BE consumed via project reference, see [DEPLOYMENT-CHALLENGES](DEPLOYMENT-CHALLENGES.md). This project cannot be created until a nuget package is created first.
+6. [x] tests/Example. Gherkin.Generator.Tests.Example. Test project which consumes the latest publicly release lib, and gives a complete example of how to use all the features. Would be great to use common sample reference gherkin examples (search web for Gherkin examples). Note the analyzer CANNOT BE consumed via project reference, see [DEPLOYMENT-CHALLENGES](DEPLOYMENT-CHALLENGES.md). This project cannot be created until a nuget package is created first.
 7. [x] docs/ directory containing all docs, aside from README. docs root contains public docs for user or developer consumption.
 8. [x] docs/USER-GUIDE.md comprehensive guide for user wanting to use this.
 9. [x] docs/wip directory contains works in progress. AI Assistants should place documents here by default.
