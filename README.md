@@ -38,6 +38,7 @@ Customize the template to match your test infrastructure and conventions.
 
 ## Documentation
 
+- [User Guide](docs/USER-GUIDE.md) - Complete guide for using Gherkin.Generator
 - [Developer Guide](docs/DEVELOPER.md) - For contributors working on this project
 
 ## Status
