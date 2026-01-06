@@ -15,23 +15,23 @@ and releases the built analyzer to Nuget.
 
 Project should contain the following:
 
-1. src/Analyzer. The Gherkin.Generator analyzer project, as built below.
-2. src/Lib. Gherkin.Generator.Lib. Contains all the business logic that isn't analyzer specific. This is everything in tests\Gherkin.Generator which doesn't take a dependency on Microsoft.CodeAnalysis namespace.
-3. src/Utils. Gherkin.Generator.Utils. Test utilities which you would include in your own project.
+1. [x] src/Analyzer. The Gherkin.Generator analyzer project, as built below.
+2. [x] src/Lib. Gherkin.Generator.Lib. Contains all the business logic that isn't analyzer specific. This is everything in tests\Gherkin.Generator which doesn't take a dependency on Microsoft.CodeAnalysis namespace.
+3. [ ] src/Utils. Gherkin.Generator.Utils. Test utilities which you would include in your own project.
    1. DataTable implementation. Currently in C:\Source\jcoliz\YoFi.V3\tests\Functional\Helpers\DataTable.cs. We need to move these out because the generator is tightly coupled.
    2. Given/When/Then attributes. Currently in tests\Functional\Attributes. Any user project will need these, so we should provide them.
    3. This will also be released to Nuget, using the same version, and at the same time as the analyzer.
-4. src/Tool. Gherkin.Generator.Tool. See [STANDALONE-TOOL-ALTERNATIVE](STANDALONE-TOOL-ALTERNATIVE.md) design. This will also be released to Nuget, as `dotnet tool global` installable.
-5. tests/Unit. Gherkin.Generator.Tests.Unit. Current unit tests, but only consume the Lib
-6. tests/Example. Gherkin.Generator.Tests.Example. Test project which consumes the latest publicly release lib, and gives a complete example of how to use all the features. Would be great to use common sample reference gherkin examples (search web for Gherkin examples). Note the analyzer CANNOT BE consumed via project reference, see [DEPLOYMENT-CHALLENGES](DEPLOYMENT-CHALLENGES.md). This project cannot be created until a nuget package is created first.
-7. docs/ directory containing all docs, aside from README. docs root contains public docs for user or developer consumption.
-8. docs/USER-GUIDE.md comprehensive guide for user wanting to use this.
-9. docs/wip directory contains works in progress. AI Assistants should place documents here by default.
-10. templates/Default.mustache. Copy (don't move!) of current tests\Functional\Features\FunctionalTest.mustache
-11. templates/README.md. Explain that you should start with the default, and modify it as needed to match your test infrastructure or other conventions.
-12. README.md at the root, explaining the project at a high level. 200 words max. Includes badges for: Build action;  latest nuget version # and link
-13. github/workflows/release.yaml: pushes updates to nuget when release is created
-14. github/workflows/ci.yaml: builds everything, runs tests
+4. [ ] src/Tool. Gherkin.Generator.Tool. See [STANDALONE-TOOL-ALTERNATIVE](STANDALONE-TOOL-ALTERNATIVE.md) design. This will also be released to Nuget, as `dotnet tool global` installable.
+5. [x] tests/Unit. Gherkin.Generator.Tests.Unit. Current unit tests, but only consume the Lib
+6. [ ] tests/Example. Gherkin.Generator.Tests.Example. Test project which consumes the latest publicly release lib, and gives a complete example of how to use all the features. Would be great to use common sample reference gherkin examples (search web for Gherkin examples). Note the analyzer CANNOT BE consumed via project reference, see [DEPLOYMENT-CHALLENGES](DEPLOYMENT-CHALLENGES.md). This project cannot be created until a nuget package is created first.
+7. [x] docs/ directory containing all docs, aside from README. docs root contains public docs for user or developer consumption.
+8. [x] docs/USER-GUIDE.md comprehensive guide for user wanting to use this.
+9. [x] docs/wip directory contains works in progress. AI Assistants should place documents here by default.
+10. [x] templates/Default.mustache. Copy (don't move!) of current tests\Functional\Features\FunctionalTest.mustache
+11. [ ] templates/README.md. Explain that you should start with the default, and modify it as needed to match your test infrastructure or other conventions.
+12. [x] README.md at the root, explaining the project at a high level. 200 words max. Includes badges for: Build action;  latest nuget version # and link
+13. [x] github/workflows/release.yaml: pushes updates to nuget when release is created
+14. [x] github/workflows/ci.yaml: builds everything, runs tests
 
 ## Migration Plan
 
