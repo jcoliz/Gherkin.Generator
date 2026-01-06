@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lib\Gherkin.Generator.Lib.csproj" />
+    <ProjectReference Include="..\..\src\Utils\Gherkin.Generator.Utils.csproj" />
   </ItemGroup>
 
   <ItemGroup>

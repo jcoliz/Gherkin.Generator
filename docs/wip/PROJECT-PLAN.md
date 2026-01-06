@@ -17,9 +17,9 @@ Project should contain the following:
 
 1. [x] src/Analyzer. The Gherkin.Generator analyzer project, as built below.
 2. [x] src/Lib. Gherkin.Generator.Lib. Contains all the business logic that isn't analyzer specific. This is everything in tests\Gherkin.Generator which doesn't take a dependency on Microsoft.CodeAnalysis namespace.
-3. [ ] src/Utils. Gherkin.Generator.Utils. Test utilities which you would include in your own project.
-   1. DataTable implementation. Currently in C:\Source\jcoliz\YoFi.V3\tests\Functional\Helpers\DataTable.cs. We need to move these out because the generator is tightly coupled.
-   2. Given/When/Then attributes. Currently in tests\Functional\Attributes. Any user project will need these, so we should provide them.
+3. [x] src/Utils. Gherkin.Generator.Utils. Test utilities which you would include in your own project.
+   1. [x] DataTable implementation. Migrated from YoFi.V3 with DataTable and DataTableExtensions classes. Comprehensive unit tests included.
+   2. [ ] Given/When/Then attributes. Currently in tests\Functional\Attributes. Any user project will need these, so we should provide them.
    3. This will also be released to Nuget, using the same version, and at the same time as the analyzer.
 4. [ ] src/Tool. Gherkin.Generator.Tool. See [STANDALONE-TOOL-ALTERNATIVE](STANDALONE-TOOL-ALTERNATIVE.md) design. This will also be released to Nuget, as `dotnet tool global` installable.
 5. [x] tests/Unit. Gherkin.Generator.Tests.Unit. Current unit tests, but only consume the Lib
