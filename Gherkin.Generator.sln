@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src.Lib", "src.Lib", "{CD1BD126-F433-F6D4-4D6A-35C28CA08962}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{CD1BD126-F433-F6D4-4D6A-35C28CA08962}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gherkin.Generator.Lib", "src.Lib\Gherkin.Generator.Lib.csproj", "{254312DE-822D-4228-9AEB-AA384BAF1300}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gherkin.Generator.Lib", "src\Lib\Gherkin.Generator.Lib.csproj", "{254312DE-822D-4228-9AEB-AA384BAF1300}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
