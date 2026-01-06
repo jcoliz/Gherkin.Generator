@@ -409,111 +409,180 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
 
     private void TrackUnimplementedSteps(FunctionalTestCrif crif, List<StepCrif> steps)
     {
-        // Track keyword context for And/But normalization
         string currentKeyword = "Given";
 
         foreach (var step in steps)
         {
-            // Normalize And/But to the current keyword
-            var normalizedKeyword = step.Keyword;
-            if (normalizedKeyword == "And" || normalizedKeyword == "But")
-            {
-                normalizedKeyword = currentKeyword;
-            }
-            else if (normalizedKeyword == "Given" || normalizedKeyword == "When" || normalizedKeyword == "Then")
-            {
-                currentKeyword = normalizedKeyword;
-            }
-
-            // Try to match step with step metadata
+            var normalizedKeyword = NormalizeKeyword(step.Keyword, ref currentKeyword);
             var matchedStep = stepMetadata.FindMatch(normalizedKeyword, step.Text);
 
             if (matchedStep != null)
             {
-                // Step is implemented - populate Owner, Method, and Arguments
-                step.Owner = matchedStep.Class;
-                step.Method = matchedStep.Method;
-
-                // Add class and namespace to CRIF if not already present
-                if (!crif.Classes.Contains(matchedStep.Class))
-                {
-                    crif.Classes.Add(matchedStep.Class);
-                }
-                if (!crif.Usings.Contains(matchedStep.Namespace))
-                {
-                    crif.Usings.Add(matchedStep.Namespace);
-                }
-
-                // Extract arguments from text parameters (non-DataTable parameters)
-                var textParameters = matchedStep.Parameters.Where(p => p.Type != "DataTable").ToList();
-                if (textParameters.Count > 0)
-                {
-                    var arguments = ExtractArguments(matchedStep.Text, step.Text, textParameters);
-                    foreach (var arg in arguments)
-                    {
-                        step.Arguments.Add(arg);
-                    }
-                }
-
-                // Add DataTable variable as argument if step has DataTable parameter
-                if (matchedStep.Parameters.Any(p => p.Type == "DataTable") && step.DataTable != null)
-                {
-                    step.Arguments.Add(new ArgumentCrif
-                    {
-                        Value = step.DataTable.VariableName,
-                        Last = false
-                    });
-                }
-
-                // Mark last argument
-                if (step.Arguments.Count > 0)
-                {
-                    step.Arguments[step.Arguments.Count - 1].Last = true;
-                }
+                ProcessImplementedStep(crif, step, matchedStep);
             }
             else
             {
-                // Step is unimplemented - track it
-                var existingUnimplemented = crif.Unimplemented.FirstOrDefault(u =>
-                    u.Text == step.Text && u.Keyword == normalizedKeyword);
-
-                if (existingUnimplemented == null)
-                {
-                    var unimplementedStep = new UnimplementedStepCrif
-                    {
-                        Keyword = normalizedKeyword,
-                        Text = step.Text,
-                        Method = ConvertToMethodName(step.Text),
-                        Parameters = []
-                    };
-
-                    // Add DataTable parameter if step has a data table
-                    if (step.DataTable != null)
-                    {
-                        unimplementedStep.Parameters.Add(new ParameterCrif
-                        {
-                            Type = "DataTable",
-                            Name = "table",
-                            Last = true
-                        });
-                    }
-
-                    crif.Unimplemented.Add(unimplementedStep);
-                }
-
-                // Set step method name to match the unimplemented method
-                step.Method = ConvertToMethodName(step.Text);
-
-                // Add DataTable variable as argument if step has data table
-                if (step.DataTable != null)
-                {
-                    step.Arguments.Add(new ArgumentCrif
-                    {
-                        Value = step.DataTable.VariableName,
-                        Last = true
-                    });
-                }
+                ProcessUnimplementedStep(crif, step, normalizedKeyword);
             }
+        }
+    }
+
+    /// <summary>
+    /// Normalizes And/But keywords to the current keyword context.
+    /// </summary>
+    /// <param name="keyword">The keyword to normalize.</param>
+    /// <param name="currentKeyword">The current keyword context (Given, When, or Then).</param>
+    /// <returns>The normalized keyword.</returns>
+    private static string NormalizeKeyword(string keyword, ref string currentKeyword)
+    {
+        if (keyword == "And" || keyword == "But")
+        {
+            return currentKeyword;
+        }
+        
+        if (keyword == "Given" || keyword == "When" || keyword == "Then")
+        {
+            currentKeyword = keyword;
+        }
+        
+        return keyword;
+    }
+
+    /// <summary>
+    /// Processes an implemented step by populating its metadata and arguments.
+    /// </summary>
+    /// <param name="crif">The CRIF object to update.</param>
+    /// <param name="step">The step to process.</param>
+    /// <param name="matchedStep">The matched step metadata.</param>
+    private void ProcessImplementedStep(FunctionalTestCrif crif, StepCrif step, StepMetadata matchedStep)
+    {
+        step.Owner = matchedStep.Class;
+        step.Method = matchedStep.Method;
+
+        AddClassAndNamespace(crif, matchedStep);
+        ExtractStepArguments(step, matchedStep);
+        AddDataTableArgument(step, matchedStep);
+        MarkLastArgument(step);
+    }
+
+    /// <summary>
+    /// Adds class and namespace to CRIF if not already present.
+    /// </summary>
+    /// <param name="crif">The CRIF object to update.</param>
+    /// <param name="matchedStep">The matched step metadata.</param>
+    private static void AddClassAndNamespace(FunctionalTestCrif crif, StepMetadata matchedStep)
+    {
+        if (!crif.Classes.Contains(matchedStep.Class))
+        {
+            crif.Classes.Add(matchedStep.Class);
+        }
+        if (!crif.Usings.Contains(matchedStep.Namespace))
+        {
+            crif.Usings.Add(matchedStep.Namespace);
+        }
+    }
+
+    /// <summary>
+    /// Extracts and adds arguments from text parameters to the step.
+    /// </summary>
+    /// <param name="step">The step to add arguments to.</param>
+    /// <param name="matchedStep">The matched step metadata.</param>
+    private void ExtractStepArguments(StepCrif step, StepMetadata matchedStep)
+    {
+        var textParameters = matchedStep.Parameters.Where(p => p.Type != "DataTable").ToList();
+        if (textParameters.Count > 0)
+        {
+            var arguments = ExtractArguments(matchedStep.Text, step.Text, textParameters);
+            foreach (var arg in arguments)
+            {
+                step.Arguments.Add(arg);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Adds DataTable variable as argument if step has DataTable parameter.
+    /// </summary>
+    /// <param name="step">The step to add the argument to.</param>
+    /// <param name="matchedStep">The matched step metadata.</param>
+    private static void AddDataTableArgument(StepCrif step, StepMetadata matchedStep)
+    {
+        if (matchedStep.Parameters.Any(p => p.Type == "DataTable") && step.DataTable != null)
+        {
+            step.Arguments.Add(new ArgumentCrif
+            {
+                Value = step.DataTable.VariableName,
+                Last = false
+            });
+        }
+    }
+
+    /// <summary>
+    /// Marks the last argument in the step's argument list.
+    /// </summary>
+    /// <param name="step">The step to update.</param>
+    private static void MarkLastArgument(StepCrif step)
+    {
+        if (step.Arguments.Count > 0)
+        {
+            step.Arguments[step.Arguments.Count - 1].Last = true;
+        }
+    }
+
+    /// <summary>
+    /// Processes an unimplemented step by tracking it in the CRIF.
+    /// </summary>
+    /// <param name="crif">The CRIF object to update.</param>
+    /// <param name="step">The step to process.</param>
+    /// <param name="normalizedKeyword">The normalized keyword.</param>
+    private void ProcessUnimplementedStep(FunctionalTestCrif crif, StepCrif step, string normalizedKeyword)
+    {
+        AddToUnimplementedList(crif, step, normalizedKeyword);
+        
+        step.Method = ConvertToMethodName(step.Text);
+
+        if (step.DataTable != null)
+        {
+            step.Arguments.Add(new ArgumentCrif
+            {
+                Value = step.DataTable.VariableName,
+                Last = true
+            });
+        }
+    }
+
+    /// <summary>
+    /// Adds step to unimplemented list if not already present.
+    /// </summary>
+    /// <param name="crif">The CRIF object to update.</param>
+    /// <param name="step">The step to add.</param>
+    /// <param name="normalizedKeyword">The normalized keyword.</param>
+    private void AddToUnimplementedList(FunctionalTestCrif crif, StepCrif step, string normalizedKeyword)
+    {
+        var existingUnimplemented = crif.Unimplemented.FirstOrDefault(u =>
+            u.Text == step.Text && u.Keyword == normalizedKeyword);
+
+        if (existingUnimplemented == null)
+        {
+            var unimplementedStep = new UnimplementedStepCrif
+            {
+                Keyword = normalizedKeyword,
+                Text = step.Text,
+                Method = ConvertToMethodName(step.Text),
+                Parameters = []
+            };
+
+            if (step.DataTable != null)
+            {
+                unimplementedStep.Parameters.Add(new ParameterCrif
+                {
+                    Type = "DataTable",
+                    Name = "table",
+                    Last = true
+                });
+            }
+
+            crif.Unimplemented.Add(unimplementedStep);
         }
     }
 
