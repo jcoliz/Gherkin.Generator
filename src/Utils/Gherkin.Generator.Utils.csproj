@@ -1,28 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>12.0</LangVersion>
-    <Nullable>enable</Nullable>
     <IsPackable>true</IsPackable>
-    <!-- Version for NuGet package -->
-    <Version>0.0.1</Version>
     <!-- NuGet package metadata -->
     <PackageId>Gherkin.Generator.Utils</PackageId>
-    <Authors>jcoliz</Authors>
-    <Company>jcoliz</Company>
     <Description>Test utilities for Gherkin-based BDD testing, including DataTable implementation and Given/When/Then attributes for step method matching.</Description>
     <PackageTags>gherkin;bdd;testing;test-utilities;datatable</PackageTags>
-    <PackageProjectUrl>https://github.com/jcoliz/Gherkin.Generator</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jcoliz/Gherkin.Generator</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <!-- Include README in package -->
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
 
 </Project>

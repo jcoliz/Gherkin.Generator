@@ -1,27 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>true</IsPackable>
-    <!-- Version for NuGet package -->
-    <Version>0.0.1</Version>
     <!-- Source generator properties -->
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IsRoslynComponent>true</IsRoslynComponent>
     <!-- NuGet package metadata -->
     <PackageId>Gherkin.Generator</PackageId>
-    <Authors>jcoliz</Authors>
-    <Company>jcoliz</Company>
     <Description>Source generator that creates C# test methods from Gherkin feature files for behavior-driven development testing.</Description>
     <PackageTags>gherkin;bdd;source-generator;testing;analyzer</PackageTags>
-    <PackageProjectUrl>https://github.com/jcoliz/Gherkin.Generator</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jcoliz/Gherkin.Generator</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,11 +26,6 @@
     
     <!-- Reference Utils project - this will become a package dependency -->
     <ProjectReference Include="..\Utils\Gherkin.Generator.Utils.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Include README in package -->
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
