@@ -34,7 +34,7 @@ Before creating a release, ensure the commit you want to release has a passing C
 
 Create a git tag for the release version:
 
-```bash
+```powershell
 # Create tag for the version (e.g., 0.0.1)
 git tag 0.0.1
 
@@ -89,10 +89,21 @@ git push origin 0.0.1
    - New version should appear (may take a few minutes)
    - Verify package details and metadata
 
-2. **Test Installation**:
-   ```bash
-   # In a test project
-   dotnet add package Gherkin.Generator --version 0.0.1
+### 6. Update Example Test
+
+1. **Update latest template**: Copy latest template into example project
+   ```powershell
+   Copy-Item templates/Default.mustache tests/Example/Templates/Default.mustache
+   ```
+
+2. **Update package version**: Ensure example test has the newly-released version
+   ```powershell
+   dotnet add tests/Example package Gherkin.Generator
+   ```
+
+3. **Run tests**
+   ```powershell
+   dotnet test tests/Example
    ```
 
 ## Version Strategy
