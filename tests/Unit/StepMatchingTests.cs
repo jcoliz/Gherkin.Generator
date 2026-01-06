@@ -22,7 +22,7 @@ public class StepMatchingTests
         // Given: A step definition with exact text
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I am logged in",
             Method = "IAmLoggedIn",
             Class = "AuthSteps",
@@ -31,7 +31,7 @@ public class StepMatchingTests
         });
 
         // When: Searching for exact match
-        var match = _stepMetadata.FindMatch("Given", "I am logged in");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "I am logged in");
 
         // Then: Should find the matching step
         Assert.That(match, Is.Not.Null);
@@ -45,7 +45,7 @@ public class StepMatchingTests
         // Given: A step definition with specific casing
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I am logged in",
             Method = "IAmLoggedIn",
             Class = "AuthSteps",
@@ -54,7 +54,7 @@ public class StepMatchingTests
         });
 
         // When: Searching with different casing
-        var match = _stepMetadata.FindMatch("Given", "I AM LOGGED IN");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "I AM LOGGED IN");
 
         // Then: Should find the match (case insensitive)
         Assert.That(match, Is.Not.Null);
@@ -67,7 +67,7 @@ public class StepMatchingTests
         // Given: A "Given" step definition
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I am logged in",
             Method = "IAmLoggedIn",
             Class = "AuthSteps",
@@ -76,7 +76,7 @@ public class StepMatchingTests
         });
 
         // When: Searching with wrong keyword
-        var match = _stepMetadata.FindMatch("When", "I am logged in");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.When, "I am logged in");
 
         // Then: Should not find a match
         Assert.That(match, Is.Null);
@@ -88,7 +88,7 @@ public class StepMatchingTests
         // Given: A step definition
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I am logged in",
             Method = "IAmLoggedIn",
             Class = "AuthSteps",
@@ -97,7 +97,7 @@ public class StepMatchingTests
         });
 
         // When: Searching for different text
-        var match = _stepMetadata.FindMatch("Given", "I am logged out");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "I am logged out");
 
         // Then: Should not find a match
         Assert.That(match, Is.Null);
@@ -109,7 +109,7 @@ public class StepMatchingTests
         // Given: A step definition with placeholder
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have an account named {account}",
             Method = "IHaveAnAccountNamed",
             Class = "AccountSteps",
@@ -118,7 +118,7 @@ public class StepMatchingTests
         });
 
         // When: Searching with single-word value
-        var match = _stepMetadata.FindMatch("Given", "I have an account named Savings");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "I have an account named Savings");
 
         // Then: Should find the match
         Assert.That(match, Is.Not.Null);
@@ -131,7 +131,7 @@ public class StepMatchingTests
         // Given: A step definition with placeholder
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have an account named {account}",
             Method = "IHaveAnAccountNamed",
             Class = "AccountSteps",
@@ -140,7 +140,7 @@ public class StepMatchingTests
         });
 
         // When: Searching with hyphenated value (no spaces)
-        var match = _stepMetadata.FindMatch("Given", "I have an account named Ski-Village");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "I have an account named Ski-Village");
 
         // Then: Should find the match
         Assert.That(match, Is.Not.Null);
@@ -153,7 +153,7 @@ public class StepMatchingTests
         // Given: A step definition with placeholder
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have an account named {account}",
             Method = "IHaveAnAccountNamed",
             Class = "AccountSteps",
@@ -162,7 +162,7 @@ public class StepMatchingTests
         });
 
         // When: Searching with quoted phrase (contains spaces)
-        var match = _stepMetadata.FindMatch("Given", "I have an account named \"Ski Village\"");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "I have an account named \"Ski Village\"");
 
         // Then: Should find the match
         Assert.That(match, Is.Not.Null);
@@ -175,7 +175,7 @@ public class StepMatchingTests
         // Given: A step definition with placeholder
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have an account named {account}",
             Method = "IHaveAnAccountNamed",
             Class = "AccountSteps",
@@ -184,7 +184,7 @@ public class StepMatchingTests
         });
 
         // When: Searching with unquoted phrase (contains spaces)
-        var match = _stepMetadata.FindMatch("Given", "I have an account named Ski Village");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "I have an account named Ski Village");
 
         // Then: Should not find a match (placeholder requires no spaces or quotes)
         Assert.That(match, Is.Null);
@@ -196,7 +196,7 @@ public class StepMatchingTests
         // Given: A step definition with multiple placeholders
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have {quantity} dollars in {account}",
             Method = "IHaveDollarsIn",
             Class = "AccountSteps",
@@ -208,7 +208,7 @@ public class StepMatchingTests
         });
 
         // When: Searching with multiple values
-        var match = _stepMetadata.FindMatch("Given", "I have 100 dollars in Savings");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "I have 100 dollars in Savings");
 
         // Then: Should find the match
         Assert.That(match, Is.Not.Null);
@@ -222,7 +222,7 @@ public class StepMatchingTests
         _stepMetadata.AddRange([
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I am logged in as {user}",
                 Method = "IAmLoggedInAs",
                 Class = "AuthSteps",
@@ -231,7 +231,7 @@ public class StepMatchingTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I am logged in",
                 Method = "IAmLoggedIn",
                 Class = "AuthSteps",
@@ -241,7 +241,7 @@ public class StepMatchingTests
         ]);
 
         // When: Searching for step that matches the second definition
-        var match = _stepMetadata.FindMatch("Given", "I am logged in");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "I am logged in");
 
         // Then: Should find the exact match (not the parameterized one)
         Assert.That(match, Is.Not.Null);
@@ -256,7 +256,7 @@ public class StepMatchingTests
         var steps = new List<StepMetadata>
         {
             new() {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I am logged in",
                 Method = "IAmLoggedIn",
                 Class = "AuthSteps",
@@ -264,7 +264,7 @@ public class StepMatchingTests
                 Parameters = []
             },
             new() {
-                NormalizedKeyword = "When",
+                NormalizedKeyword = NormalizedKeyword.When,
                 Text = "I create a transaction",
                 Method = "ICreateATransaction",
                 Class = "TransactionSteps",
@@ -277,8 +277,8 @@ public class StepMatchingTests
         _stepMetadata.AddRange(steps);
 
         // Then: Should be able to find both steps
-        var match1 = _stepMetadata.FindMatch("Given", "I am logged in");
-        var match2 = _stepMetadata.FindMatch("When", "I create a transaction");
+        var match1 = _stepMetadata.FindMatch(NormalizedKeyword.Given, "I am logged in");
+        var match2 = _stepMetadata.FindMatch(NormalizedKeyword.When, "I create a transaction");
 
         Assert.That(match1, Is.Not.Null);
         Assert.That(match2, Is.Not.Null);
@@ -290,7 +290,7 @@ public class StepMatchingTests
         // Given: A step definition with numeric placeholder
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have {quantity} items",
             Method = "IHaveItems",
             Class = "InventorySteps",
@@ -299,7 +299,7 @@ public class StepMatchingTests
         });
 
         // When: Searching with numeric value
-        var match = _stepMetadata.FindMatch("Given", "I have 42 items");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "I have 42 items");
 
         // Then: Should find the match
         Assert.That(match, Is.Not.Null);
@@ -312,7 +312,7 @@ public class StepMatchingTests
         // Given: A step definition with placeholder at start
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "{user} is logged in",
             Method = "UserIsLoggedIn",
             Class = "AuthSteps",
@@ -321,7 +321,7 @@ public class StepMatchingTests
         });
 
         // When: Searching with value at start
-        var match = _stepMetadata.FindMatch("Given", "Alice is logged in");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "Alice is logged in");
 
         // Then: Should find the match
         Assert.That(match, Is.Not.Null);
@@ -334,7 +334,7 @@ public class StepMatchingTests
         // Given: A step definition with placeholder at end
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "the user is {status}",
             Method = "TheUserIs",
             Class = "AuthSteps",
@@ -343,7 +343,7 @@ public class StepMatchingTests
         });
 
         // When: Searching with value at end
-        var match = _stepMetadata.FindMatch("Given", "the user is active");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "the user is active");
 
         // Then: Should find the match
         Assert.That(match, Is.Not.Null);
@@ -356,7 +356,7 @@ public class StepMatchingTests
         // Given: A step definition with adjacent placeholders
         _stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "user {firstName} {lastName} exists",
             Method = "UserExists",
             Class = "UserSteps",
@@ -368,7 +368,7 @@ public class StepMatchingTests
         });
 
         // When: Searching with adjacent values
-        var match = _stepMetadata.FindMatch("Given", "user John Smith exists");
+        var match = _stepMetadata.FindMatch(NormalizedKeyword.Given, "user John Smith exists");
 
         // Then: Should find the match
         Assert.That(match, Is.Not.Null);

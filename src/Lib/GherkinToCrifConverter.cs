@@ -399,7 +399,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
 
     private void TrackUnimplementedSteps(FeatureCrif crif, List<StepCrif> steps)
     {
-        var currentKeyword = "Given";
+        var currentKeyword = NormalizedKeyword.Given;
 
         foreach (var step in steps)
         {
@@ -423,19 +423,32 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="keyword">The keyword to normalize.</param>
     /// <param name="currentKeyword">The current keyword context (Given, When, or Then).</param>
     /// <returns>The normalized keyword.</returns>
-    private static string NormalizeKeyword(string keyword, ref string currentKeyword)
+    private static NormalizedKeyword NormalizeKeyword(string keyword, ref NormalizedKeyword currentKeyword)
     {
         if (keyword == "And" || keyword == "But")
         {
             return currentKeyword;
         }
 
-        if (keyword == "Given" || keyword == "When" || keyword == "Then")
+        if (keyword == "Given")
         {
-            currentKeyword = keyword;
+            currentKeyword = NormalizedKeyword.Given;
+            return NormalizedKeyword.Given;
         }
 
-        return keyword;
+        if (keyword == "When")
+        {
+            currentKeyword = NormalizedKeyword.When;
+            return NormalizedKeyword.When;
+        }
+
+        if (keyword == "Then")
+        {
+            currentKeyword = NormalizedKeyword.Then;
+            return NormalizedKeyword.Then;
+        }
+
+        return currentKeyword;
     }
 
     /// <summary>
@@ -525,7 +538,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="crif">The CRIF object to update.</param>
     /// <param name="step">The step to process.</param>
     /// <param name="normalizedKeyword">The normalized keyword.</param>
-    private void ProcessUnimplementedStep(FeatureCrif crif, StepCrif step, string normalizedKeyword)
+    private void ProcessUnimplementedStep(FeatureCrif crif, StepCrif step, NormalizedKeyword normalizedKeyword)
     {
         AddToUnimplementedList(crif, step, normalizedKeyword);
 
@@ -547,7 +560,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="crif">The CRIF object to update.</param>
     /// <param name="step">The step to add.</param>
     /// <param name="normalizedKeyword">The normalized keyword.</param>
-    private void AddToUnimplementedList(FeatureCrif crif, StepCrif step, string normalizedKeyword)
+    private void AddToUnimplementedList(FeatureCrif crif, StepCrif step, NormalizedKeyword normalizedKeyword)
     {
         var existingUnimplemented = crif.Unimplemented.FirstOrDefault(u =>
             u.Text == step.Text && u.Keyword == normalizedKeyword);
@@ -728,11 +741,10 @@ public class StepMetadataCollection
     /// <param name="normalizedKeyword">Normalized keyword (Given, When, or Then).</param>
     /// <param name="stepText">Step text from Gherkin scenario.</param>
     /// <returns>Matching step metadata, or null if no match found.</returns>
-    public StepMetadata? FindMatch(string normalizedKeyword, string stepText)
+    public StepMetadata? FindMatch(NormalizedKeyword normalizedKeyword, string stepText)
     {
         // Filter by keyword first
-        var candidates = _steps.Where(s =>
-            s.NormalizedKeyword.Equals(normalizedKeyword, StringComparison.OrdinalIgnoreCase));
+        var candidates = _steps.Where(s => s.NormalizedKeyword == normalizedKeyword);
 
         // Try to find exact match first (no parameters)
         var exactMatch = candidates
@@ -800,7 +812,7 @@ public class StepMetadata
     /// <summary>
     /// Normalized keyword (Given, When, or Then).
     /// </summary>
-    public string NormalizedKeyword { get; set; } = string.Empty;
+    public NormalizedKeyword NormalizedKeyword { get; set; }
 
     /// <summary>
     /// Step text pattern with placeholders (e.g., "I have {quantity} cars in my {place}").

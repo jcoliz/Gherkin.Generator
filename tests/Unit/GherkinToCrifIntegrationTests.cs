@@ -19,7 +19,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I am logged in",
             Method = "IAmLoggedIn",
             Class = "AuthSteps",
@@ -56,7 +56,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I am logged in",
             Method = "IAmLoggedIn",
             Class = "AuthSteps",
@@ -89,7 +89,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I am logged in",
             Method = "IAmLoggedIn",
             Class = "AuthSteps",
@@ -141,7 +141,7 @@ public class GherkinToCrifIntegrationTests
         // Then: Step should be in Unimplemented list
         Assert.That(crif.Unimplemented, Has.Count.EqualTo(1));
         Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("I am logged in"));
-        Assert.That(crif.Unimplemented[0].Keyword, Is.EqualTo("Given"));
+        Assert.That(crif.Unimplemented[0].Keyword, Is.EqualTo(NormalizedKeyword.Given));
 
         // And: Step should have Owner="this"
         var step = crif.Rules[0].Scenarios[0].Steps[0];
@@ -159,7 +159,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have {quantity} dollars",
             Method = "IHaveDollars",
             Class = "AccountSteps",
@@ -195,7 +195,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have {quantity} dollars in {account}",
             Method = "IHaveDollarsIn",
             Class = "AccountSteps",
@@ -236,7 +236,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have an account named {account}",
             Method = "IHaveAnAccountNamed",
             Class = "AccountSteps",
@@ -276,7 +276,7 @@ public class GherkinToCrifIntegrationTests
         stepMetadata.AddRange([
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I am logged in",
                 Method = "IAmLoggedIn",
                 Class = "AuthSteps",
@@ -285,7 +285,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "When",
+                NormalizedKeyword = NormalizedKeyword.When,
                 Text = "I log out",
                 Method = "ILogOut",
                 Class = "AuthSteps",
@@ -321,7 +321,7 @@ public class GherkinToCrifIntegrationTests
         stepMetadata.AddRange([
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I am logged in",
                 Method = "IAmLoggedIn",
                 Class = "AuthSteps",
@@ -330,7 +330,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "When",
+                NormalizedKeyword = NormalizedKeyword.When,
                 Text = "I create a transaction",
                 Method = "ICreateATransaction",
                 Class = "TransactionSteps",
@@ -370,7 +370,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I am logged in",
             Method = "IAmLoggedIn",
             Class = "AuthSteps",
@@ -415,7 +415,7 @@ public class GherkinToCrifIntegrationTests
         stepMetadata.AddRange([
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I am logged in",
                 Method = "IAmLoggedIn",
                 Class = "AuthSteps",
@@ -424,7 +424,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "When",
+                NormalizedKeyword = NormalizedKeyword.When,
                 Text = "I navigate to the page",
                 Method = "INavigateToThePage",
                 Class = "NavigationSteps",
@@ -461,7 +461,7 @@ public class GherkinToCrifIntegrationTests
         stepMetadata.AddRange([
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I am logged in",
                 Method = "IAmLoggedIn",
                 Class = "AuthSteps",
@@ -470,7 +470,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "When",
+                NormalizedKeyword = NormalizedKeyword.When,
                 Text = "I create a transaction",
                 Method = "ICreateATransaction",
                 Class = "TransactionSteps",
@@ -510,7 +510,7 @@ public class GherkinToCrifIntegrationTests
         stepMetadata.AddRange([
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I am logged in",
                 Method = "IAmLoggedIn",
                 Class = "AuthSteps",
@@ -519,7 +519,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I have a workspace",
                 Method = "IHaveAWorkspace",
                 Class = "WorkspaceSteps",
@@ -560,7 +560,7 @@ public class GherkinToCrifIntegrationTests
         stepMetadata.AddRange([
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I am logged in",
                 Method = "IAmLoggedIn",
                 Class = "AuthSteps",
@@ -569,7 +569,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I have a workspace",
                 Method = "IHaveAWorkspace",
                 Class = "WorkspaceSteps",
@@ -578,7 +578,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I have permissions",
                 Method = "IHavePermissions",
                 Class = "PermissionSteps",
@@ -626,7 +626,7 @@ public class GherkinToCrifIntegrationTests
         stepMetadata.AddRange([
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I am logged in",
                 Method = "IAmLoggedIn",
                 Class = "AuthSteps",
@@ -635,7 +635,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I have a workspace",
                 Method = "IHaveAWorkspace",
                 Class = "WorkspaceSteps",
@@ -683,7 +683,7 @@ public class GherkinToCrifIntegrationTests
         stepMetadata.AddRange([
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I am logged in",
                 Method = "IAmLoggedIn",
                 Class = "AuthSteps",
@@ -692,7 +692,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I have a workspace",
                 Method = "IHaveAWorkspace",
                 Class = "WorkspaceSteps",
@@ -737,7 +737,7 @@ public class GherkinToCrifIntegrationTests
         stepMetadata.AddRange([
             new StepMetadata
             {
-                NormalizedKeyword = "Then",
+                NormalizedKeyword = NormalizedKeyword.Then,
                 Text = "the user should be logged in",
                 Method = "TheUserShouldBeLoggedIn",
                 Class = "AuthSteps",
@@ -746,7 +746,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "Then",
+                NormalizedKeyword = NormalizedKeyword.Then,
                 Text = "the session should be active",
                 Method = "TheSessionShouldBeActive",
                 Class = "SessionSteps",
@@ -755,7 +755,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "Then",
+                NormalizedKeyword = NormalizedKeyword.Then,
                 Text = "the user should have access",
                 Method = "TheUserShouldHaveAccess",
                 Class = "AccessSteps",
@@ -814,7 +814,7 @@ public class GherkinToCrifIntegrationTests
         stepMetadata.AddRange([
             new StepMetadata
             {
-                NormalizedKeyword = "Then",
+                NormalizedKeyword = NormalizedKeyword.Then,
                 Text = "the user should be logged in",
                 Method = "TheUserShouldBeLoggedIn",
                 Class = "AuthSteps",
@@ -823,7 +823,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "Then",
+                NormalizedKeyword = NormalizedKeyword.Then,
                 Text = "the session should be active",
                 Method = "TheSessionShouldBeActive",
                 Class = "SessionSteps",
@@ -878,8 +878,8 @@ public class GherkinToCrifIntegrationTests
 
         // And: Unimplemented steps should be tracked
         Assert.That(crif.Unimplemented, Has.Count.EqualTo(2));
-        Assert.That(crif.Unimplemented.Any(u => u.Keyword == "Given" && u.Text == "I am on the login page"), Is.True);
-        Assert.That(crif.Unimplemented.Any(u => u.Keyword == "When" && u.Text == "I log in"), Is.True);
+        Assert.That(crif.Unimplemented.Any(u => u.Keyword == NormalizedKeyword.Given && u.Text == "I am on the login page"), Is.True);
+        Assert.That(crif.Unimplemented.Any(u => u.Keyword == NormalizedKeyword.When && u.Text == "I log in"), Is.True);
 
         // And: Only matched step classes should be in the classes list
         Assert.That(crif.Classes, Has.Count.EqualTo(2));
@@ -898,7 +898,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have the following transactions",
             Method = "IHaveTheFollowingTransactions",
             Class = "TransactionSteps",
@@ -945,7 +945,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "When",
+            NormalizedKeyword = NormalizedKeyword.When,
             Text = "I create transactions",
             Method = "ICreateTransactions",
             Class = "TransactionSteps",
@@ -983,7 +983,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have {count} transactions with data",
             Method = "IHaveTransactionsWithData",
             Class = "TransactionSteps",
@@ -1035,7 +1035,7 @@ public class GherkinToCrifIntegrationTests
         stepMetadata.AddRange([
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I have transactions",
                 Method = "IHaveTransactions",
                 Class = "TransactionSteps",
@@ -1044,7 +1044,7 @@ public class GherkinToCrifIntegrationTests
             },
             new StepMetadata
             {
-                NormalizedKeyword = "Given",
+                NormalizedKeyword = NormalizedKeyword.Given,
                 Text = "I have payees",
                 Method = "IHavePayees",
                 Class = "PayeeSteps",
@@ -1168,7 +1168,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have test data",
             Method = "IHaveTestData",
             Class = "DataSteps",
@@ -1215,7 +1215,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have the following users",
             Method = "IHaveTheFollowingUsers",
             Class = "UserSteps",
@@ -1278,7 +1278,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Then",
+            NormalizedKeyword = NormalizedKeyword.Then,
             Text = "I should see {expectedValue} as the {fieldName}",
             Method = "ThenIShouldSeeValueAsField",
             Class = "TransactionDetailsSteps",
@@ -1351,7 +1351,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have {amount} dollars",
             Method = "IHaveDollars",
             Class = "AccountSteps",
@@ -1413,7 +1413,7 @@ public class GherkinToCrifIntegrationTests
         var stepMetadata = new StepMetadataCollection();
         stepMetadata.Add(new StepMetadata
         {
-            NormalizedKeyword = "Given",
+            NormalizedKeyword = NormalizedKeyword.Given,
             Text = "I have {amount} dollars in {account}",
             Method = "IHaveDollarsIn",
             Class = "AccountSteps",

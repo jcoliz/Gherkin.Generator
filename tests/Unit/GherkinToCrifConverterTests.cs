@@ -714,9 +714,9 @@ public class GherkinToCrifConverterTests
         var crif = _converter.Convert(feature);
 
         // Then: Unimplemented steps should have normalized keywords (all Given)
-        Assert.That(crif.Unimplemented[0].Keyword, Is.EqualTo("Given"));
-        Assert.That(crif.Unimplemented[1].Keyword, Is.EqualTo("Given"));
-        Assert.That(crif.Unimplemented[2].Keyword, Is.EqualTo("Given"));
+        Assert.That(crif.Unimplemented[0].Keyword, Is.EqualTo(NormalizedKeyword.Given));
+        Assert.That(crif.Unimplemented[1].Keyword, Is.EqualTo(NormalizedKeyword.Given));
+        Assert.That(crif.Unimplemented[2].Keyword, Is.EqualTo(NormalizedKeyword.Given));
     }
 
     [Test]

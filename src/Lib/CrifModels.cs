@@ -3,6 +3,30 @@ using System.Collections.Generic;
 namespace Gherkin.Generator.Lib;
 
 /// <summary>
+/// Normalized Gherkin step keyword for step matching.
+/// </summary>
+/// <remarks>
+/// And/But keywords are normalized to the context keyword (Given, When, or Then).
+/// </remarks>
+public enum NormalizedKeyword
+{
+    /// <summary>
+    /// Given step (preconditions/setup).
+    /// </summary>
+    Given,
+
+    /// <summary>
+    /// When step (action/event).
+    /// </summary>
+    When,
+
+    /// <summary>
+    /// Then step (assertions/outcomes).
+    /// </summary>
+    Then
+}
+
+/// <summary>
 /// Code-Ready Intermediate Form (CRIF) of a test feature.
 /// </summary>
 /// <remarks>
@@ -400,12 +424,12 @@ public class DataCellCrif
 public class UnimplementedStepCrif
 {
     /// <summary>
-    /// Exact Step keyword (Given, When, Then).
+    /// Normalized step keyword (Given, When, or Then).
     /// </summary>
     /// <remarks>
-    /// No "and" or "but" keywords here - those are normalized to the main keyword.
+    /// And/But keywords are normalized to the context keyword before being stored here.
     /// </remarks>
-    public string Keyword { get; set; } = string.Empty;
+    public NormalizedKeyword Keyword { get; set; }
 
     /// <summary>
     /// Step text (human-readable description).

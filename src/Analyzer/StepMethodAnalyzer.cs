@@ -102,7 +102,9 @@ public static class StepMethodAnalyzer
                     continue;
 
                 // Normalize keyword (remove "Attribute" suffix if present)
-                var normalizedKeyword = NormalizeKeyword(attributeName);
+                var normalizedKeyword = NormalizeKeywordToEnum(attributeName);
+                if (normalizedKeyword == null)
+                    continue;
 
                 // Get the step text from the attribute argument
                 var stepText = GetStepTextFromAttribute(attribute);
@@ -115,7 +117,7 @@ public static class StepMethodAnalyzer
                 // Create step metadata
                 var metadata = new StepMetadata
                 {
-                    NormalizedKeyword = normalizedKeyword,
+                    NormalizedKeyword = normalizedKeyword.Value,
                     Text = stepText,
                     Method = methodName,
                     Class = className,
@@ -137,9 +139,10 @@ public static class StepMethodAnalyzer
     }
 
     /// <summary>
-    /// Normalizes a step attribute name to a keyword (Given, When, or Then).
+    /// Normalizes a step attribute name to a NormalizedKeyword enum value.
     /// </summary>
-    private static string NormalizeKeyword(string attributeName)
+    /// <returns>The normalized keyword enum value, or null if not a valid step keyword.</returns>
+    private static NormalizedKeyword? NormalizeKeywordToEnum(string attributeName)
     {
         // Remove "Attribute" suffix if present
         if (attributeName.EndsWith("Attribute"))
@@ -147,7 +150,13 @@ public static class StepMethodAnalyzer
             attributeName = attributeName.Substring(0, attributeName.Length - "Attribute".Length);
         }
 
-        return attributeName; // Given, When, or Then
+        return attributeName switch
+        {
+            "Given" => NormalizedKeyword.Given,
+            "When" => NormalizedKeyword.When,
+            "Then" => NormalizedKeyword.Then,
+            _ => null
+        };
     }
 
     /// <summary>

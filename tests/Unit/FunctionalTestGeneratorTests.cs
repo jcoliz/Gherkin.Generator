@@ -502,14 +502,14 @@ public class FunctionalTestGeneratorTests
         [
             new UnimplementedStepCrif
             {
-                Keyword = "Given",
+                Keyword = NormalizedKeyword.Given,
                 Text = "a new feature exists",
                 Method = "GivenANewFeatureExists",
                 Parameters = []
             },
             new UnimplementedStepCrif
             {
-                Keyword = "When",
+                Keyword = NormalizedKeyword.When,
                 Text = "I perform action with \"parameter\"",
                 Method = "WhenIPerformActionWithParameter",
                 Parameters =
