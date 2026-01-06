@@ -37,6 +37,9 @@
   <ItemGroup>
     <!-- Reference the Lib project - but it won't be packed directly -->
     <ProjectReference Include="..\Lib\Gherkin.Generator.Lib.csproj" PrivateAssets="all" />
+    
+    <!-- Reference Utils project - this will become a package dependency -->
+    <ProjectReference Include="..\Utils\Gherkin.Generator.Utils.csproj" />
   </ItemGroup>
 
   <ItemGroup>

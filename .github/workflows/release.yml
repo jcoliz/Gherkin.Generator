@@ -36,6 +36,9 @@ jobs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Publishing version: $VERSION"
       
+    - name: Pack Gherkin.Generator.Utils
+      run: dotnet pack src/Utils/Gherkin.Generator.Utils.csproj --no-build --configuration Release -p:Version=${{ steps.get_version.outputs.version }} --output ./artifacts
+      
     - name: Pack Gherkin.Generator
       run: dotnet pack src/Analyzer/Gherkin.Generator.csproj --no-build --configuration Release -p:Version=${{ steps.get_version.outputs.version }} --output ./artifacts
       
