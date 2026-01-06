@@ -180,7 +180,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         if (background != null)
         {
             crif.Background = ConvertBackground(background);
-            TrackUnimplementedSteps(crif, crif.Background.Steps);
+            _ = TrackUnimplementedSteps(crif, crif.Background.Steps);
         }
     }
 
@@ -257,7 +257,15 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     {
         var scenarioCrif = ConvertScenario(scenario);
         ruleCrif.Scenarios.Add(scenarioCrif);
-        TrackUnimplementedSteps(crif, scenarioCrif.Steps);
+        
+        var hasUnmatchedSteps = TrackUnimplementedSteps(crif, scenarioCrif.Steps);
+        
+        // Mark scenario as explicit if it has unmatched steps
+        if (hasUnmatchedSteps && !scenarioCrif.IsExplicit)
+        {
+            scenarioCrif.IsExplicit = true;
+            scenarioCrif.ExplicitReason = "steps_in_progress";
+        }
     }
 
     private BackgroundCrif ConvertBackground(Background background)
@@ -448,9 +456,16 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         return result;
     }
 
-    private void TrackUnimplementedSteps(FeatureCrif crif, List<StepCrif> steps)
+    /// <summary>
+    /// Tracks unimplemented steps in the CRIF and returns whether any steps were unmatched.
+    /// </summary>
+    /// <param name="crif">The CRIF object to update.</param>
+    /// <param name="steps">The steps to track.</param>
+    /// <returns>True if any steps were unmatched; otherwise, false.</returns>
+    private bool TrackUnimplementedSteps(FeatureCrif crif, List<StepCrif> steps)
     {
         var currentKeyword = NormalizedKeyword.Given;
+        var hasUnmatchedSteps = false;
 
         foreach (var step in steps)
         {
@@ -464,8 +479,11 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             else
             {
                 ProcessUnimplementedStep(crif, step, normalizedKeyword);
+                hasUnmatchedSteps = true;
             }
         }
+
+        return hasUnmatchedSteps;
     }
 
     /// <summary>

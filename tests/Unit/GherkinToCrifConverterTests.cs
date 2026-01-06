@@ -272,7 +272,19 @@ public class GherkinToCrifConverterTests
     [Test]
     public void Convert_ScenarioWithoutExplicitTag_IsExplicitFalse()
     {
-        // Given: A scenario without @explicit tag
+        // Given: A step metadata collection with the needed step
+        var steps = new StepMetadataCollection();
+        steps.Add(new StepMetadata
+        {
+            NormalizedKeyword = NormalizedKeyword.Given,
+            Text = "I am logged in",
+            Method = "IAmLoggedIn",
+            Class = "AuthSteps",
+            Namespace = "Test.Steps"
+        });
+        var converter = new GherkinToCrifConverter(steps);
+
+        // And: A scenario without @explicit tag (and with matched steps)
         var gherkin = """
             Feature: Transaction Management
 
@@ -284,9 +296,9 @@ public class GherkinToCrifConverterTests
         var feature = ParseGherkin(gherkin);
 
         // When: Feature is converted to CRIF
-        var crif = _converter.Convert(feature);
+        var crif = converter.Convert(feature);
 
-        // Then: IsExplicit should be false
+        // Then: IsExplicit should be false (because all steps are matched)
         Assert.That(crif.Rules[0].Scenarios[0].IsExplicit, Is.False);
 
         // And: ExplicitReason should be null
