@@ -95,9 +95,10 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
     {{/Unimplemented.0}}
     {{#Unimplemented}}
     /// <summary>
-    /// {{Keyword}} {{Text}}
+    /// {{Keyword}} {{{Text}}}
     /// </summary>
-    async Task {{Method}}({{#Parameters}}{{Type}} {{Name}}{{^Last}}, {{/Last}}{{/Parameters}})
+    //[{{Keyword}}("{{Text}}")]
+    public async Task {{Method}}({{#Parameters}}{{Type}} {{Name}}{{^Last}}, {{/Last}}{{/Parameters}})
     {
         throw new NotImplementedException();
     }

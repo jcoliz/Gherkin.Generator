@@ -44,4 +44,4 @@ Scenario: Clear cart
     | Widget | 2        |
     | Gadget | 1        |
   When I clear the cart
-  Then the cart should be empty
+  Then the cart should be "empty"
