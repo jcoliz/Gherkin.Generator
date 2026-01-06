@@ -1,443 +1,386 @@
-using Gherkin.Generator.Utils;
+using Gherkin.Generator.Lib;
 
 namespace Gherkin.Generator.Tests.Unit;
 
+/// <summary>
+/// Tests for DataTable handling in Gherkin-to-CRIF conversion.
+/// </summary>
 [TestFixture]
-public class DataTableTests
+public class DataTableTests : StepMatchingTestsBase
 {
     [Test]
-    public void Constructor_ValidHeadersAndRows_CreatesTable()
+    public void Convert_WithDataTableStep_ExtractsDataTableAndMatchesStep()
     {
-        // Given: Valid headers and data rows
+        // Given: A step with DataTable parameter
+        var stepMetadata = new StepMetadataCollection();
+        stepMetadata.Add(new StepMetadata
+        {
+            NormalizedKeyword = NormalizedKeyword.Given,
+            Text = "I have the following transactions",
+            Method = "IHaveTheFollowingTransactions",
+            Class = "TransactionSteps",
+            Namespace = "YoFi.V3.Tests.Functional.Steps",
+            Parameters = [new StepParameter { Type = "DataTable", Name = "table" }]
+        });
 
-        // When: Creating a new DataTable
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"],
-            ["bob", "Editor"]
-        );
+        var converter = new GherkinToCrifConverter(stepMetadata);
 
-        // Then: Table should be created successfully
-        Assert.That(table.RowCount, Is.EqualTo(2));
-        Assert.That(table.ColumnCount, Is.EqualTo(2));
-        Assert.That(table.Headers, Is.EqualTo(new[] { "Username", "Role" }));
+        // And: A Gherkin feature with that step and DataTable
+        var gherkin = """
+            Feature: Transactions
+
+            Scenario: Multiple transactions
+              Given I have the following transactions
+                | Date       | Payee      | Amount |
+                | 2024-01-01 | Store A    | 100.00 |
+                | 2024-01-02 | Store B    | 200.00 |
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Step should be matched with correct Owner and Method
+        var step = crif.Rules[0].Scenarios[0].Steps[0];
+        Assert.That(step.Owner, Is.EqualTo("TransactionSteps"));
+        Assert.That(step.Method, Is.EqualTo("IHaveTheFollowingTransactions"));
+
+        // And: DataTable should be extracted
+        Assert.That(step.DataTable, Is.Not.Null);
+        Assert.That(step.DataTable!.Headers, Has.Count.EqualTo(3));
+        Assert.That(step.DataTable.Rows, Has.Count.EqualTo(2));
+
+        // And: Step should have DataTable variable as argument
+        Assert.That(step.Arguments, Has.Count.EqualTo(1));
+        Assert.That(step.Arguments[0].Value, Is.EqualTo("table1"));
     }
 
     [Test]
-    public void Constructor_SingleColumn_CreatesTable()
+    public void Convert_WithDataTableStep_AddsClassAndNamespace()
     {
-        // Given: Single column table definition
+        // Given: A step with DataTable parameter
+        var stepMetadata = new StepMetadataCollection();
+        stepMetadata.Add(new StepMetadata
+        {
+            NormalizedKeyword = NormalizedKeyword.When,
+            Text = "I create transactions",
+            Method = "ICreateTransactions",
+            Class = "TransactionSteps",
+            Namespace = "YoFi.V3.Tests.Functional.Steps",
+            Parameters = [new StepParameter { Type = "DataTable", Name = "transactions" }]
+        });
 
-        // When: Creating a single-column table
-        var table = new DataTable(
-            ["Username"],
-            ["alice"],
-            ["bob"]
-        );
+        var converter = new GherkinToCrifConverter(stepMetadata);
 
-        // Then: Table should be created with one column
-        Assert.That(table.ColumnCount, Is.EqualTo(1));
-        Assert.That(table.RowCount, Is.EqualTo(2));
+        // And: A Gherkin feature with DataTable
+        var gherkin = """
+            Feature: Transactions
+
+            Scenario: Create multiple
+              When I create transactions
+                | Payee   | Amount |
+                | Store A | 100.00 |
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Class should be added to Classes list
+        Assert.That(crif.Classes, Contains.Item("TransactionSteps"));
+
+        // And: Namespace should be added to Usings
+        Assert.That(crif.Usings, Contains.Item("YoFi.V3.Tests.Functional.Steps"));
     }
 
     [Test]
-    public void Constructor_EmptyHeaders_ThrowsArgumentException()
+    public void Convert_WithMixedParametersAndDataTable_ExtractsBothCorrectly()
     {
-        // Given: Empty headers array
+        // Given: A step with both regular parameter and DataTable
+        var stepMetadata = new StepMetadataCollection();
+        stepMetadata.Add(new StepMetadata
+        {
+            NormalizedKeyword = NormalizedKeyword.Given,
+            Text = "I have {count} transactions with data",
+            Method = "IHaveTransactionsWithData",
+            Class = "TransactionSteps",
+            Namespace = "YoFi.V3.Tests.Functional.Steps",
+            Parameters = [
+                new StepParameter { Type = "int", Name = "count" },
+                new StepParameter { Type = "DataTable", Name = "table" }
+            ]
+        });
 
-        // When: Attempting to create a table with empty headers
-        // Then: ArgumentException should be thrown
-        var ex = Assert.Throws<ArgumentException>(() => new DataTable(
-            [],
-            ["data"]
-        ));
-        Assert.That(ex!.ParamName, Is.EqualTo("headers"));
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin feature with parameter and DataTable
+        var gherkin = """
+            Feature: Transactions
+
+            Scenario: Multiple transactions
+              Given I have 5 transactions with data
+                | Field  | Value |
+                | Type   | Credit |
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Step should be matched
+        var step = crif.Rules[0].Scenarios[0].Steps[0];
+        Assert.That(step.Owner, Is.EqualTo("TransactionSteps"));
+        Assert.That(step.Method, Is.EqualTo("IHaveTransactionsWithData"));
+
+        // And: Both regular argument and DataTable variable should be present
+        Assert.That(step.Arguments, Has.Count.EqualTo(2));
+        Assert.That(step.Arguments[0].Value, Is.EqualTo("5"));
+        Assert.That(step.Arguments[0].Last, Is.False);
+        Assert.That(step.Arguments[1].Value, Is.EqualTo("table1"));
+        Assert.That(step.Arguments[1].Last, Is.True);
+
+        // And: DataTable should be extracted
+        Assert.That(step.DataTable, Is.Not.Null);
+        Assert.That(step.DataTable!.Headers, Has.Count.EqualTo(2));
     }
 
     [Test]
-    public void Constructor_NullHeaders_ThrowsArgumentException()
+    public void Convert_WithMultipleDataTableSteps_GeneratesUniqueVariableNames()
     {
-        // Given: Null headers
+        // Given: Multiple steps with DataTable parameters
+        var stepMetadata = new StepMetadataCollection();
+        stepMetadata.AddRange([
+            new StepMetadata
+            {
+                NormalizedKeyword = NormalizedKeyword.Given,
+                Text = "I have transactions",
+                Method = "IHaveTransactions",
+                Class = "TransactionSteps",
+                Namespace = "YoFi.V3.Tests.Functional.Steps",
+                Parameters = [new StepParameter { Type = "DataTable", Name = "transactions" }]
+            },
+            new StepMetadata
+            {
+                NormalizedKeyword = NormalizedKeyword.Given,
+                Text = "I have payees",
+                Method = "IHavePayees",
+                Class = "PayeeSteps",
+                Namespace = "YoFi.V3.Tests.Functional.Steps",
+                Parameters = [new StepParameter { Type = "DataTable", Name = "payees" }]
+            }
+        ]);
 
-        // When: Attempting to create a table with null headers
-        // Then: ArgumentException should be thrown
-        var ex = Assert.Throws<ArgumentException>(() => new DataTable(
-            null!,
-            ["data"]
-        ));
-        Assert.That(ex!.ParamName, Is.EqualTo("headers"));
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin feature with multiple DataTable steps
+        var gherkin = """
+            Feature: Data Setup
+
+            Scenario: Setup test data
+              Given I have transactions
+                | Date       | Amount |
+                | 2024-01-01 | 100.00 |
+              And I have payees
+                | Name    | Category |
+                | Store A | Shopping |
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Each DataTable should have a unique variable name
+        var step1 = crif.Rules[0].Scenarios[0].Steps[0];
+        var step2 = crif.Rules[0].Scenarios[0].Steps[1];
+        Assert.That(step1.DataTable!.VariableName, Is.EqualTo("table1"));
+        Assert.That(step2.DataTable!.VariableName, Is.EqualTo("table2"));
+
+        // And: Arguments should reference the correct table variables
+        Assert.That(step1.Arguments[0].Value, Is.EqualTo("table1"));
+        Assert.That(step2.Arguments[0].Value, Is.EqualTo("table2"));
     }
 
     [Test]
-    public void Constructor_InconsistentColumnCount_ThrowsArgumentException()
+    public void Convert_WithUnmatchedDataTableStep_StaysInUnimplementedList()
     {
-        // Given: Data rows with inconsistent column counts
+        // Given: An empty step metadata collection
+        var stepMetadata = new StepMetadataCollection();
+        var converter = new GherkinToCrifConverter(stepMetadata);
 
-        // When: Attempting to create a table with mismatched columns
-        // Then: ArgumentException should be thrown
-        var ex = Assert.Throws<ArgumentException>(() => new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"],
-            ["bob"] // Missing second column
-        ));
-        Assert.That(ex!.Message, Does.Contain("expected 2"));
-        Assert.That(ex.ParamName, Is.EqualTo("dataRows"));
+        // And: A Gherkin feature with unmatched DataTable step
+        var gherkin = """
+            Feature: Transactions
+
+            Scenario: Test
+              Given I have the following data
+                | Field | Value |
+                | Name  | Test  |
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Step should be in Unimplemented list
+        Assert.That(crif.Unimplemented, Has.Count.EqualTo(1));
+        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("I have the following data"));
+
+        // And: Step should still have DataTable extracted
+        var step = crif.Rules[0].Scenarios[0].Steps[0];
+        Assert.That(step.DataTable, Is.Not.Null);
+
+        // And: Step should have Owner="this" for unimplemented step
+        Assert.That(step.Owner, Is.EqualTo("this"));
     }
 
     [Test]
-    public void IndexerByInt_ValidIndex_ReturnsRow()
+    public void Convert_WithUnmatchedDataTableStep_AddsDataTableVariableAsArgument()
     {
-        // Given: A table with multiple rows
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"],
-            ["bob", "Editor"]
-        );
+        // Given: An empty step metadata collection (no step matching)
+        var stepMetadata = new StepMetadataCollection();
+        var converter = new GherkinToCrifConverter(stepMetadata);
 
-        // When: Accessing row by index
-        var row = table[0];
+        // And: A Gherkin feature with unmatched DataTable step
+        var gherkin = """
+            Feature: Bank Import
 
-        // Then: Should return the correct row
-        Assert.That(row["Username"], Is.EqualTo("alice"));
-        Assert.That(row["Role"], Is.EqualTo("Owner"));
+            Scenario: Import transactions with external IDs
+              Given I have some other transactions with external IDs:
+                | ExternalId | Date       | Payee       | Amount  |
+                | 2024010701 | 2024-01-07 | Gas Station | -89.99  |
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Step should be in Unimplemented list
+        Assert.That(crif.Unimplemented, Has.Count.EqualTo(1));
+        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("I have some other transactions with external IDs:"));
+
+        // And: Unimplemented step should have DataTable parameter in signature
+        var unimplementedStep = crif.Unimplemented[0];
+        Assert.That(unimplementedStep.Parameters, Has.Count.EqualTo(1));
+        Assert.That(unimplementedStep.Parameters[0].Type, Is.EqualTo("DataTable"));
+        Assert.That(unimplementedStep.Parameters[0].Name, Is.EqualTo("table"));
+
+        // And: Step should have DataTable extracted
+        var step = crif.Rules[0].Scenarios[0].Steps[0];
+        Assert.That(step.DataTable, Is.Not.Null);
+        Assert.That(step.DataTable!.VariableName, Is.EqualTo("table1"));
+
+        // And: Step should have DataTable variable as argument
+        Assert.That(step.Arguments, Has.Count.EqualTo(1));
+        Assert.That(step.Arguments[0].Value, Is.EqualTo("table1"));
+        Assert.That(step.Arguments[0].Last, Is.True);
+
+        // And: Step should have Owner="this" for unimplemented step
+        Assert.That(step.Owner, Is.EqualTo("this"));
     }
 
     [Test]
-    public void IndexerByInt_InvalidIndex_ThrowsIndexOutOfRangeException()
+    public void Convert_WithDataTableInBackground_ExtractsDataTableAndMatches()
     {
-        // Given: A table with 2 rows
-        var table = new DataTable(
-            ["Username"],
-            ["alice"],
-            ["bob"]
-        );
+        // Given: A step with DataTable parameter
+        var stepMetadata = new StepMetadataCollection();
+        stepMetadata.Add(new StepMetadata
+        {
+            NormalizedKeyword = NormalizedKeyword.Given,
+            Text = "I have test data",
+            Method = "IHaveTestData",
+            Class = "DataSteps",
+            Namespace = "YoFi.V3.Tests.Functional.Steps",
+            Parameters = [new StepParameter { Type = "DataTable", Name = "data" }]
+        });
 
-        // When: Accessing invalid index
-        // Then: IndexOutOfRangeException should be thrown
-        Assert.Throws<ArgumentOutOfRangeException>(() => { var _ = table[5]; });
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin feature with DataTable in Background
+        var gherkin = """
+            Feature: Data Tests
+
+            Background:
+              Given I have test data
+                | Key   | Value |
+                | Test1 | Val1  |
+
+            Scenario: Test scenario
+              When I run tests
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Background step should be matched
+        var bgStep = crif.Background!.Steps[0];
+        Assert.That(bgStep.Owner, Is.EqualTo("DataSteps"));
+        Assert.That(bgStep.Method, Is.EqualTo("IHaveTestData"));
+
+        // And: DataTable should be extracted in background
+        Assert.That(bgStep.DataTable, Is.Not.Null);
+        Assert.That(bgStep.DataTable!.Headers, Has.Count.EqualTo(2));
+
+        // And: Class should be added from background step
+        Assert.That(crif.Classes, Contains.Item("DataSteps"));
     }
 
     [Test]
-    public void HasColumn_ExistingColumn_ReturnsTrue()
+    public void Convert_WithDataTableInBackground_AddsClassAndNamespace()
     {
-        // Given: A table with specific columns
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"]
-        );
+        // Given: A step with DataTable parameter
+        var stepMetadata = new StepMetadataCollection();
+        stepMetadata.Add(new StepMetadata
+        {
+            NormalizedKeyword = NormalizedKeyword.Given,
+            Text = "I have the following users",
+            Method = "IHaveTheFollowingUsers",
+            Class = "UserSteps",
+            Namespace = "YoFi.V3.Tests.Functional.Steps",
+            Parameters = [new StepParameter { Type = "DataTable", Name = "users" }]
+        });
 
-        // When: Checking for existing column
-        var hasColumn = table.HasColumn("Role");
+        var converter = new GherkinToCrifConverter(stepMetadata);
 
-        // Then: Should return true
-        Assert.That(hasColumn, Is.True);
-    }
+        // And: A Gherkin feature with DataTable in Background
+        var gherkin = """
+            Feature: User Management
 
-    [Test]
-    public void HasColumn_NonExistingColumn_ReturnsFalse()
-    {
-        // Given: A table with specific columns
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"]
-        );
+            Background:
+              Given I have the following users
+                | Username | Email              | Role  |
+                | alice    | alice@example.com  | Admin |
+                | bob      | bob@example.com    | User  |
 
-        // When: Checking for non-existing column
-        var hasColumn = table.HasColumn("Email");
+            Scenario: User operations
+              When I perform user operations
+            """;
+        var feature = ParseGherkin(gherkin);
 
-        // Then: Should return false
-        Assert.That(hasColumn, Is.False);
-    }
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
 
-    [Test]
-    public void GetColumn_ValidColumn_ReturnsAllValues()
-    {
-        // Given: A table with multiple rows
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"],
-            ["bob", "Editor"],
-            ["charlie", "Viewer"]
-        );
+        // Then: Background step should be matched with correct Owner and Method
+        var bgStep = crif.Background!.Steps[0];
+        Assert.That(bgStep.Owner, Is.EqualTo("UserSteps"));
+        Assert.That(bgStep.Method, Is.EqualTo("IHaveTheFollowingUsers"));
 
-        // When: Getting all values from Username column
-        var usernames = table.GetColumn("Username");
+        // And: DataTable should be extracted with correct structure
+        Assert.That(bgStep.DataTable, Is.Not.Null);
+        Assert.That(bgStep.DataTable!.Headers, Has.Count.EqualTo(3));
+        Assert.That(bgStep.DataTable.Headers[0].Value, Is.EqualTo("Username"));
+        Assert.That(bgStep.DataTable.Headers[1].Value, Is.EqualTo("Email"));
+        Assert.That(bgStep.DataTable.Headers[2].Value, Is.EqualTo("Role"));
+        Assert.That(bgStep.DataTable.Rows, Has.Count.EqualTo(2));
 
-        // Then: Should return all username values
-        Assert.That(usernames, Is.EqualTo(new[] { "alice", "bob", "charlie" }));
-    }
+        // And: Step should have DataTable variable as argument
+        Assert.That(bgStep.Arguments, Has.Count.EqualTo(1));
+        Assert.That(bgStep.Arguments[0].Value, Is.EqualTo("table1"));
 
-    [Test]
-    public void GetColumn_InvalidColumn_ThrowsArgumentException()
-    {
-        // Given: A table with specific columns
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"]
-        );
+        // And: Class should be added to Classes list
+        Assert.That(crif.Classes, Contains.Item("UserSteps"));
 
-        // When: Getting non-existing column
-        // Then: ArgumentException should be thrown
-        var ex = Assert.Throws<ArgumentException>(() => table.GetColumn("Email"));
-        Assert.That(ex!.Message, Does.Contain("Email"));
-        Assert.That(ex.Message, Does.Contain("Available columns"));
-    }
-
-    [Test]
-    public void Enumeration_LinqQueries_WorksCorrectly()
-    {
-        // Given: A table with multiple rows
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"],
-            ["bob", "Editor"],
-            ["charlie", "Owner"]
-        );
-
-        // When: Querying with LINQ
-        var owners = table.Where(row => row["Role"] == "Owner").ToList();
-
-        // Then: Should return filtered rows
-        Assert.That(owners, Has.Count.EqualTo(2));
-        Assert.That(owners[0]["Username"], Is.EqualTo("alice"));
-        Assert.That(owners[1]["Username"], Is.EqualTo("charlie"));
-    }
-
-    [Test]
-    public void Enumeration_First_ReturnsFirstRow()
-    {
-        // Given: A table with multiple rows
-        var table = new DataTable(
-            ["Username"],
-            ["alice"],
-            ["bob"]
-        );
-
-        // When: Getting first row
-        var first = table.First();
-
-        // Then: Should return first row
-        Assert.That(first["Username"], Is.EqualTo("alice"));
-    }
-
-    [Test]
-    public void Rows_Property_ReturnsReadOnlyList()
-    {
-        // Given: A table with rows
-        var table = new DataTable(
-            ["Username"],
-            ["alice"],
-            ["bob"]
-        );
-
-        // When: Accessing Rows property
-        var rows = table.Rows;
-
-        // Then: Should return read-only list with correct count
-        Assert.That(rows, Has.Count.EqualTo(2));
-        Assert.That(rows[0]["Username"], Is.EqualTo("alice"));
-        Assert.That(rows[1]["Username"], Is.EqualTo("bob"));
-    }
-
-    [Test]
-    public void ToString_CreatesReadableRepresentation()
-    {
-        // Given: A table with data
-        var table = new DataTable(
-            ["Name", "Age"],
-            ["Alice", "30"],
-            ["Bob", "25"]
-        );
-
-        // When: Converting to string
-        var result = table.ToString();
-
-        // Then: Should contain table structure information
-        Assert.That(result, Does.Contain("2 rows"));
-        Assert.That(result, Does.Contain("2 columns"));
-        Assert.That(result, Does.Contain("Name"));
-        Assert.That(result, Does.Contain("Age"));
-        Assert.That(result, Does.Contain("Alice"));
-        Assert.That(result, Does.Contain("Bob"));
-    }
-}
-
-[TestFixture]
-public class DataTableRowTests
-{
-    [Test]
-    public void IndexerByColumnName_ValidColumn_ReturnsValue()
-    {
-        // Given: A table row with data
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"]
-        );
-        var row = table[0];
-
-        // When: Accessing column by name
-        var username = row["Username"];
-        var role = row["Role"];
-
-        // Then: Should return correct values
-        Assert.That(username, Is.EqualTo("alice"));
-        Assert.That(role, Is.EqualTo("Owner"));
-    }
-
-    [Test]
-    public void IndexerByColumnName_InvalidColumn_ThrowsArgumentException()
-    {
-        // Given: A table row with specific columns
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"]
-        );
-        var row = table[0];
-
-        // When: Accessing non-existing column
-        // Then: ArgumentException should be thrown
-        var ex = Assert.Throws<ArgumentException>(() => { var _ = row["Email"]; });
-        Assert.That(ex!.Message, Does.Contain("Email"));
-        Assert.That(ex.Message, Does.Contain("Available columns"));
-    }
-
-    [Test]
-    public void IndexerByInt_ValidIndex_ReturnsValue()
-    {
-        // Given: A table row with data
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"]
-        );
-        var row = table[0];
-
-        // When: Accessing column by index
-        var value0 = row[0];
-        var value1 = row[1];
-
-        // Then: Should return correct values
-        Assert.That(value0, Is.EqualTo("alice"));
-        Assert.That(value1, Is.EqualTo("Owner"));
-    }
-
-    [Test]
-    public void IndexerByInt_InvalidIndex_ThrowsIndexOutOfRangeException()
-    {
-        // Given: A table row with 2 columns
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"]
-        );
-        var row = table[0];
-
-        // When: Accessing invalid index
-        // Then: IndexOutOfRangeException should be thrown
-        Assert.Throws<ArgumentOutOfRangeException>(() => { var _ = row[5]; });
-    }
-
-    [Test]
-    public void HasColumn_ExistingColumn_ReturnsTrue()
-    {
-        // Given: A table row with specific columns
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"]
-        );
-        var row = table[0];
-
-        // When: Checking for existing column
-        var hasColumn = row.HasColumn("Role");
-
-        // Then: Should return true
-        Assert.That(hasColumn, Is.True);
-    }
-
-    [Test]
-    public void HasColumn_NonExistingColumn_ReturnsFalse()
-    {
-        // Given: A table row with specific columns
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"]
-        );
-        var row = table[0];
-
-        // When: Checking for non-existing column
-        var hasColumn = row.HasColumn("Email");
-
-        // Then: Should return false
-        Assert.That(hasColumn, Is.False);
-    }
-
-    [Test]
-    public void TryGetValue_ExistingColumn_ReturnsTrue()
-    {
-        // Given: A table row with data
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"]
-        );
-        var row = table[0];
-
-        // When: Trying to get existing column value
-        var success = row.TryGetValue("Username", out var value);
-
-        // Then: Should return true and the value
-        Assert.That(success, Is.True);
-        Assert.That(value, Is.EqualTo("alice"));
-    }
-
-    [Test]
-    public void TryGetValue_NonExistingColumn_ReturnsFalse()
-    {
-        // Given: A table row with specific columns
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"]
-        );
-        var row = table[0];
-
-        // When: Trying to get non-existing column value
-        var success = row.TryGetValue("Email", out var value);
-
-        // Then: Should return false and null value
-        Assert.That(success, Is.False);
-        Assert.That(value, Is.Null);
-    }
-
-    [Test]
-    public void Values_Property_ReturnsAllValues()
-    {
-        // Given: A table row with data
-        var table = new DataTable(
-            ["Username", "Role", "Status"],
-            ["alice", "Owner", "Active"]
-        );
-        var row = table[0];
-
-        // When: Accessing Values property
-        var values = row.Values;
-
-        // Then: Should return all values in order
-        Assert.That(values, Is.EqualTo(new[] { "alice", "Owner", "Active" }));
-    }
-
-    [Test]
-    public void ToString_CreatesReadableRepresentation()
-    {
-        // Given: A table row with data
-        var table = new DataTable(
-            ["Username", "Role"],
-            ["alice", "Owner"]
-        );
-        var row = table[0];
-
-        // When: Converting to string
-        var result = row.ToString();
-
-        // Then: Should contain values separated by pipe
-        Assert.That(result, Does.Contain("alice"));
-        Assert.That(result, Does.Contain("Owner"));
-        Assert.That(result, Does.Contain("|"));
+        // And: Namespace should be added to Usings
+        Assert.That(crif.Usings, Contains.Item("YoFi.V3.Tests.Functional.Steps"));
     }
 }
