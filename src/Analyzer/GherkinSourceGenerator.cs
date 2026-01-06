@@ -24,6 +24,8 @@ namespace Gherkin.Generator;
 [Generator]
 public class GherkinSourceGenerator : IIncrementalGenerator
 {
+    private const string DiagnosticCategory = "Gherkin.Generator";
+
     /// <summary>
     /// Initializes the incremental generator pipeline.
     /// </summary>
@@ -49,8 +51,7 @@ public class GherkinSourceGenerator : IIncrementalGenerator
         var stepMetadataProvider = context.CompilationProvider
             .Select((compilation, cancellationToken) =>
             {
-                var analyzer = new StepMethodAnalyzer();
-                return analyzer.Analyze(compilation);
+                return StepMethodAnalyzer.Analyze(compilation);
             });
 
         // 4. Combine template, feature files, and step metadata
@@ -71,7 +72,7 @@ public class GherkinSourceGenerator : IIncrementalGenerator
                         "GHERKIN001",
                         "Missing Mustache Template",
                         "No .mustache template file found in AdditionalFiles. Add a .mustache file to AdditionalFiles in your project.",
-                        "Gherkin.Generator",
+                        DiagnosticCategory,
                         DiagnosticSeverity.Error,
                         isEnabledByDefault: true),
                     Microsoft.CodeAnalysis.Location.None));
@@ -92,7 +93,7 @@ public class GherkinSourceGenerator : IIncrementalGenerator
                             "GHERKIN002",
                             "Feature Generation Error",
                             $"Error generating test for {featureFile.FileName}: {ex.Message}",
-                            "Gherkin.Generator",
+                            DiagnosticCategory,
                             DiagnosticSeverity.Error,
                             isEnabledByDefault: true),
                         Microsoft.CodeAnalysis.Location.None));
@@ -135,7 +136,7 @@ public class GherkinSourceGenerator : IIncrementalGenerator
                     "GHERKIN003",
                     "Gherkin Parse Error",
                     "Error parsing {0}.feature: {1}",
-                    "Gherkin.Generator",
+                    DiagnosticCategory,
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
                 Microsoft.CodeAnalysis.Location.None,
@@ -151,7 +152,7 @@ public class GherkinSourceGenerator : IIncrementalGenerator
                     "GHERKIN003",
                     "Gherkin Parse Error",
                     "Error parsing {0}.feature: {1}",
-                    "Gherkin.Generator",
+                    DiagnosticCategory,
                     DiagnosticSeverity.Error,
                     isEnabledByDefault: true),
                 Microsoft.CodeAnalysis.Location.None,
@@ -172,7 +173,7 @@ public class GherkinSourceGenerator : IIncrementalGenerator
                     "GHERKIN004",
                     "Unimplemented Steps",
                     $"Feature '{fileName}' has {crif.Unimplemented.Count} unimplemented step(s). Stub implementations generated in output file.",
-                    "Gherkin.Generator",
+                    DiagnosticCategory,
                     DiagnosticSeverity.Warning,
                     isEnabledByDefault: true),
                 Microsoft.CodeAnalysis.Location.None));

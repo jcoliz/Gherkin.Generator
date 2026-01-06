@@ -17,7 +17,7 @@ namespace Gherkin.Generator;
 /// - Method name and parameters
 /// - Containing class and namespace
 /// </remarks>
-public class StepMethodAnalyzer
+public static class StepMethodAnalyzer
 {
     private static readonly string[] StepAttributes = { "Given", "When", "Then", "GivenAttribute", "WhenAttribute", "ThenAttribute" };
 
@@ -26,7 +26,7 @@ public class StepMethodAnalyzer
     /// </summary>
     /// <param name="compilation">The compilation containing syntax trees to analyze.</param>
     /// <returns>A StepMetadataCollection containing all discovered step definitions.</returns>
-    public StepMetadataCollection Analyze(Compilation compilation)
+    public static StepMetadataCollection Analyze(Compilation compilation)
     {
         var collection = new StepMetadataCollection();
 
@@ -53,7 +53,7 @@ public class StepMethodAnalyzer
     /// <param name="classDecl">The class declaration syntax node.</param>
     /// <param name="semanticModel">Semantic model for symbol resolution.</param>
     /// <param name="collection">Collection to add discovered step metadata to.</param>
-    private void AnalyzeClass(ClassDeclarationSyntax classDecl, SemanticModel semanticModel, StepMetadataCollection collection)
+    private static void AnalyzeClass(ClassDeclarationSyntax classDecl, SemanticModel semanticModel, StepMetadataCollection collection)
     {
         var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
         if (classSymbol == null)
@@ -79,7 +79,7 @@ public class StepMethodAnalyzer
     /// <param name="className">Name of the containing class.</param>
     /// <param name="namespaceName">Namespace of the containing class.</param>
     /// <param name="collection">Collection to add discovered step metadata to.</param>
-    private void AnalyzeMethod(
+    private static void AnalyzeMethod(
         MethodDeclarationSyntax methodDecl,
         SemanticModel semanticModel,
         string className,
@@ -133,7 +133,7 @@ public class StepMethodAnalyzer
     /// <summary>
     /// Checks if an attribute name is a step attribute (Given, When, or Then).
     /// </summary>
-    private bool IsStepAttribute(string attributeName)
+    private static bool IsStepAttribute(string attributeName)
     {
         return StepAttributes.Contains(attributeName);
     }
@@ -141,7 +141,7 @@ public class StepMethodAnalyzer
     /// <summary>
     /// Normalizes a step attribute name to a keyword (Given, When, or Then).
     /// </summary>
-    private string NormalizeKeyword(string attributeName)
+    private static string NormalizeKeyword(string attributeName)
     {
         // Remove "Attribute" suffix if present
         if (attributeName.EndsWith("Attribute"))
@@ -155,7 +155,7 @@ public class StepMethodAnalyzer
     /// <summary>
     /// Extracts the step text from a step attribute's first argument.
     /// </summary>
-    private string GetStepTextFromAttribute(AttributeSyntax attribute)
+    private static string GetStepTextFromAttribute(AttributeSyntax attribute)
     {
         // Step text is the first argument to the attribute
         // Example: [Given("I am logged in")] or [Given("I have {quantity} items")]
@@ -180,7 +180,7 @@ public class StepMethodAnalyzer
     /// <summary>
     /// Extracts parameter information from a method symbol.
     /// </summary>
-    private List<StepParameter> GetMethodParameters(IMethodSymbol methodSymbol)
+    private static List<StepParameter> GetMethodParameters(IMethodSymbol methodSymbol)
     {
         var parameters = new List<StepParameter>();
 
