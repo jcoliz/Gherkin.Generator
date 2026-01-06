@@ -1,6 +1,6 @@
 # Gherkin.Generator
 
-[![.NET](https://github.com/jcoliz/Gherkin.Generator/actions/workflows/build/ci.yml.svg)](https://github.com/jcoliz/Gherkin.Generator/actions/workflows/ci.yml)
+[![CI](https://github.com/jcoliz/Gherkin.Generator/actions/workflows/ci.yml/badge.svg)](https://github.com/jcoliz/Gherkin.Generator/actions/workflows/ci.yml)
 
 Generate running C# test code from Gherkin feature files.
 
