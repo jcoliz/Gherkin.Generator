@@ -383,4 +383,42 @@ public class DataTableTests : StepMatchingTestsBase
         // And: Namespace should be added to Usings
         Assert.That(crif.Usings, Contains.Item("YoFi.V3.Tests.Functional.Steps"));
     }
+
+    [Test]
+    public void Convert_WithDataTable_AddsUtilsNamespaceToUsings()
+    {
+        // Given: A step with DataTable parameter
+        var stepMetadata = new StepMetadataCollection();
+        stepMetadata.Add(new StepMetadata
+        {
+            NormalizedKeyword = NormalizedKeyword.Given,
+            Text = "I have the following data",
+            Method = "IHaveTheFollowingData",
+            Class = "DataSteps",
+            Namespace = "MyApp.Tests.Functional.Steps",
+            Parameters = [new StepParameter { Type = "DataTable", Name = "table" }]
+        });
+
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin feature with a DataTable
+        var gherkin = """
+            Feature: Data Management
+
+            Scenario: Process data
+              Given I have the following data
+                | Field1 | Field2 |
+                | Value1 | Value2 |
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Usings should contain Gherkin.Generator.Utils
+        Assert.That(crif.Usings, Contains.Item("Gherkin.Generator.Utils"));
+
+        // And: Step-specific namespace should also be present
+        Assert.That(crif.Usings, Contains.Item("MyApp.Tests.Functional.Steps"));
+    }
 }

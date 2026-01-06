@@ -41,9 +41,40 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             ProcessFeatureTags(feature.Feature.Tags, crif);
             ProcessBackground(feature.Feature, crif);
             ProcessFeatureChildren(feature.Feature.Children, crif);
+            AddUtilsNamespaceIfNeeded(crif);
         }
 
         return crif;
+    }
+
+    /// <summary>
+    /// Adds Gherkin.Generator.Utils namespace if the feature contains any DataTables.
+    /// </summary>
+    /// <param name="crif">The CRIF object to update.</param>
+    private static void AddUtilsNamespaceIfNeeded(FeatureCrif crif)
+    {
+        var hasDataTable = false;
+
+        // Check background steps for DataTables
+        if (crif.Background != null)
+        {
+            hasDataTable = crif.Background.Steps.Any(s => s.DataTable != null);
+        }
+
+        // Check scenario steps for DataTables
+        if (!hasDataTable)
+        {
+            hasDataTable = crif.Rules
+                .SelectMany(r => r.Scenarios)
+                .SelectMany(s => s.Steps)
+                .Any(s => s.DataTable != null);
+        }
+
+        // Add Utils namespace if DataTable found
+        if (hasDataTable && !crif.Usings.Contains("Gherkin.Generator.Utils"))
+        {
+            crif.Usings.Add("Gherkin.Generator.Utils");
+        }
     }
 
     /// <summary>
