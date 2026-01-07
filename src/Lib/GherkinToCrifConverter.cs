@@ -48,30 +48,36 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     }
 
     /// <summary>
-    /// Adds Gherkin.Generator.Utils namespace if the feature contains any DataTables.
+    /// Adds Gherkin.Generator.Utils namespace if the feature contains any DataTables or unimplemented steps.
     /// </summary>
     /// <param name="crif">The CRIF object to update.</param>
     private static void AddUtilsNamespaceIfNeeded(FeatureCrif crif)
     {
-        var hasDataTable = false;
+        var needsUtils = false;
 
         // Check background steps for DataTables
         if (crif.Background != null)
         {
-            hasDataTable = crif.Background.Steps.Any(s => s.DataTable != null);
+            needsUtils = crif.Background.Steps.Any(s => s.DataTable != null);
         }
 
         // Check scenario steps for DataTables
-        if (!hasDataTable)
+        if (!needsUtils)
         {
-            hasDataTable = crif.Rules
+            needsUtils = crif.Rules
                 .SelectMany(r => r.Scenarios)
                 .SelectMany(s => s.Steps)
                 .Any(s => s.DataTable != null);
         }
 
-        // Add Utils namespace if DataTable found
-        if (hasDataTable && !crif.Usings.Contains("Gherkin.Generator.Utils"))
+        // Check for unimplemented steps
+        if (!needsUtils)
+        {
+            needsUtils = crif.Unimplemented.Count > 0;
+        }
+
+        // Add Utils namespace if needed
+        if (needsUtils && !crif.Usings.Contains("Gherkin.Generator.Utils"))
         {
             crif.Usings.Add("Gherkin.Generator.Utils");
         }

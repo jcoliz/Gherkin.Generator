@@ -3,7 +3,7 @@
 - [ ] For tool, use example test as an integration test
 - [ ] DRY @namespace/@baseclass repeated in every feature file
 - [ ] Consider out-of-the-box defaults for both
-- [ ] When having stubs, ensure utils is in includes. Then uncomment step definition? (Not sure if that will cause issues)
+- [ ] Try to uncomment step definition (Not sure if that will cause issues)
 
 What would out of the box defaults look like?
 
