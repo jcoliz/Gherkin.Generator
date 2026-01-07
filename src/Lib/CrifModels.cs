@@ -497,3 +497,48 @@ public class UnimplementedStepCrif
     /// </summary>
     public List<ParameterCrif> Parameters { get; set; } = [];
 }
+
+/// <summary>
+/// Metadata about the project discovered during compilation analysis.
+/// </summary>
+/// <remarks>
+/// Used to provide default values for namespace and base class when not explicitly
+/// specified in feature file tags.
+/// </remarks>
+public class ProjectMetadata
+{
+    /// <summary>
+    /// Information about the class decorated with [GeneratedTestBase] attribute.
+    /// </summary>
+    public GeneratedTestBaseInfo? DefaultTestBase { get; set; }
+
+    /// <summary>
+    /// Namespace to use for generated test classes.
+    /// </summary>
+    /// <remarks>
+    /// Taken from the UseNamespace property of the [GeneratedTestBase] attribute,
+    /// or defaults to the namespace of the decorated class if not specified.
+    /// </remarks>
+    public string GeneratedNamespace { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Information about a class decorated with [GeneratedTestBase] attribute.
+/// </summary>
+public class GeneratedTestBaseInfo
+{
+    /// <summary>
+    /// Simple class name (e.g., "FunctionalTestBase").
+    /// </summary>
+    public string ClassName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Namespace containing the base class (e.g., "MyApp.Tests").
+    /// </summary>
+    public string Namespace { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Fully qualified name including namespace (e.g., "MyApp.Tests.FunctionalTestBase").
+    /// </summary>
+    public string FullName { get; set; } = string.Empty;
+}

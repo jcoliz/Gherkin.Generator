@@ -19,7 +19,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <returns>Code-Ready Intermediate Form ready for template rendering.</returns>
     public FeatureCrif Convert(GherkinDocument feature)
     {
-        return Convert(feature, string.Empty);
+        return Convert(feature, string.Empty, null);
     }
 
     /// <summary>
@@ -30,6 +30,18 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <returns>Code-Ready Intermediate Form ready for template rendering.</returns>
     public FeatureCrif Convert(GherkinDocument feature, string fileName)
     {
+        return Convert(feature, fileName, null);
+    }
+
+    /// <summary>
+    /// Converts a Gherkin feature document to a CRIF object with a specified filename and project metadata.
+    /// </summary>
+    /// <param name="feature">Parsed Gherkin feature document.</param>
+    /// <param name="fileName">Name of the feature file without extension (e.g., "BankImport").</param>
+    /// <param name="projectMetadata">Project metadata for default namespace and base class.</param>
+    /// <returns>Code-Ready Intermediate Form ready for template rendering.</returns>
+    public FeatureCrif Convert(GherkinDocument feature, string fileName, ProjectMetadata? projectMetadata)
+    {
         var crif = new FeatureCrif
         {
             FileName = fileName
@@ -39,6 +51,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         {
             ProcessFeatureMetadata(feature.Feature, crif);
             ProcessFeatureTags(feature.Feature.Tags, crif);
+            ApplyProjectDefaults(crif, projectMetadata);
             ProcessBackground(feature.Feature, crif);
             ProcessFeatureChildren(feature.Feature.Children, crif);
             AddUtilsNamespaceIfNeeded(crif);
@@ -172,6 +185,36 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         if (!crif.Usings.Contains(usingValue))
         {
             crif.Usings.Add(usingValue);
+        }
+    }
+
+    /// <summary>
+    /// Applies project-level defaults from project metadata when feature tags don't override them.
+    /// </summary>
+    /// <param name="crif">The CRIF object to populate.</param>
+    /// <param name="projectMetadata">Project metadata containing defaults.</param>
+    private static void ApplyProjectDefaults(FeatureCrif crif, ProjectMetadata? projectMetadata)
+    {
+        if (projectMetadata == null)
+            return;
+
+        // Apply namespace default if not explicitly set by @namespace tag
+        if (string.IsNullOrEmpty(crif.Namespace) && !string.IsNullOrEmpty(projectMetadata.GeneratedNamespace))
+        {
+            crif.Namespace = projectMetadata.GeneratedNamespace;
+        }
+
+        // Apply base class default if not explicitly set by @baseclass tag
+        if (string.IsNullOrEmpty(crif.BaseClass) && projectMetadata.DefaultTestBase != null)
+        {
+            crif.BaseClass = projectMetadata.DefaultTestBase.ClassName;
+            
+            // Add base class namespace to usings
+            if (!string.IsNullOrEmpty(projectMetadata.DefaultTestBase.Namespace) &&
+                !crif.Usings.Contains(projectMetadata.DefaultTestBase.Namespace))
+            {
+                crif.Usings.Add(projectMetadata.DefaultTestBase.Namespace);
+            }
         }
     }
 

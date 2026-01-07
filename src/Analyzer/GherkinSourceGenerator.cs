@@ -44,22 +44,29 @@ public class GherkinSourceGenerator : IIncrementalGenerator
                 Content = file.GetText(cancellationToken)?.ToString() ?? string.Empty
             });
 
-        // 3. Analyze compilation to discover step definitions
+        // 3. Analyze compilation to discover step definitions and project metadata
         var stepMetadataProvider = context.CompilationProvider
             .Select((compilation, cancellationToken) =>
             {
                 return StepMethodAnalyzer.Analyze(compilation);
             });
 
-        // 4. Combine template, feature files, and step metadata
+        var projectMetadataProvider = context.CompilationProvider
+            .Select((compilation, cancellationToken) =>
+            {
+                return StepMethodAnalyzer.AnalyzeProjectMetadata(compilation);
+            });
+
+        // 4. Combine template, feature files, step metadata, and project metadata
         var combinedProvider = templateProvider
             .Combine(featureFilesProvider.Collect())
-            .Combine(stepMetadataProvider);
+            .Combine(stepMetadataProvider)
+            .Combine(projectMetadataProvider);
 
         // 5. Generate source for each feature file
         context.RegisterSourceOutput(combinedProvider, (spc, source) =>
         {
-            var ((template, featureFiles), stepMetadata) = source;
+            var (((template, featureFiles), stepMetadata), projectMetadata) = source;
 
             // Skip if no template found
             if (string.IsNullOrEmpty(template))
@@ -81,7 +88,7 @@ public class GherkinSourceGenerator : IIncrementalGenerator
             {
                 try
                 {
-                    GenerateTestForFeature(spc, featureFile.FileName, featureFile.Content, template, stepMetadata);
+                    GenerateTestForFeature(spc, featureFile.FileName, featureFile.Content, template, stepMetadata, projectMetadata);
                 }
                 catch (System.Exception ex)
                 {
@@ -107,7 +114,8 @@ public class GherkinSourceGenerator : IIncrementalGenerator
         string fileName,
         string featureContent,
         string template,
-        StepMetadataCollection stepMetadata)
+        StepMetadataCollection stepMetadata,
+        ProjectMetadata projectMetadata)
     {
         // 1. Parse Gherkin feature
         var parser = new Parser();
@@ -160,7 +168,7 @@ public class GherkinSourceGenerator : IIncrementalGenerator
 
         // 2. Convert Gherkin to CRIF
         var converter = new GherkinToCrifConverter(stepMetadata);
-        var crif = converter.Convert(gherkinDocument, fileName);
+        var crif = converter.Convert(gherkinDocument, fileName, projectMetadata);
 
         // 3. Report warnings for unimplemented steps (optional)
         if (crif.Unimplemented.Any())

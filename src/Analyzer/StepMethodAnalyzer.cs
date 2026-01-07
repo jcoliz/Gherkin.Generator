@@ -46,6 +46,79 @@ public static class StepMethodAnalyzer
     }
 
     /// <summary>
+    /// Analyzes a compilation to discover project metadata including the default test base class.
+    /// </summary>
+    /// <param name="compilation">The compilation containing syntax trees to analyze.</param>
+    /// <returns>A ProjectMetadata object containing discovered project information.</returns>
+    public static ProjectMetadata AnalyzeProjectMetadata(Compilation compilation)
+    {
+        var metadata = new ProjectMetadata();
+
+        foreach (var syntaxTree in compilation.SyntaxTrees)
+        {
+            var semanticModel = compilation.GetSemanticModel(syntaxTree);
+            var root = syntaxTree.GetRoot();
+
+            // Find all class declarations
+            var classDeclarations = root.DescendantNodes().OfType<ClassDeclarationSyntax>();
+
+            foreach (var classDecl in classDeclarations)
+            {
+                var result = FindGeneratedTestBase(classDecl, semanticModel);
+                if (result.HasValue)
+                {
+                    metadata.DefaultTestBase = result.Value.TestBase;
+                    metadata.GeneratedNamespace = result.Value.GeneratedNamespace;
+                    return metadata; // Found it, no need to continue searching
+                }
+            }
+        }
+
+        return metadata;
+    }
+
+    /// <summary>
+    /// Checks if a class is decorated with [GeneratedTestBase] attribute and extracts its metadata.
+    /// </summary>
+    /// <param name="classDecl">The class declaration syntax node.</param>
+    /// <param name="semanticModel">Semantic model for symbol resolution.</param>
+    /// <returns>Tuple with GeneratedTestBaseInfo and generated namespace if attribute found; otherwise, null.</returns>
+    private static (GeneratedTestBaseInfo TestBase, string GeneratedNamespace)? FindGeneratedTestBase(ClassDeclarationSyntax classDecl, SemanticModel semanticModel)
+    {
+        var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
+        if (classSymbol == null)
+            return null;
+
+        // Look for GeneratedTestBase attribute
+        var attr = classSymbol.GetAttributes()
+            .FirstOrDefault(a => a.AttributeClass?.Name == "GeneratedTestBaseAttribute");
+
+        if (attr == null)
+            return null;
+
+        var className = classSymbol.Name;
+        var namespaceName = classSymbol.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+        var fullName = classSymbol.ToDisplayString();
+
+        // Get UseNamespace property from named arguments
+        var useNamespace = attr.NamedArguments
+            .FirstOrDefault(kvp => kvp.Key == "UseNamespace")
+            .Value.Value?.ToString();
+
+        // If UseNamespace not specified, default to the class's namespace
+        var generatedNamespace = string.IsNullOrEmpty(useNamespace) ? namespaceName : useNamespace;
+
+        var testBase = new GeneratedTestBaseInfo
+        {
+            ClassName = className,
+            Namespace = namespaceName,
+            FullName = fullName
+        };
+
+        return (testBase, generatedNamespace);
+    }
+
+    /// <summary>
     /// Analyzes a single class declaration for step definition methods.
     /// </summary>
     /// <param name="classDecl">The class declaration syntax node.</param>
