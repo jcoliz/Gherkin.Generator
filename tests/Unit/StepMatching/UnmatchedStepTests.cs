@@ -151,4 +151,72 @@ public class UnmatchedStepTests
         // And: All three steps should be in Unimplemented list
         Assert.That(crif.Unimplemented, Has.Count.EqualTo(3));
     }
+
+    [Test]
+    public void Convert_ScenarioOutlineWithUnmatchedStep_MarksAsExplicitAndAddsToUnimplemented()
+    {
+        // Given: An empty step metadata collection
+        var stepMetadata = new StepMetadataCollection();
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin scenario outline with unmatched steps
+        var gherkin = """
+            Feature: Account Management
+
+            Scenario Outline: Create account with balance
+              Given I have <amount> dollars
+              When I create an account
+              Then the balance should be <amount>
+
+            Examples:
+              | amount |
+              | 100    |
+              | 200    |
+            """;
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: All steps should be in Unimplemented list
+        Assert.That(crif.Unimplemented, Has.Count.EqualTo(3));
+        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("I have <amount> dollars"));
+        Assert.That(crif.Unimplemented[1].Text, Is.EqualTo("I create an account"));
+        Assert.That(crif.Unimplemented[2].Text, Is.EqualTo("the balance should be <amount>"));
+
+        // And: Scenario should be marked as explicit
+        var scenario = crif.Rules[0].Scenarios[0];
+        Assert.That(scenario.IsExplicit, Is.True);
+
+        // And: Explicit reason should be "steps_in_progress"
+        Assert.That(scenario.ExplicitReason, Is.EqualTo("steps_in_progress"));
+
+        // And: All steps should have Owner="this"
+        Assert.That(scenario.Steps[0].Owner, Is.EqualTo("this"));
+        Assert.That(scenario.Steps[1].Owner, Is.EqualTo("this"));
+        Assert.That(scenario.Steps[2].Owner, Is.EqualTo("this"));
+
+        // And: Steps with placeholders should have arguments matching the parameter
+        Assert.That(scenario.Steps[0].Arguments, Has.Count.EqualTo(1), "Step 'I have <amount> dollars' should have 1 argument");
+        Assert.That(scenario.Steps[0].Arguments[0].Value, Is.EqualTo("amount"), "Step argument should match parameter name");
+        
+        // And: Steps without placeholders should have no arguments
+        Assert.That(scenario.Steps[1].Arguments, Has.Count.EqualTo(0), "Step 'I create an account' should have no arguments");
+        
+        // And: Step with placeholder should have argument
+        Assert.That(scenario.Steps[2].Arguments, Has.Count.EqualTo(1), "Step 'the balance should be <amount>' should have 1 argument");
+        Assert.That(scenario.Steps[2].Arguments[0].Value, Is.EqualTo("amount"), "Step argument should match parameter name");
+
+        // And: Usings should include Gherkin.Generator.Utils namespace
+        Assert.That(crif.Usings, Contains.Item("Gherkin.Generator.Utils"));
+
+        // And: Scenario should still have parameters from examples
+        Assert.That(scenario.Parameters, Has.Count.EqualTo(1));
+        Assert.That(scenario.Parameters[0].Name, Is.EqualTo("amount"));
+
+        // And: Test cases should be generated
+        Assert.That(scenario.TestCases, Has.Count.EqualTo(2));
+        Assert.That(scenario.TestCases[0], Is.EqualTo("\"100\""));
+        Assert.That(scenario.TestCases[1], Is.EqualTo("\"200\""));
+    }
 }

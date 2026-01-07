@@ -243,7 +243,7 @@ public partial class TransactionRecordFieldsFeature_Tests : FunctionalTestBase
     #endregion
 
 
-    #region Unimplemented Steps
+    #region Stubs for Unimplemented Steps
     /// <summary>
     /// Given a new feature is being implemented
     /// </summary>

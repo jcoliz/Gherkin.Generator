@@ -563,7 +563,7 @@ public class FunctionalTestGeneratorTests
         var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
         // Then: Stub methods are generated
-        Assert.That(result, Does.Contain("#region Unimplemented Steps"));
+        Assert.That(result, Does.Contain("#region Stubs for Unimplemented Steps"));
         Assert.That(result, Does.Contain("/// Given a new feature exists"));
         Assert.That(result, Does.Contain("async Task GivenANewFeatureExists()"));
         Assert.That(result, Does.Contain("throw new NotImplementedException();"));
@@ -661,7 +661,7 @@ public class FunctionalTestGeneratorTests
         Assert.That(generatedCode, Does.Contain("var table = new DataTable("));
         Assert.That(generatedCode, Does.Contain("[TestCase(\"/weather\")]"));
         Assert.That(generatedCode, Does.Contain("[Explicit]"));
-        Assert.That(generatedCode, Does.Contain("#region Unimplemented Steps"));
+        Assert.That(generatedCode, Does.Contain("#region Stubs for Unimplemented Steps"));
 
         // And: Attach the generated file to test output
         TestContext.AddTestAttachment(outputPath, "Generated test file from sample YAML");

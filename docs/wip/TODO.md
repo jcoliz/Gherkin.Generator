@@ -1,4 +1,2 @@
 - [ ] Maybe call "unimplemented" as "stub" instead?
-- [ ] Stubs don't include parameter from scenario outline
 - [ ] For tool, use example test as an integration test
-- [ ] Consider out-of-the-box defaults for both

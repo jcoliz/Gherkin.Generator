@@ -646,12 +646,39 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
 
         step.Method = ConvertToMethodName(step.Text);
 
+        // Extract scenario outline placeholders (e.g., <amount>) and add as arguments
+        ExtractScenarioOutlinePlaceholders(step);
+
         if (step.DataTable != null)
         {
             step.Arguments.Add(new ArgumentCrif
             {
                 Value = step.DataTable.VariableName,
-                Last = true
+                Last = false
+            });
+        }
+
+        // Mark the last argument
+        MarkLastArgument(step);
+    }
+
+    /// <summary>
+    /// Extracts scenario outline placeholders from step text and adds them as arguments.
+    /// </summary>
+    /// <param name="step">The step to process.</param>
+    private static void ExtractScenarioOutlinePlaceholders(StepCrif step)
+    {
+        // Find all placeholders in the format <parameterName>
+        var regex = new System.Text.RegularExpressions.Regex(@"<(\w+)>");
+        var matches = regex.Matches(step.Text);
+
+        foreach (System.Text.RegularExpressions.Match match in matches)
+        {
+            var parameterName = match.Groups[1].Value;
+            step.Arguments.Add(new ArgumentCrif
+            {
+                Value = parameterName,
+                Last = false
             });
         }
     }
@@ -677,14 +704,34 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
                 Parameters = []
             };
 
+            // Extract scenario outline placeholders and add as parameters
+            var regex = new System.Text.RegularExpressions.Regex(@"<(\w+)>");
+            var matches = regex.Matches(step.Text);
+            foreach (System.Text.RegularExpressions.Match match in matches)
+            {
+                var parameterName = match.Groups[1].Value;
+                unimplementedStep.Parameters.Add(new ParameterCrif
+                {
+                    Type = "string",
+                    Name = parameterName,
+                    Last = false
+                });
+            }
+
             if (step.DataTable != null)
             {
                 unimplementedStep.Parameters.Add(new ParameterCrif
                 {
                     Type = "DataTable",
                     Name = "table",
-                    Last = true
+                    Last = false
                 });
+            }
+
+            // Mark the last parameter
+            if (unimplementedStep.Parameters.Count > 0)
+            {
+                unimplementedStep.Parameters[unimplementedStep.Parameters.Count - 1].Last = true;
             }
 
             crif.Unimplemented.Add(unimplementedStep);
