@@ -9,6 +9,8 @@
     <IsTestProject>true</IsTestProject>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>obj\GeneratedFiles</CompilerGeneratedFilesOutputPath>
+    <!-- This example intentionally emits a stub method, which will trigger this warning -->
+    <NoWarn>$(NoWarn);GHERKIN004</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,7 +21,7 @@
     <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
     
     <!-- Gherkin.Generator analyzer package (includes Utils as transitive dependency) -->
-    <PackageReference Include="Gherkin.Generator" Version="0.1.4" />
+    <PackageReference Include="Gherkin.Generator" Version="0.1.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +30,7 @@
 
   <ItemGroup>
     <AdditionalFiles Include="Features\*.feature" />
+    <!-- We use the latest default template from the project to stay current -->
     <AdditionalFiles Include="..\..\templates\Default.mustache" />
   </ItemGroup>
 

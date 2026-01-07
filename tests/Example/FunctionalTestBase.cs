@@ -1,8 +1,11 @@
+using Gherkin.Generator.Utils;
+
 namespace Gherkin.Generator.Tests.Example;
 
 /// <summary>
 /// Base class for functional tests with shopping cart capabilities.
 /// </summary>
+[GeneratedTestBase(UseNamespace = "Gherkin.Generator.Tests.Example.Features")]
 public class FunctionalTestBase
 {
     /// <summary>

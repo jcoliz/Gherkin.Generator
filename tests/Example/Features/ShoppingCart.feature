@@ -1,5 +1,3 @@
-@namespace:Gherkin.Generator.Tests.Example.Features
-@baseclass:Gherkin.Generator.Tests.Example.FunctionalTestBase
 Feature: Shopping Cart
   As a customer
   I want to add items to my cart
