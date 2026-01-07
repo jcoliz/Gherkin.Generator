@@ -28,11 +28,7 @@
 
   <ItemGroup>
     <AdditionalFiles Include="Features\*.feature" />
-    <AdditionalFiles Include="Templates\Default.mustache" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\templates\Default.mustache" Link="Templates\Default.mustache" />
+    <AdditionalFiles Include="..\..\templates\Default.mustache" />
   </ItemGroup>
 
 </Project>
