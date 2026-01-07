@@ -18,25 +18,50 @@ Complete guide for using Gherkin.Generator to create behavior-driven tests with 
 Add the package to your test project:
 
 ```xml
-<PackageReference Include="Gherkin.Generator" Version="0.0.1" />
+<PackageReference Include="Gherkin.Generator" Version="0.1.5" />
 ```
 
 ### Basic Setup
 
-1. **Create a Features directory** in your test project
-2. **Copy the template** from [`templates/Default.mustache`](../templates/Default.mustache)
-3. **Configure your project** to include feature files:
+1. **Create a test base class** decorated with the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute:
 
-```xml
-<ItemGroup>
-  <AdditionalFiles Include="Features\*.feature" />
-  <AdditionalFiles Include="Templates\Default.mustache" />
-</ItemGroup>
-```
+    ```csharp
+    using Gherkin.Generator.Utils;
+    using NUnit.Framework;
+
+    namespace MyApp.Tests;
+
+    [GeneratedTestBase]
+    public class FunctionalTestBase
+    {
+        [SetUp]
+        public void Setup()
+        {
+            // Common test setup
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            // Common test cleanup
+        }
+    }
+    ```
+
+2. **Create a Features directory** in your test project
+3. **Copy the template** from [`templates/Default.mustache`](../templates/Default.mustache) to your project
+4. **Configure your project** to include feature files and the template:
+
+    ```xml
+    <ItemGroup>
+      <AdditionalFiles Include="Features\*.feature" />
+      <AdditionalFiles Include="Templates\Default.mustache" />
+    </ItemGroup>
+    ```
 
 ### Retaining Generated Files
 
-**Important:** Configure your project to emit generated files to a visible location for debugging.
+**Pro Tip:** Configure your project to emit generated files to a visible location for debugging.
 
 Add to your `.csproj`:
 
@@ -57,6 +82,40 @@ This creates an `obj/GeneratedFiles/` directory with all generated test code. Be
 The `obj/` directory is typically in `.gitignore`, which is appropriate since generated files should be regenerated on each build. This keeps your repository clean while making generated code easily accessible for debugging.
 
 **Pro tip:** Keep these files open in your editor while authoring feature files to see real-time code generation results.
+
+### Configuring the Test Base Class
+
+The [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute identifies your test base class and provides configuration options:
+
+**Key benefits:**
+- **Centralized configuration** - Set namespace and base class once, not in every feature file
+- **Cleaner feature files** - No need for `@namespace` and `@baseclass` tags
+- **Type safety** - Compiler-verified base class reference
+- **Maintainability** - Change configuration in one place
+
+#### Optional: Customizing the Namespace
+
+By default, generated test classes use the same namespace as your base class. To use a different namespace, specify the `UseNamespace` parameter:
+
+```csharp
+using Gherkin.Generator.Utils;
+using NUnit.Framework;
+
+namespace MyApp.Tests;
+
+[GeneratedTestBase(UseNamespace = "MyApp.Tests.Features")]
+public class FunctionalTestBase
+{
+    // Implementation
+}
+```
+
+**The `UseNamespace` parameter:**
+- Sets the namespace for all generated test classes
+- If omitted, uses the base class's namespace (e.g., `MyApp.Tests`)
+- Can be overridden per-feature using `@namespace:` tag in specific feature files
+
+See the complete example in [`tests/Example/FunctionalTestBase.cs`](../tests/Example/FunctionalTestBase.cs).
 
 ## Writing Feature Files
 
@@ -157,22 +216,25 @@ Examples:
   | /about    | About Us  |
 ```
 
-### Feature Tags
+### Feature Tags (Optional Overrides)
 
-Configure namespace, base class, and imports:
+When using the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute, feature tags are **optional** and only needed to override defaults.
+
+**Override tags (when needed):**
+- `@namespace:` - Override the default namespace for this feature only
+- `@baseclass:` - Override the default base class (supports fully-qualified names)
+- `@using:` - Add using directives (can use multiple times)
+- `@explicit` - Mark scenario as explicit (requires manual execution)
+
+**Example with overrides:**
 
 ```gherkin
-@namespace:MyApp.Tests.Functional.Features
-@baseclass:FunctionalTestBase
+@namespace:MyApp.Tests.Integration
 @using:System.Collections.Generic
 Feature: User Login
 ```
 
-**Common tags:**
-- `@namespace:` - Set the namespace for generated test class
-- `@baseclass:` - Set the base class (supports fully-qualified names)
-- `@using:` - Add using directives (can use multiple times)
-- `@explicit` - Mark scenario as explicit (requires manual execution)
+**Best practice:** Avoid tags unless you need feature-specific overrides. Use the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute for project-wide defaults.
 
 ## Authoring Step Definitions
 
@@ -270,19 +332,42 @@ public class NavigationSteps
 }
 ```
 
-### Recommended Pattern: Interface-Based Context
+### Simple Pattern: Direct Context Reference
 
-For better separation, define an interface for test capabilities:
+The simplest pattern is for step classes to directly reference the test base class:
 
 ```csharp
-// Infrastructure.TestBase.cs
+public class NavigationSteps
+{
+    private readonly FunctionalTestBase _context;
+
+    public NavigationSteps(FunctionalTestBase context)
+    {
+        _context = context;
+    }
+
+    [Given("the application is running")]
+    public async Task GivenTheApplicationIsRunning()
+    {
+        await _context.LaunchApplicationAsync();
+    }
+}
+```
+
+This works seamlessly with the default template's step construction logic.
+
+### Recommended Pattern: Interface-Based Context
+
+For better separation and testability, define an interface for test capabilities:
+
+```csharp
 public interface ITestCapabilities
 {
     HttpClient HttpClient { get; }
     Task LaunchApplicationAsync();
-    // Other shared capabilities
 }
 
+[GeneratedTestBase(UseNamespace = "MyApp.Tests.Features")]
 public class FunctionalTestBase : ITestCapabilities
 {
     public HttpClient HttpClient { get; private set; }
@@ -294,7 +379,7 @@ public class FunctionalTestBase : ITestCapabilities
 }
 ```
 
-Step classes depend on the interface, not the concrete base class:
+Step classes depend on the interface:
 
 ```csharp
 public class NavigationSteps
@@ -314,13 +399,10 @@ public class NavigationSteps
 }
 ```
 
-This approach works with the default template since `FunctionalTestBase` implements `ITestCapabilities`. Benefits:
-
+**Benefits:**
 - **Testability** - Step classes can be unit tested with mocked capabilities
 - **Flexibility** - Multiple test base classes can implement the same interface
 - **Clarity** - Interface explicitly declares what capabilities steps need
-
-You can modify the template if you need different construction logic.
 
 ### Organizing Step Classes
 
@@ -412,12 +494,13 @@ public class {{FileName}}_Tests : {{BaseClass}}
 Steps without matching definitions generate stub methods:
 
 ```csharp
-#region Unimplemented Steps
+#region Stubs for Unimplemented Steps
 
 /// <summary>
 /// Given I am logged in
 /// </summary>
-async Task IAmLoggedIn()
+[Given("I am logged in")]
+public async Task IAmLoggedIn()
 {
     throw new NotImplementedException();
 }
@@ -425,7 +508,7 @@ async Task IAmLoggedIn()
 #endregion
 ```
 
-Implement these stubs in your step classes, then rebuild.
+Copy these stubs to your step classes, implement them, and then rebuild.
 
 ### Explicit Tests
 
@@ -494,9 +577,10 @@ Scenario outlines support only one examples table per scenario. For multiple tes
 ### Generated Code Issues
 
 **Problem:** Generated code doesn't compile
-- **Check:** Namespace tags set correctly
+- **Check:** [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute configured correctly
+- **Check:** `UseNamespace` parameter matches your desired namespace
 - **Check:** Base class exists and is accessible
-- **Check:** Using directives include required namespaces
+- **Check:** Using directives include required namespaces (add with `@using:` tags if needed)
 
 **Problem:** Step methods not found at runtime
 - **Check:** Step classes are instantiated properly
@@ -533,11 +617,11 @@ See [`tests/Example`](../tests/Example/) for a complete, working shopping cart e
 The example builds and all tests pass. It's a great starting point for understanding how all the pieces fit together.
 
 **Key files:**
-- [`Features/ShoppingCart.feature`](../tests/Example/Features/ShoppingCart.feature) - Complete Gherkin scenarios
+- [`Features/ShoppingCart.feature`](../tests/Example/Features/ShoppingCart.feature) - Clean Gherkin scenarios (no tags needed!)
+- [`FunctionalTestBase.cs`](../tests/Example/FunctionalTestBase.cs) - Test base class with `[GeneratedTestBase]` attribute
 - [`Steps/ShoppingCartSteps.cs`](../tests/Example/Steps/ShoppingCartSteps.cs) - Shopping cart step definitions
 - [`Steps/ApplicationSteps.cs`](../tests/Example/Steps/ApplicationSteps.cs) - Application setup steps
 - [`ShoppingCart.cs`](../tests/Example/ShoppingCart.cs) - Simple cart implementation
-- [`FunctionalTestBase.cs`](../tests/Example/FunctionalTestBase.cs) - Test base class
 
 To run the example:
 
