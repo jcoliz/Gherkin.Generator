@@ -1,2 +1,3 @@
 - [ ] Maybe call "unimplemented" as "stub" instead?
 - [ ] For tool, use example test as an integration test
+- [ ] Pack default template in with nuget package. Auto-install it to users workspace
