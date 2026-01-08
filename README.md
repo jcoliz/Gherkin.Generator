@@ -15,29 +15,26 @@ A source generator that converts Gherkin `.feature` files into executable C# tes
 - **Flexible templating** - Uses Mustache templates for customizable code generation
 - **Step matching** - Discovers and maps Gherkin steps to your step implementation methods
 
-## Installation
+## Why Gherkin.Generator?
 
-Add to your test project:
+### Advantages Over Reqnroll/SpecFlow
 
-```xml
-<PackageReference Include="Gherkin.Generator" Version="0.0.1" />
-```
+- **⚡ Zero runtime overhead** - All code generation happens at compile-time; no reflection or runtime step discovery
+- **🔍 Transparent generation** - See exactly what code is generated in `obj/GeneratedFiles/` for debugging and understanding
+- **✅ Build-time validation** - Missing or mismatched steps are caught during compilation, not at test execution
+- **🎨 Full template control** - Customize generated code via Mustache templates to match your exact infrastructure needs
+- **📦 Framework agnostic** - Generate for NUnit, xUnit, MSTest, or any custom test framework
+- **🚀 Faster test execution** - Direct method calls without runtime binding overhead
+- **📋 Automatic stub generation** - Generates stub methods for unimplemented steps with documentation
+- **🛠️ Simpler setup** - Just add package, configure `[GeneratedTestBase]` attribute, and include files in `.csproj`
 
-## Quick Start
+### Key Trade-offs
 
-1. **Write feature files** - Create `.feature` files with Gherkin scenarios
-2. **Get template** - Copy [`Default.mustache`](templates/Default.mustache) to your project
-3. **Add to project** - Include as AdditionalFiles in `.csproj`:
-   ```xml
-   <ItemGroup>
-     <AdditionalFiles Include="Features\*.feature" />
-     <AdditionalFiles Include="path\to\Default.mustache" />
-   </ItemGroup>
-   ```
-4. **Define step methods** - Write step implementations with `[Given]`, `[When]`, `[Then]` attributes
-5. **Build** - Test methods generate automatically
-
-Customize the template to match your test infrastructure and conventions.
+- **Maturity**: Reqnroll is more mature with richer IDE tooling (Visual Studio/Rider extensions)
+- **Extensibility**: Reqnroll offers more runtime flexibility with plugins, hooks, and dependency injection
+- **Development workflow**: Reqnroll's runtime binding enables hot reload—modify step implementations and immediately re-run tests without rebuilding.
+ 
+Gherkin.Generator optimizes for **performance, transparency, and control** at the cost of runtime flexibility. Choose Reqnroll if you need advanced runtime features and mature IDE integration. Choose Gherkin.Generator if you want compile-time validation, minimal overhead, and full control over generated code.
 
 ## Documentation
 
