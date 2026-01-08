@@ -19,10 +19,10 @@ A source generator that converts Gherkin `.feature` files into executable C# tes
 
 ### Advantages Over Reqnroll/SpecFlow
 
-- **⚡ Zero runtime overhead** - All code generation happens at compile-time; no reflection or runtime step discovery
-- **🔍 Transparent generation** - See exactly what code is generated in `obj/GeneratedFiles/` for debugging and understanding
+- **⚡ Zero runtime overhead** - All code generation happens at compile-time; no reflection or runtime discovery
+- **🔍 Transparent generation** - See exactly what code is generated for debugging and understanding
 - **✅ Build-time validation** - Missing or mismatched steps are caught during compilation, not at test execution
-- **🎨 Full template control** - Customize generated code via Mustache templates to match your exact infrastructure needs
+- **🎨 Full template control** - Customize generated code via Mustache templates to match any infrastructure
 - **📦 Framework agnostic** - Generate for NUnit, xUnit, MSTest, or any custom test framework
 - **🚀 Faster test execution** - Direct method calls without runtime binding overhead
 - **📋 Automatic stub generation** - Generates stub methods for unimplemented steps with documentation
