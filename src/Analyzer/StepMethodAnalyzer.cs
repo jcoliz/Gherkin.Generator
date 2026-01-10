@@ -106,7 +106,7 @@ public static class StepMethodAnalyzer
             .Value.Value?.ToString();
 
         // If UseNamespace not specified, default to the class's namespace
-        var generatedNamespace = string.IsNullOrEmpty(useNamespace) ? namespaceName : useNamespace;
+        var generatedNamespace = string.IsNullOrEmpty(useNamespace) ? namespaceName : useNamespace!;
 
         var testBase = new GeneratedTestBaseInfo
         {
