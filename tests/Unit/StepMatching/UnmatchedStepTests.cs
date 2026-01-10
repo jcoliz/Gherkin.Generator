@@ -256,4 +256,53 @@ public class UnmatchedStepTests
         // And: Method name should be generated without the integer (IHaveOranges)
         Assert.That(step.Method, Is.EqualTo("IHaveOranges"));
     }
+
+    [Test]
+    public void Convert_WithUnmatchedStepContainingQuotedString_DetectsQuotedStringAsParameter()
+    {
+        // Given: An empty step metadata collection
+        var stepMetadata = new StepMetadataCollection();
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin feature with a step containing an integer and quoted string
+        var gherkin = """
+            Feature: Transaction Management
+
+            Scenario: Add transactions with payee
+              Given 5 transactions with payee "Something brand new"
+            """;
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Step should be in Unimplemented list
+        Assert.That(crif.Unimplemented, Has.Count.EqualTo(1));
+        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("5 transactions with payee \"Something brand new\""));
+        Assert.That(crif.Unimplemented[0].Keyword, Is.EqualTo(NormalizedKeyword.Given));
+
+        // And: Step should have detected both the integer and quoted string as parameters
+        Assert.That(crif.Unimplemented[0].Parameters, Has.Count.EqualTo(2));
+        
+        // And: First parameter should be the integer
+        Assert.That(crif.Unimplemented[0].Parameters[0].Type, Is.EqualTo("int"));
+        Assert.That(crif.Unimplemented[0].Parameters[0].Name, Is.EqualTo("value1"));
+        
+        // And: Second parameter should be the quoted string
+        Assert.That(crif.Unimplemented[0].Parameters[1].Type, Is.EqualTo("string"));
+        Assert.That(crif.Unimplemented[0].Parameters[1].Name, Is.EqualTo("string1"));
+
+        // And: Step should have both parameters as arguments
+        var step = crif.Rules[0].Scenarios[0].Steps[0];
+        Assert.That(step.Arguments, Has.Count.EqualTo(2), "Both integer and string should be detected as parameters");
+        
+        // And: First argument should be the integer value
+        Assert.That(step.Arguments[0].Value, Is.EqualTo("5"));
+        
+        // And: Second argument should be the quoted string (with quotes preserved)
+        Assert.That(step.Arguments[1].Value, Is.EqualTo("\"Something brand new\""));
+        
+        // And: Method name should be generated without the integer or quoted string (TransactionsWithPayee)
+        Assert.That(step.Method, Is.EqualTo("TransactionsWithPayee"));
+    }
 }

@@ -644,14 +644,17 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     {
         AddToUnimplementedList(crif, step, normalizedKeyword);
 
-        // Generate method name with integers removed
-        step.Method = ConvertToMethodNameWithoutIntegers(step.Text);
+        // Generate method name with integers and quoted strings removed
+        step.Method = ConvertToMethodNameWithoutParameters(step.Text);
 
         // Extract scenario outline placeholders (e.g., <amount>) and add as arguments
         ExtractScenarioOutlinePlaceholders(step);
 
         // Extract integers and add as arguments
         ExtractIntegerParameters(step);
+
+        // Extract quoted strings and add as arguments
+        ExtractQuotedStringParameters(step);
 
         if (step.DataTable != null)
         {
@@ -667,15 +670,16 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     }
 
     /// <summary>
-    /// Converts step text to a method name, removing integers.
+    /// Converts step text to a method name, removing integers and quoted strings.
     /// </summary>
     /// <param name="text">The step text.</param>
-    /// <returns>PascalCase method name without integers.</returns>
-    private static string ConvertToMethodNameWithoutIntegers(string text)
+    /// <returns>PascalCase method name without integers or quoted strings.</returns>
+    private static string ConvertToMethodNameWithoutParameters(string text)
     {
-        // Remove integers from the text before converting to method name
-        var textWithoutIntegers = System.Text.RegularExpressions.Regex.Replace(text, @"\b\d+\b", "");
-        return ConvertToMethodName(textWithoutIntegers);
+        // Remove integers and quoted strings from the text before converting to method name
+        var textWithoutParameters = System.Text.RegularExpressions.Regex.Replace(text, @"\b\d+\b", "");
+        textWithoutParameters = System.Text.RegularExpressions.Regex.Replace(textWithoutParameters, @"""[^""]*""", "");
+        return ConvertToMethodName(textWithoutParameters);
     }
 
     /// <summary>
@@ -696,6 +700,26 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             });
 
         step.Arguments.AddRange(integerArguments);
+    }
+
+    /// <summary>
+    /// Extracts quoted string parameters from step text and adds them as arguments.
+    /// </summary>
+    /// <param name="step">The step to process.</param>
+    private static void ExtractQuotedStringParameters(StepCrif step)
+    {
+        var regex = new System.Text.RegularExpressions.Regex(@"""([^""]*)""");
+        var matches = regex.Matches(step.Text);
+
+        var stringArguments = matches
+            .Cast<System.Text.RegularExpressions.Match>()
+            .Select(match => new ArgumentCrif
+            {
+                Value = match.Value, // Keep quotes in the value
+                Last = false
+            });
+
+        step.Arguments.AddRange(stringArguments);
     }
 
     /// <summary>
@@ -757,16 +781,31 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             // Extract integers and add as parameters with generated names
             var integerRegex = new System.Text.RegularExpressions.Regex(@"\b(\d+)\b");
             var integerMatches = integerRegex.Matches(step.Text);
-            var paramCounter = 1;
+            var valueCounter = 1;
             foreach (System.Text.RegularExpressions.Match match in integerMatches)
             {
                 unimplementedStep.Parameters.Add(new ParameterCrif
                 {
                     Type = "int",
-                    Name = $"value{paramCounter}",
+                    Name = $"value{valueCounter}",
                     Last = false
                 });
-                paramCounter++;
+                valueCounter++;
+            }
+
+            // Extract quoted strings and add as parameters with generated names
+            var stringRegex = new System.Text.RegularExpressions.Regex(@"""[^""]*""");
+            var stringMatches = stringRegex.Matches(step.Text);
+            var stringCounter = 1;
+            foreach (System.Text.RegularExpressions.Match match in stringMatches)
+            {
+                unimplementedStep.Parameters.Add(new ParameterCrif
+                {
+                    Type = "string",
+                    Name = $"string{stringCounter}",
+                    Last = false
+                });
+                stringCounter++;
             }
 
             if (step.DataTable != null)
