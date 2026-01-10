@@ -9,6 +9,8 @@
     <PackageId>Gherkin.Generator</PackageId>
     <Description>Source generator that creates C# test methods from Gherkin feature files for behavior-driven development testing.</Description>
     <PackageTags>gherkin;bdd;source-generator;testing;analyzer</PackageTags>
+    <!-- Ensure content files are copied to project -->
+    <ContentTargetFolders>contentFiles</ContentTargetFolders>
   </PropertyGroup>
 
   <ItemGroup>
@@ -46,6 +48,25 @@
     <None Include="$(OutputPath)\System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(OutputPath)\System.Text.Encodings.Web.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(OutputPath)\System.Threading.Tasks.Extensions.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Pack template files as content -->
+    <None Include="..\..\templates\Default.mustache" Pack="true" PackagePath="contentFiles\any\any\Templates" />
+    <Content Include="..\..\templates\Default.mustache">
+      <PackagePath>contentFiles\any\any\Templates\Default.mustache</PackagePath>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <BuildAction>None</BuildAction>
+      <IncludeInPackage>true</IncludeInPackage>
+    </Content>
+    
+    <None Include="..\..\templates\Default.mustache.md" Pack="true" PackagePath="contentFiles\any\any\Templates" />
+    <Content Include="..\..\templates\Default.mustache.md">
+      <PackagePath>contentFiles\any\any\Templates\Default.mustache.md</PackagePath>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <BuildAction>None</BuildAction>
+      <IncludeInPackage>true</IncludeInPackage>
+    </Content>
   </ItemGroup>
 
   <!-- Custom target to copy dependencies for packing -->
