@@ -164,8 +164,112 @@ Install template as a dotnet tool or global tool. This was rejected because:
 - [ ] No manual template copying required
 - [ ] User Guide reflects new automatic installation
 
+## Implementation Attempts and Results
+
+### Attempt 1: ContentFiles Only
+**Approach**: Package templates using NuGet `contentFiles` feature with `copyToOutput="true"`.
+
+**Result**: ❌ Failed
+- Files packaged correctly in `.nupkg` at `contentFiles/any/any/Templates/`
+- `.nuspec` contains proper `<contentFiles>` metadata
+- **Issue**: SDK-style projects with PackageReference don't automatically copy contentFiles to project directory (this only works with legacy packages.config projects)
+
+### Attempt 2: MSBuild .targets File
+**Approach**: Create [`src/Analyzer/build/Gherkin.Generator.targets`](../../src/Analyzer/build/Gherkin.Generator.targets) with a target that runs `BeforeTargets="BeforeBuild"` to copy templates from NuGet cache to project directory.
+
+**Result**: ❌ Failed
+- `.targets` file packaged in both `build/` and `buildTransitive/` folders for compatibility
+- **Issue**: Target never executes - no "Copied template files" message in build output
+- Likely cause: Analyzer packages may not support automatic import of build targets, or targets run too late (after source generators)
+
+### Attempt 3: MSBuild .props File
+**Approach**: Create [`src/Analyzer/build/Gherkin.Generator.props`](../../src/Analyzer/build/Gherkin.Generator.props) to add templates from NuGet cache directly to `AdditionalFiles` so generator can read them from cache.
+
+**Result**: ❌ Failed
+- `.props` file packaged in both `build/` and `buildTransitive/` folders
+- **Issue**: Props file not imported or templates not added to AdditionalFiles
+- Generator still reports "No .mustache template file found in AdditionalFiles"
+
+### Root Causes Identified
+
+1. **SDK-style Project Limitations**: Modern SDK-style projects with `PackageReference` don't automatically copy `contentFiles` to the project directory like legacy `packages.config` projects did.
+
+2. **Analyzer Package Restrictions**: Analyzer/source generator packages may have limitations on MSBuild integration:
+   - Build `.props` and `.targets` files may not be automatically imported
+   - Or they import too late in the build process (after source generators run)
+
+3. **Timing Issues**: Source generators run very early in the compilation pipeline, before most MSBuild targets execute.
+
+## Alternative Approaches to Consider
+
+### Option 1: Keep Manual Installation (Recommended for Now)
+**Pros**:
+- Known to work
+- Simple and transparent
+- Users can easily customize
+
+**Cons**:
+- Extra step for users
+- Must remember to update template when upgrading
+
+**Implementation**: Improve documentation in User Guide with clear instructions.
+
+### Option 2: Embedded Template with Auto-Export
+**Approach**: Embed Default.mustache as a resource in the generator assembly. If generator doesn't find a template in AdditionalFiles, automatically write the embedded template to `Templates/Default.mustache`.
+
+**Pros**:
+- No manual installation required
+- Template version always matches generator
+
+**Cons**:
+- Requires generator to write to file system (may have permissions issues)
+- Less discoverable for users who want to customize
+- Complicates the generator code
+
+### Option 3: Dotnet New Template
+**Approach**: Create a `dotnet new` project template that scaffolds a complete test project with template, base class, and sample feature file.
+
+**Pros**:
+- Standard .NET tooling
+- Complete project setup
+- Good discoverability
+
+**Cons**:
+- Separate package to maintain
+- Still requires manual step (`dotnet new gherkintest`)
+- Only helps with new projects, not existing ones
+
+### Option 4: Init Command Tool
+**Approach**: Create a dotnet tool (`dotnet gherkin init`) that copies template files to the current project.
+
+**Pros**:
+- Clean separation of concerns
+- Can update existing projects
+- Standard .NET tooling pattern
+
+**Cons**:
+- Additional package to install
+- Extra step in documentation
+- Tool needs to find/copy correct template version
+
+## Recommendation
+
+**Abandon automatic template installation for now.** The NuGet/MSBuild infrastructure for analyzer packages doesn't support the required functionality. Instead:
+
+1. **Keep manual installation** - It works and is straightforward
+2. **Improve documentation** - Make the User Guide installation section clearer
+3. **Consider Option 2** (embedded with auto-export) as a future enhancement if user feedback indicates the manual step is a significant pain point
+
+## Files Created During Investigation
+
+These files can be removed if we abandon this approach:
+- [`src/Analyzer/build/Gherkin.Generator.targets`](../../src/Analyzer/build/Gherkin.Generator.targets)
+- [`src/Analyzer/build/Gherkin.Generator.props`](../../src/Analyzer/build/Gherkin.Generator.props)
+- [`templates/Default.mustache.md`](../../templates/Default.mustache.md) - Keep this for future use
+
 ## References
 
 - [NuGet ContentFiles Documentation](https://learn.microsoft.com/en-us/nuget/reference/nuspec#including-content-files)
 - [MSBuild Pack Target](https://learn.microsoft.com/en-us/nuget/reference/msbuild-targets)
+- [SDK-style Projects and Content](https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#controlling-dependency-assets)
 - [`src/Analyzer/Gherkin.Generator.csproj`](../../src/Analyzer/Gherkin.Generator.csproj) - Current package configuration
