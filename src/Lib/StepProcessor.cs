@@ -143,14 +143,22 @@ internal class StepProcessor
     /// <returns>The normalized keyword.</returns>
     private static NormalizedKeyword NormalizeKeyword(DisplayKeyword keyword, ref NormalizedKeyword currentKeyword)
     {
-        return keyword switch
+        switch (keyword)
         {
-            DisplayKeyword.Given => currentKeyword = NormalizedKeyword.Given,
-            DisplayKeyword.When => currentKeyword = NormalizedKeyword.When,
-            DisplayKeyword.Then => currentKeyword = NormalizedKeyword.Then,
-            DisplayKeyword.And or DisplayKeyword.But => currentKeyword,
-            _ => currentKeyword
-        };
+            case DisplayKeyword.Given:
+                currentKeyword = NormalizedKeyword.Given;
+                return currentKeyword;
+            case DisplayKeyword.When:
+                currentKeyword = NormalizedKeyword.When;
+                return currentKeyword;
+            case DisplayKeyword.Then:
+                currentKeyword = NormalizedKeyword.Then;
+                return currentKeyword;
+            case DisplayKeyword.And:
+            case DisplayKeyword.But:
+            default:
+                return currentKeyword;
+        }
     }
 
     /// <summary>
@@ -303,9 +311,8 @@ internal class StepProcessor
     /// <param name="crif">The CRIF object to update.</param>
     /// <param name="step">The step to add.</param>
     /// <param name="normalizedKeyword">The normalized keyword.</param>
-    private void AddToUnimplementedList(FeatureCrif crif, StepCrif step, NormalizedKeyword normalizedKeyword)
+    private static void AddToUnimplementedList(FeatureCrif crif, StepCrif step, NormalizedKeyword normalizedKeyword)
     {
-        // Generate pattern text by replacing integers and quoted strings with placeholders
         var patternText = GeneratePatternText(step.Text);
         
         var existingUnimplemented = crif.Unimplemented.FirstOrDefault(u =>
@@ -313,73 +320,133 @@ internal class StepProcessor
 
         if (existingUnimplemented == null)
         {
-            // Generate method name from pattern text (with placeholders removed)
-            var textForMethodName = Regex.Replace(patternText, @"\{[^}]+\}", "");
-            
-            var unimplementedStep = new UnimplementedStepCrif
-            {
-                Keyword = normalizedKeyword,
-                Text = patternText,
-                Method = ConvertToMethodName(textForMethodName),
-                Parameters = []
-            };
-
-            // Extract all parameters in the order they appear in the text
-            var placeholderRegex = new Regex(@"<(\w+)>");
-            var integerRegex = new Regex(@"\b(\d+)\b");
-            var stringRegex = new Regex(@"""[^""]*""");
-
-            // Collect all matches with their positions
-            var allMatches = new List<(int Position, string Type, string Value)>();
-            
-            // Add scenario outline placeholders
-            foreach (Match match in placeholderRegex.Matches(step.Text))
-            {
-                allMatches.Add((match.Index, "placeholder", match.Groups[1].Value));
-            }
-            
-            // Add integers
-            var integerMatches = integerRegex.Matches(step.Text).Cast<Match>().ToList();
-            for (int i = 0; i < integerMatches.Count; i++)
-            {
-                allMatches.Add((integerMatches[i].Index, "int", $"value{i + 1}"));
-            }
-            
-            // Add quoted strings
-            var stringMatches = stringRegex.Matches(step.Text).Cast<Match>().ToList();
-            for (int i = 0; i < stringMatches.Count; i++)
-            {
-                allMatches.Add((stringMatches[i].Index, "string", $"string{i + 1}"));
-            }
-            
-            // Sort by position and create parameters
-            foreach (var match in allMatches.OrderBy(m => m.Position))
-            {
-                unimplementedStep.Parameters.Add(new ParameterCrif
-                {
-                    Type = match.Type == "placeholder" ? "string" : match.Type,
-                    Name = match.Value,
-                    Last = false
-                });
-            }
-
-            if (step.DataTable != null)
-            {
-                unimplementedStep.Parameters.Add(new ParameterCrif
-                {
-                    Type = "DataTable",
-                    Name = "table",
-                    Last = false
-                });
-            }
-
-            // Mark the last parameter
-            if (unimplementedStep.Parameters.Count > 0)
-            {
-                unimplementedStep.Parameters[unimplementedStep.Parameters.Count - 1].Last = true;
-            }
-
+            var unimplementedStep = CreateUnimplementedStep(step, normalizedKeyword, patternText);
             crif.Unimplemented.Add(unimplementedStep);
+        }
+    }
+
+    /// <summary>
+    /// Creates an unimplemented step with extracted parameters.
+    /// </summary>
+    /// <param name="step">The step to process.</param>
+    /// <param name="normalizedKeyword">The normalized keyword.</param>
+    /// <param name="patternText">The pattern text with placeholders.</param>
+    /// <returns>The created unimplemented step.</returns>
+    private static UnimplementedStepCrif CreateUnimplementedStep(StepCrif step, NormalizedKeyword normalizedKeyword, string patternText)
+    {
+        var textForMethodName = Regex.Replace(patternText, @"\{[^}]+\}", "");
+        
+        var unimplementedStep = new UnimplementedStepCrif
+        {
+            Keyword = normalizedKeyword,
+            Text = patternText,
+            Method = ConvertToMethodName(textForMethodName),
+            Parameters = []
+        };
+
+        var allMatches = CollectParameterMatches(step.Text);
+        AddParametersFromMatches(unimplementedStep, allMatches);
+        AddDataTableParameter(unimplementedStep, step);
+        MarkLastParameter(unimplementedStep);
+
+        return unimplementedStep;
+    }
+
+    /// <summary>
+    /// Collects all parameter matches from the step text.
+    /// </summary>
+    /// <param name="stepText">The step text to analyze.</param>
+    /// <returns>List of parameter matches with position, type, and value.</returns>
+    private static List<(int Position, string Type, string Value)> CollectParameterMatches(string stepText)
+    {
+        var placeholderRegex = new Regex(@"<(\w+)>");
+        var integerRegex = new Regex(@"\b(\d+)\b");
+        var stringRegex = new Regex(@"""[^""]*""");
+
+        var allMatches = new List<(int Position, string Type, string Value)>();
+        
+        CollectPlaceholderMatches(stepText, placeholderRegex, allMatches);
+        CollectIntegerMatches(stepText, integerRegex, allMatches);
+        CollectStringMatches(stepText, stringRegex, allMatches);
+        
+        return allMatches;
+    }
+
+    /// <summary>
+    /// Collects scenario outline placeholder matches.
+    /// </summary>
+    private static void CollectPlaceholderMatches(string stepText, Regex placeholderRegex, List<(int Position, string Type, string Value)> allMatches)
+    {
+        foreach (Match match in placeholderRegex.Matches(stepText))
+        {
+            allMatches.Add((match.Index, "placeholder", match.Groups[1].Value));
+        }
+    }
+
+    /// <summary>
+    /// Collects integer parameter matches.
+    /// </summary>
+    private static void CollectIntegerMatches(string stepText, Regex integerRegex, List<(int Position, string Type, string Value)> allMatches)
+    {
+        var integerMatches = integerRegex.Matches(stepText).Cast<Match>().ToList();
+        for (var i = 0; i < integerMatches.Count; i++)
+        {
+            allMatches.Add((integerMatches[i].Index, "int", $"value{i + 1}"));
+        }
+    }
+
+    /// <summary>
+    /// Collects string parameter matches.
+    /// </summary>
+    private static void CollectStringMatches(string stepText, Regex stringRegex, List<(int Position, string Type, string Value)> allMatches)
+    {
+        var stringMatches = stringRegex.Matches(stepText).Cast<Match>().ToList();
+        for (var i = 0; i < stringMatches.Count; i++)
+        {
+            allMatches.Add((stringMatches[i].Index, "string", $"string{i + 1}"));
+        }
+    }
+
+    /// <summary>
+    /// Adds parameters to unimplemented step from matches.
+    /// </summary>
+    private static void AddParametersFromMatches(UnimplementedStepCrif unimplementedStep, List<(int Position, string Type, string Value)> allMatches)
+    {
+        foreach (var match in allMatches.OrderBy(m => m.Position))
+        {
+            unimplementedStep.Parameters.Add(new ParameterCrif
+            {
+                Type = match.Type == "placeholder" ? "string" : match.Type,
+                Name = match.Value,
+                Last = false
+            });
+        }
+    }
+
+    /// <summary>
+    /// Adds DataTable parameter if present.
+    /// </summary>
+    private static void AddDataTableParameter(UnimplementedStepCrif unimplementedStep, StepCrif step)
+    {
+        if (step.DataTable != null)
+        {
+            unimplementedStep.Parameters.Add(new ParameterCrif
+            {
+                Type = "DataTable",
+                Name = "table",
+                Last = false
+            });
+        }
+    }
+
+    /// <summary>
+    /// Marks the last parameter in the unimplemented step.
+    /// </summary>
+    private static void MarkLastParameter(UnimplementedStepCrif unimplementedStep)
+    {
+        if (unimplementedStep.Parameters.Count > 0)
+        {
+            unimplementedStep.Parameters[unimplementedStep.Parameters.Count - 1].Last = true;
         }
     }
 
@@ -395,7 +462,7 @@ internal class StepProcessor
         // Replace integers with placeholders
         var integerRegex = new Regex(@"\b(\d+)\b");
         var integerMatches = integerRegex.Matches(text).Cast<Match>().ToList();
-        for (int i = integerMatches.Count - 1; i >= 0; i--)
+        for (var i = integerMatches.Count - 1; i >= 0; i--)
         {
             var match = integerMatches[i];
             patternText = patternText.Substring(0, match.Index)
@@ -406,7 +473,7 @@ internal class StepProcessor
         // Replace quoted strings with placeholders
         var stringRegex = new Regex(@"""[^""]*""");
         var stringMatches = stringRegex.Matches(patternText).Cast<Match>().ToList();
-        for (int i = stringMatches.Count - 1; i >= 0; i--)
+        for (var i = stringMatches.Count - 1; i >= 0; i--)
         {
             var match = stringMatches[i];
             patternText = patternText.Substring(0, match.Index)
