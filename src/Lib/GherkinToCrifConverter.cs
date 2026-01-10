@@ -12,6 +12,8 @@ namespace Gherkin.Generator.Lib;
 /// <param name="stepMetadata">Collection of step definition metadata for matching.</param>
 public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
 {
+    private readonly StepProcessor _stepProcessor = new(stepMetadata);
+
     /// <summary>
     /// Converts a Gherkin feature document to a CRIF object.
     /// </summary>
@@ -50,8 +52,8 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         if (feature.Feature != null)
         {
             ProcessFeatureMetadata(feature.Feature, crif);
-            ProcessFeatureTags(feature.Feature.Tags, crif);
-            ApplyProjectDefaults(crif, projectMetadata);
+            TagProcessor.ProcessFeatureTags(feature.Feature.Tags, crif);
+            TagProcessor.ApplyProjectDefaults(crif, projectMetadata);
             ProcessBackground(feature.Feature, crif);
             ProcessFeatureChildren(feature.Feature.Children, crif);
             AddUtilsNamespaceIfNeeded(crif);
@@ -116,109 +118,6 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     }
 
     /// <summary>
-    /// Processes feature-level tags for namespace, base class, and using directives.
-    /// </summary>
-    /// <param name="tags">Collection of feature tags.</param>
-    /// <param name="crif">The CRIF object to populate.</param>
-    private static void ProcessFeatureTags(IEnumerable<Tag> tags, FeatureCrif crif)
-    {
-        foreach (var tag in tags)
-        {
-            if (tag.Name.StartsWith("@namespace:"))
-            {
-                ProcessNamespaceTag(tag, crif);
-            }
-            else if (tag.Name.StartsWith("@baseclass:"))
-            {
-                ProcessBaseClassTag(tag, crif);
-            }
-            else if (tag.Name.StartsWith("@using:"))
-            {
-                ProcessUsingTag(tag, crif);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Processes a namespace tag.
-    /// </summary>
-    /// <param name="tag">The namespace tag.</param>
-    /// <param name="crif">The CRIF object to populate.</param>
-    private static void ProcessNamespaceTag(Tag tag, FeatureCrif crif)
-    {
-        crif.Namespace = tag.Name.Substring("@namespace:".Length);
-    }
-
-    /// <summary>
-    /// Processes a base class tag, extracting namespace if present.
-    /// </summary>
-    /// <param name="tag">The base class tag.</param>
-    /// <param name="crif">The CRIF object to populate.</param>
-    private static void ProcessBaseClassTag(Tag tag, FeatureCrif crif)
-    {
-        var baseClassValue = tag.Name.Substring("@baseclass:".Length);
-        var lastDotIndex = baseClassValue.LastIndexOf('.');
-
-        if (lastDotIndex >= 0)
-        {
-            var ns = baseClassValue.Substring(0, lastDotIndex);
-            crif.BaseClass = baseClassValue.Substring(lastDotIndex + 1);
-            if (!crif.Usings.Contains(ns))
-            {
-                crif.Usings.Add(ns);
-            }
-        }
-        else
-        {
-            crif.BaseClass = baseClassValue;
-        }
-    }
-
-    /// <summary>
-    /// Processes a using directive tag.
-    /// </summary>
-    /// <param name="tag">The using tag.</param>
-    /// <param name="crif">The CRIF object to populate.</param>
-    private static void ProcessUsingTag(Tag tag, FeatureCrif crif)
-    {
-        var usingValue = tag.Name.Substring("@using:".Length);
-        if (!crif.Usings.Contains(usingValue))
-        {
-            crif.Usings.Add(usingValue);
-        }
-    }
-
-    /// <summary>
-    /// Applies project-level defaults from project metadata when feature tags don't override them.
-    /// </summary>
-    /// <param name="crif">The CRIF object to populate.</param>
-    /// <param name="projectMetadata">Project metadata containing defaults.</param>
-    private static void ApplyProjectDefaults(FeatureCrif crif, ProjectMetadata? projectMetadata)
-    {
-        if (projectMetadata == null)
-            return;
-
-        // Apply namespace default if not explicitly set by @namespace tag
-        if (string.IsNullOrEmpty(crif.Namespace) && !string.IsNullOrEmpty(projectMetadata.GeneratedNamespace))
-        {
-            crif.Namespace = projectMetadata.GeneratedNamespace;
-        }
-
-        // Apply base class default if not explicitly set by @baseclass tag
-        if (string.IsNullOrEmpty(crif.BaseClass) && projectMetadata.DefaultTestBase != null)
-        {
-            crif.BaseClass = projectMetadata.DefaultTestBase.ClassName;
-            
-            // Add base class namespace to usings
-            if (!string.IsNullOrEmpty(projectMetadata.DefaultTestBase.Namespace) &&
-                !crif.Usings.Contains(projectMetadata.DefaultTestBase.Namespace))
-            {
-                crif.Usings.Add(projectMetadata.DefaultTestBase.Namespace);
-            }
-        }
-    }
-
-    /// <summary>
     /// Processes the background section if present.
     /// </summary>
     /// <param name="feature">The Gherkin feature.</param>
@@ -229,7 +128,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         if (background != null)
         {
             crif.Background = ConvertBackground(background);
-            _ = TrackUnimplementedSteps(crif, crif.Background.Steps);
+            _ = _stepProcessor.TrackUnimplementedSteps(crif, crif.Background.Steps);
         }
     }
 
@@ -307,7 +206,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         var scenarioCrif = ConvertScenario(scenario);
         ruleCrif.Scenarios.Add(scenarioCrif);
         
-        var hasUnmatchedSteps = TrackUnimplementedSteps(crif, scenarioCrif.Steps);
+        var hasUnmatchedSteps = _stepProcessor.TrackUnimplementedSteps(crif, scenarioCrif.Steps);
         
         // Mark scenario as explicit if it has unmatched steps
         if (hasUnmatchedSteps && !scenarioCrif.IsExplicit)
@@ -317,6 +216,11 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         }
     }
 
+    /// <summary>
+    /// Converts a Gherkin background to CRIF format.
+    /// </summary>
+    /// <param name="background">The Gherkin background.</param>
+    /// <returns>Background in CRIF format.</returns>
     private BackgroundCrif ConvertBackground(Background background)
     {
         var backgroundCrif = new BackgroundCrif();
@@ -324,7 +228,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         var tableCounter = 1;
         foreach (var step in background.Steps)
         {
-            var stepCrif = ConvertStep(step);
+            var stepCrif = _stepProcessor.ConvertStep(step);
 
             // Assign data table variable name if present
             if (stepCrif.DataTable != null)
@@ -339,12 +243,17 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         return backgroundCrif;
     }
 
+    /// <summary>
+    /// Converts a Gherkin scenario to CRIF format.
+    /// </summary>
+    /// <param name="scenario">The Gherkin scenario.</param>
+    /// <returns>Scenario in CRIF format.</returns>
     private ScenarioCrif ConvertScenario(Scenario scenario)
     {
         var scenarioCrif = new ScenarioCrif
         {
             Name = scenario.Name,
-            Method = ConvertToMethodName(scenario.Name)
+            Method = StepProcessor.ConvertToMethodName(scenario.Name)
         };
 
         // Extract scenario description as remarks
@@ -404,7 +313,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         var tableCounter = 1;
         foreach (var step in scenario.Steps)
         {
-            var stepCrif = ConvertStep(step);
+            var stepCrif = _stepProcessor.ConvertStep(step);
 
             // Assign data table variable name if present
             if (stepCrif.DataTable != null)
@@ -417,535 +326,6 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         }
 
         return scenarioCrif;
-    }
-
-    private StepCrif ConvertStep(Gherkin.Ast.Step step)
-    {
-        var stepCrif = new StepCrif
-        {
-            Keyword = ParseDisplayKeyword(step.Keyword.Trim()),
-            Text = step.Text,
-            Owner = "this", // Default for unimplemented steps
-            Method = string.Empty // Will be set during step matching
-        };
-
-        // Convert data table if present
-        if (step.Argument is DataTable dataTable)
-        {
-            stepCrif.DataTable = ConvertDataTable(dataTable);
-        }
-
-        return stepCrif;
-    }
-
-    /// <summary>
-    /// Parses a keyword string into a DisplayKeyword enum value.
-    /// </summary>
-    /// <param name="keyword">The keyword string (e.g., "Given", "When", "And").</param>
-    /// <returns>The corresponding DisplayKeyword enum value.</returns>
-    /// <exception cref="ArgumentException">Thrown when the keyword is not a valid Gherkin keyword.</exception>
-    private static DisplayKeyword ParseDisplayKeyword(string keyword)
-    {
-        return keyword switch
-        {
-            "Given" => DisplayKeyword.Given,
-            "When" => DisplayKeyword.When,
-            "Then" => DisplayKeyword.Then,
-            "And" => DisplayKeyword.And,
-            "But" => DisplayKeyword.But,
-            _ => throw new ArgumentException($"Unknown Gherkin keyword: '{keyword}'", nameof(keyword))
-        };
-    }
-
-    private DataTableCrif ConvertDataTable(DataTable dataTable)
-    {
-        var tableCrif = new DataTableCrif();
-
-        var rows = dataTable.Rows.ToList();
-        if (rows.Count > 0)
-        {
-            // First row is headers
-            var headerRow = rows[0];
-            var headerCells = headerRow.Cells.ToList();
-            tableCrif.Headers = headerCells.Select((cell, index) => new HeaderCellCrif
-            {
-                Value = cell.Value,
-                Last = index == headerCells.Count - 1
-            }).ToList();
-
-            // Remaining rows are data
-            tableCrif.Rows = rows.Skip(1).Select((row, rowIndex) =>
-            {
-                var cells = row.Cells.ToList();
-                return new DataRowCrif
-                {
-                    Last = rowIndex == rows.Count - 2, // rows.Count - 2 because we skipped first row
-                    Cells = cells.Select((cell, cellIndex) => new DataCellCrif
-                    {
-                        Value = cell.Value,
-                        Last = cellIndex == cells.Count - 1
-                    }).ToList()
-                };
-            }).ToList();
-        }
-
-        return tableCrif;
-    }
-
-    private static string ConvertToMethodName(string name)
-    {
-        // Convert scenario name to PascalCase method name
-        var words = name.Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
-        var result = string.Join("", words.Select(w =>
-            char.ToUpper(w[0]) + (w.Length > 1 ? w.Substring(1) : "")));
-
-        // Remove any remaining special characters
-        result = new string(result.Where(c => char.IsLetterOrDigit(c)).ToArray());
-
-        return result;
-    }
-
-    /// <summary>
-    /// Tracks unimplemented steps in the CRIF and returns whether any steps were unmatched.
-    /// </summary>
-    /// <param name="crif">The CRIF object to update.</param>
-    /// <param name="steps">The steps to track.</param>
-    /// <returns>True if any steps were unmatched; otherwise, false.</returns>
-    private bool TrackUnimplementedSteps(FeatureCrif crif, List<StepCrif> steps)
-    {
-        var currentKeyword = NormalizedKeyword.Given;
-        var hasUnmatchedSteps = false;
-
-        foreach (var step in steps)
-        {
-            var normalizedKeyword = NormalizeKeyword(step.Keyword, ref currentKeyword);
-            var matchedStep = stepMetadata.FindMatch(normalizedKeyword, step.Text);
-
-            if (matchedStep != null)
-            {
-                ProcessImplementedStep(crif, step, matchedStep);
-            }
-            else
-            {
-                ProcessUnimplementedStep(crif, step, normalizedKeyword);
-                hasUnmatchedSteps = true;
-            }
-        }
-
-        return hasUnmatchedSteps;
-    }
-
-    /// <summary>
-    /// Normalizes And/But keywords to the current keyword context.
-    /// </summary>
-    /// <param name="keyword">The display keyword to normalize.</param>
-    /// <param name="currentKeyword">The current keyword context (Given, When, or Then).</param>
-    /// <returns>The normalized keyword.</returns>
-    private static NormalizedKeyword NormalizeKeyword(DisplayKeyword keyword, ref NormalizedKeyword currentKeyword)
-    {
-        return keyword switch
-        {
-            DisplayKeyword.Given => currentKeyword = NormalizedKeyword.Given,
-            DisplayKeyword.When => currentKeyword = NormalizedKeyword.When,
-            DisplayKeyword.Then => currentKeyword = NormalizedKeyword.Then,
-            DisplayKeyword.And or DisplayKeyword.But => currentKeyword,
-            _ => currentKeyword
-        };
-    }
-
-    /// <summary>
-    /// Processes an implemented step by populating its metadata and arguments.
-    /// </summary>
-    /// <param name="crif">The CRIF object to update.</param>
-    /// <param name="step">The step to process.</param>
-    /// <param name="matchedStep">The matched step metadata.</param>
-    private static void ProcessImplementedStep(FeatureCrif crif, StepCrif step, StepMetadata matchedStep)
-    {
-        step.Owner = matchedStep.Class;
-        step.Method = matchedStep.Method;
-
-        AddClassAndNamespace(crif, matchedStep);
-        ExtractStepArguments(step, matchedStep);
-        AddDataTableArgument(step, matchedStep);
-        MarkLastArgument(step);
-    }
-
-    /// <summary>
-    /// Adds class and namespace to CRIF if not already present.
-    /// </summary>
-    /// <param name="crif">The CRIF object to update.</param>
-    /// <param name="matchedStep">The matched step metadata.</param>
-    private static void AddClassAndNamespace(FeatureCrif crif, StepMetadata matchedStep)
-    {
-        if (!crif.Classes.Contains(matchedStep.Class))
-        {
-            crif.Classes.Add(matchedStep.Class);
-        }
-        if (!crif.Usings.Contains(matchedStep.Namespace))
-        {
-            crif.Usings.Add(matchedStep.Namespace);
-        }
-    }
-
-    /// <summary>
-    /// Extracts and adds arguments from text parameters to the step.
-    /// </summary>
-    /// <param name="step">The step to add arguments to.</param>
-    /// <param name="matchedStep">The matched step metadata.</param>
-    private static void ExtractStepArguments(StepCrif step, StepMetadata matchedStep)
-    {
-        var textParameters = matchedStep.Parameters.Where(p => p.Type != "DataTable").ToList();
-        if (textParameters.Count > 0)
-        {
-            var arguments = ExtractArguments(matchedStep.Text, step.Text, textParameters);
-            foreach (var arg in arguments)
-            {
-                step.Arguments.Add(arg);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Adds DataTable variable as argument if step has DataTable parameter.
-    /// </summary>
-    /// <param name="step">The step to add the argument to.</param>
-    /// <param name="matchedStep">The matched step metadata.</param>
-    private static void AddDataTableArgument(StepCrif step, StepMetadata matchedStep)
-    {
-        if (matchedStep.Parameters.Any(p => p.Type == "DataTable") && step.DataTable != null)
-        {
-            step.Arguments.Add(new ArgumentCrif
-            {
-                Value = step.DataTable.VariableName,
-                Last = false
-            });
-        }
-    }
-
-    /// <summary>
-    /// Marks the last argument in the step's argument list.
-    /// </summary>
-    /// <param name="step">The step to update.</param>
-    private static void MarkLastArgument(StepCrif step)
-    {
-        if (step.Arguments.Count > 0)
-        {
-            step.Arguments[step.Arguments.Count - 1].Last = true;
-        }
-    }
-
-    /// <summary>
-    /// Processes an unimplemented step by tracking it in the CRIF.
-    /// </summary>
-    /// <param name="crif">The CRIF object to update.</param>
-    /// <param name="step">The step to process.</param>
-    /// <param name="normalizedKeyword">The normalized keyword.</param>
-    private void ProcessUnimplementedStep(FeatureCrif crif, StepCrif step, NormalizedKeyword normalizedKeyword)
-    {
-        AddToUnimplementedList(crif, step, normalizedKeyword);
-
-        // Generate method name with integers and quoted strings removed
-        step.Method = ConvertToMethodNameWithoutParameters(step.Text);
-
-        // Extract scenario outline placeholders (e.g., <amount>) and add as arguments
-        ExtractScenarioOutlinePlaceholders(step);
-
-        // Extract integers and add as arguments
-        ExtractIntegerParameters(step);
-
-        // Extract quoted strings and add as arguments
-        ExtractQuotedStringParameters(step);
-
-        if (step.DataTable != null)
-        {
-            step.Arguments.Add(new ArgumentCrif
-            {
-                Value = step.DataTable.VariableName,
-                Last = false
-            });
-        }
-
-        // Mark the last argument
-        MarkLastArgument(step);
-    }
-
-    /// <summary>
-    /// Converts step text to a method name, removing integers and quoted strings.
-    /// </summary>
-    /// <param name="text">The step text.</param>
-    /// <returns>PascalCase method name without integers or quoted strings.</returns>
-    private static string ConvertToMethodNameWithoutParameters(string text)
-    {
-        // Remove integers and quoted strings from the text before converting to method name
-        var textWithoutParameters = System.Text.RegularExpressions.Regex.Replace(text, @"\b\d+\b", "");
-        textWithoutParameters = System.Text.RegularExpressions.Regex.Replace(textWithoutParameters, @"""[^""]*""", "");
-        return ConvertToMethodName(textWithoutParameters);
-    }
-
-    /// <summary>
-    /// Extracts integer parameters from step text and adds them as arguments.
-    /// </summary>
-    /// <param name="step">The step to process.</param>
-    private static void ExtractIntegerParameters(StepCrif step)
-    {
-        var regex = new System.Text.RegularExpressions.Regex(@"\b(\d+)\b");
-        var matches = regex.Matches(step.Text);
-
-        var integerArguments = matches
-            .Cast<System.Text.RegularExpressions.Match>()
-            .Select(match => new ArgumentCrif
-            {
-                Value = match.Groups[1].Value,
-                Last = false
-            });
-
-        step.Arguments.AddRange(integerArguments);
-    }
-
-    /// <summary>
-    /// Extracts quoted string parameters from step text and adds them as arguments.
-    /// </summary>
-    /// <param name="step">The step to process.</param>
-    private static void ExtractQuotedStringParameters(StepCrif step)
-    {
-        var regex = new System.Text.RegularExpressions.Regex(@"""([^""]*)""");
-        var matches = regex.Matches(step.Text);
-
-        var stringArguments = matches
-            .Cast<System.Text.RegularExpressions.Match>()
-            .Select(match => new ArgumentCrif
-            {
-                Value = match.Value, // Keep quotes in the value
-                Last = false
-            });
-
-        step.Arguments.AddRange(stringArguments);
-    }
-
-    /// <summary>
-    /// Extracts scenario outline placeholders from step text and adds them as arguments.
-    /// </summary>
-    /// <param name="step">The step to process.</param>
-    private static void ExtractScenarioOutlinePlaceholders(StepCrif step)
-    {
-        // Find all placeholders in the format <parameterName>
-        var regex = new System.Text.RegularExpressions.Regex(@"<(\w+)>");
-        var matches = regex.Matches(step.Text);
-
-        foreach (System.Text.RegularExpressions.Match match in matches)
-        {
-            var parameterName = match.Groups[1].Value;
-            step.Arguments.Add(new ArgumentCrif
-            {
-                Value = parameterName,
-                Last = false
-            });
-        }
-    }
-
-    /// <summary>
-    /// Adds step to unimplemented list if not already present.
-    /// </summary>
-    /// <param name="crif">The CRIF object to update.</param>
-    /// <param name="step">The step to add.</param>
-    /// <param name="normalizedKeyword">The normalized keyword.</param>
-    private void AddToUnimplementedList(FeatureCrif crif, StepCrif step, NormalizedKeyword normalizedKeyword)
-    {
-        var existingUnimplemented = crif.Unimplemented.FirstOrDefault(u =>
-            u.Text == step.Text && u.Keyword == normalizedKeyword);
-
-        if (existingUnimplemented == null)
-        {
-            var unimplementedStep = new UnimplementedStepCrif
-            {
-                Keyword = normalizedKeyword,
-                Text = step.Text,
-                Method = ConvertToMethodName(step.Text),
-                Parameters = []
-            };
-
-            // Extract scenario outline placeholders and add as parameters
-            var placeholderRegex = new System.Text.RegularExpressions.Regex(@"<(\w+)>");
-            var placeholderMatches = placeholderRegex.Matches(step.Text);
-            foreach (System.Text.RegularExpressions.Match match in placeholderMatches)
-            {
-                var parameterName = match.Groups[1].Value;
-                unimplementedStep.Parameters.Add(new ParameterCrif
-                {
-                    Type = "string",
-                    Name = parameterName,
-                    Last = false
-                });
-            }
-
-            // Extract integers and add as parameters with generated names
-            var integerRegex = new System.Text.RegularExpressions.Regex(@"\b(\d+)\b");
-            var integerMatches = integerRegex.Matches(step.Text);
-            var valueCounter = 1;
-            foreach (System.Text.RegularExpressions.Match match in integerMatches)
-            {
-                unimplementedStep.Parameters.Add(new ParameterCrif
-                {
-                    Type = "int",
-                    Name = $"value{valueCounter}",
-                    Last = false
-                });
-                valueCounter++;
-            }
-
-            // Extract quoted strings and add as parameters with generated names
-            var stringRegex = new System.Text.RegularExpressions.Regex(@"""[^""]*""");
-            var stringMatches = stringRegex.Matches(step.Text);
-            var stringCounter = 1;
-            foreach (System.Text.RegularExpressions.Match match in stringMatches)
-            {
-                unimplementedStep.Parameters.Add(new ParameterCrif
-                {
-                    Type = "string",
-                    Name = $"string{stringCounter}",
-                    Last = false
-                });
-                stringCounter++;
-            }
-
-            if (step.DataTable != null)
-            {
-                unimplementedStep.Parameters.Add(new ParameterCrif
-                {
-                    Type = "DataTable",
-                    Name = "table",
-                    Last = false
-                });
-            }
-
-            // Mark the last parameter
-            if (unimplementedStep.Parameters.Count > 0)
-            {
-                unimplementedStep.Parameters[unimplementedStep.Parameters.Count - 1].Last = true;
-            }
-
-            crif.Unimplemented.Add(unimplementedStep);
-        }
-    }
-
-    private static List<ArgumentCrif> ExtractArguments(string pattern, string text, List<StepParameter> parameters)
-    {
-        var arguments = new List<ArgumentCrif>();
-        var regexPattern = BuildRegexPattern(pattern);
-
-        try
-        {
-            var regex = new System.Text.RegularExpressions.Regex(
-                regexPattern,
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase
-            );
-            var match = regex.Match(text);
-
-            if (match.Success)
-            {
-                ExtractArgumentsFromMatch(match, parameters, arguments);
-            }
-        }
-        catch
-        {
-            // Fallback: couldn't extract arguments
-        }
-
-        return arguments;
-    }
-
-    /// <summary>
-    /// Builds a regex pattern from step definition text by replacing placeholders with capture groups.
-    /// </summary>
-    /// <param name="pattern">Step definition pattern with {placeholder} markers.</param>
-    /// <returns>Regex pattern string.</returns>
-    private static string BuildRegexPattern(string pattern)
-    {
-        // Replace {placeholder} with temporary markers BEFORE escaping
-        var regexPattern = System.Text.RegularExpressions.Regex.Replace(
-            pattern,
-            @"\{[^}]+\}",
-            "<<<PLACEHOLDER>>>"
-        );
-
-        // Escape the pattern for regex special characters
-        regexPattern = System.Text.RegularExpressions.Regex.Escape(regexPattern);
-
-        // Replace markers with capture groups
-        regexPattern = regexPattern.Replace(
-            "<<<PLACEHOLDER>>>",
-            @"((?:""[^""]*""|\S+))"
-        );
-
-        // Add anchors for full string match
-        return "^" + regexPattern + "$";
-    }
-
-    /// <summary>
-    /// Extracts arguments from a successful regex match.
-    /// </summary>
-    /// <param name="match">The successful regex match.</param>
-    /// <param name="parameters">List of step parameters.</param>
-    /// <param name="arguments">List to add extracted arguments to.</param>
-    private static void ExtractArgumentsFromMatch(System.Text.RegularExpressions.Match match, List<StepParameter> parameters, List<ArgumentCrif> arguments)
-    {
-        // Groups[0] is the entire match, Groups[1..n] are capture groups
-        var extractedArgs = match.Groups
-            .Cast<System.Text.RegularExpressions.Group>()
-            .Skip(1) // Skip Groups[0] which is the full match
-            .Select((group, index) => new ArgumentCrif
-            {
-                Value = ProcessArgumentValue(group.Value, index, parameters),
-                Last = false
-            });
-
-        arguments.AddRange(extractedArgs);
-    }
-
-    /// <summary>
-    /// Processes an argument value, handling scenario outline parameters and quote formatting.
-    /// </summary>
-    /// <param name="value">The extracted value.</param>
-    /// <param name="paramIndex">The parameter index (0-based).</param>
-    /// <param name="parameters">List of step parameters.</param>
-    /// <returns>Processed argument value.</returns>
-    private static string ProcessArgumentValue(string value, int paramIndex, List<StepParameter> parameters)
-    {
-        // Check if this is a Scenario Outline parameter (e.g., <amount>)
-        if (value.StartsWith("<") && value.EndsWith(">"))
-        {
-            return value.Substring(1, value.Length - 2);
-        }
-
-        // This is a concrete value - determine if we need to add quotes
-        return FormatConcreteValue(value, paramIndex, parameters);
-    }
-
-    /// <summary>
-    /// Formats a concrete value by adding quotes for string types if needed.
-    /// </summary>
-    /// <param name="value">The value to format.</param>
-    /// <param name="paramIndex">The parameter index.</param>
-    /// <param name="parameters">List of step parameters.</param>
-    /// <returns>Formatted value.</returns>
-    private static string FormatConcreteValue(string value, int paramIndex, List<StepParameter> parameters)
-    {
-        if (paramIndex >= parameters.Count)
-        {
-            return value;
-        }
-
-        var paramType = parameters[paramIndex].Type;
-        var isStringType = paramType.Equals("string", StringComparison.OrdinalIgnoreCase);
-
-        // If it's a string type and not already quoted, add quotes
-        if (isStringType && !value.StartsWith("\""))
-        {
-            return $"\"{value}\"";
-        }
-
-        // For non-string types, keep the value as-is (no quotes for numbers)
-        return value;
     }
 }
 
