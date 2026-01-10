@@ -219,4 +219,41 @@ public class UnmatchedStepTests
         Assert.That(scenario.TestCases[0], Is.EqualTo("\"100\""));
         Assert.That(scenario.TestCases[1], Is.EqualTo("\"200\""));
     }
+
+    [Test]
+    public void Convert_WithUnmatchedStepContainingInteger_DetectsIntegerAsParameter()
+    {
+        // Given: An empty step metadata collection
+        var stepMetadata = new StepMetadataCollection();
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin feature with a step containing an integer
+        var gherkin = """
+            Feature: Shopping Cart
+
+            Scenario: Add items to cart
+              When I have 12 oranges
+            """;
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Step should be in Unimplemented list
+        Assert.That(crif.Unimplemented, Has.Count.EqualTo(1));
+        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("I have 12 oranges"));
+        Assert.That(crif.Unimplemented[0].Keyword, Is.EqualTo(NormalizedKeyword.When));
+        Assert.That(crif.Unimplemented[0].Parameters[0].Type, Is.EqualTo("int"));
+        Assert.That(crif.Unimplemented[0].Parameters[0].Name, Is.EqualTo("value1"));
+
+        // And: Step should have detected the integer as a parameter
+        var step = crif.Rules[0].Scenarios[0].Steps[0];
+        Assert.That(step.Arguments, Has.Count.EqualTo(1), "Integer '12' should be detected as a parameter");
+        
+        // And: Parameter value should be the integer
+        Assert.That(step.Arguments[0].Value, Is.EqualTo("12"));
+        
+        // And: Method name should be generated without the integer (IHaveOranges)
+        Assert.That(step.Method, Is.EqualTo("IHaveOranges"));
+    }
 }

@@ -644,10 +644,14 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     {
         AddToUnimplementedList(crif, step, normalizedKeyword);
 
-        step.Method = ConvertToMethodName(step.Text);
+        // Generate method name with integers removed
+        step.Method = ConvertToMethodNameWithoutIntegers(step.Text);
 
         // Extract scenario outline placeholders (e.g., <amount>) and add as arguments
         ExtractScenarioOutlinePlaceholders(step);
+
+        // Extract integers and add as arguments
+        ExtractIntegerParameters(step);
 
         if (step.DataTable != null)
         {
@@ -660,6 +664,38 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
 
         // Mark the last argument
         MarkLastArgument(step);
+    }
+
+    /// <summary>
+    /// Converts step text to a method name, removing integers.
+    /// </summary>
+    /// <param name="text">The step text.</param>
+    /// <returns>PascalCase method name without integers.</returns>
+    private static string ConvertToMethodNameWithoutIntegers(string text)
+    {
+        // Remove integers from the text before converting to method name
+        var textWithoutIntegers = System.Text.RegularExpressions.Regex.Replace(text, @"\b\d+\b", "");
+        return ConvertToMethodName(textWithoutIntegers);
+    }
+
+    /// <summary>
+    /// Extracts integer parameters from step text and adds them as arguments.
+    /// </summary>
+    /// <param name="step">The step to process.</param>
+    private static void ExtractIntegerParameters(StepCrif step)
+    {
+        var regex = new System.Text.RegularExpressions.Regex(@"\b(\d+)\b");
+        var matches = regex.Matches(step.Text);
+
+        var integerArguments = matches
+            .Cast<System.Text.RegularExpressions.Match>()
+            .Select(match => new ArgumentCrif
+            {
+                Value = match.Groups[1].Value,
+                Last = false
+            });
+
+        step.Arguments.AddRange(integerArguments);
     }
 
     /// <summary>
@@ -705,9 +741,9 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             };
 
             // Extract scenario outline placeholders and add as parameters
-            var regex = new System.Text.RegularExpressions.Regex(@"<(\w+)>");
-            var matches = regex.Matches(step.Text);
-            foreach (System.Text.RegularExpressions.Match match in matches)
+            var placeholderRegex = new System.Text.RegularExpressions.Regex(@"<(\w+)>");
+            var placeholderMatches = placeholderRegex.Matches(step.Text);
+            foreach (System.Text.RegularExpressions.Match match in placeholderMatches)
             {
                 var parameterName = match.Groups[1].Value;
                 unimplementedStep.Parameters.Add(new ParameterCrif
@@ -716,6 +752,21 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
                     Name = parameterName,
                     Last = false
                 });
+            }
+
+            // Extract integers and add as parameters with generated names
+            var integerRegex = new System.Text.RegularExpressions.Regex(@"\b(\d+)\b");
+            var integerMatches = integerRegex.Matches(step.Text);
+            var paramCounter = 1;
+            foreach (System.Text.RegularExpressions.Match match in integerMatches)
+            {
+                unimplementedStep.Parameters.Add(new ParameterCrif
+                {
+                    Type = "int",
+                    Name = $"value{paramCounter}",
+                    Last = false
+                });
+                paramCounter++;
             }
 
             if (step.DataTable != null)
