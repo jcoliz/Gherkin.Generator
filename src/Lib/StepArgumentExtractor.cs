@@ -119,9 +119,10 @@ internal static class StepArgumentExtractor
     /// <returns>Formatted value.</returns>
     private static string FormatConcreteValue(string value, int paramIndex, List<StepParameter> parameters)
     {
+        // When no parameter metadata exists, default to string type with quotes
         if (paramIndex >= parameters.Count)
         {
-            return value;
+            return value.StartsWith("\"") ? value : $"\"{value}\"";
         }
 
         var paramType = parameters[paramIndex].Type;

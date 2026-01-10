@@ -119,4 +119,47 @@ public class ParameterizedStepTests
         Assert.That(step.Arguments, Has.Count.EqualTo(1));
         Assert.That(step.Arguments[0].Value, Is.EqualTo("\"Ski Village\""));
     }
+
+    [Test]
+    public void Convert_WithMoreCapturesThanParameters_HandlesGracefully()
+    {
+        // Given: A step with pattern containing 3 placeholders but only 2 parameters defined
+        var stepMetadata = new StepMetadataCollection();
+        stepMetadata.Add(new StepMetadata
+        {
+            NormalizedKeyword = NormalizedKeyword.Given,
+            Text = "I transfer {amount} from {source} to {destination}",
+            Method = "ITransfer",
+            Class = "AccountSteps",
+            Namespace = "YoFi.V3.Tests.Functional.Steps",
+            // Only 2 parameters defined, but pattern has 3 placeholders
+            Parameters = [
+                new StepParameter { Type = "int", Name = "amount" },
+                new StepParameter { Type = "string", Name = "source" }
+                // Missing: destination parameter
+            ]
+        });
+
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin feature with actual step using all three values
+        var gherkin = """
+            Feature: Accounts
+
+            Scenario: Transfer money
+              Given I transfer 100 from Savings to Checking
+            """;
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Step should extract all arguments, with third one defaulting to string type
+        var step = crif.Rules[0].Scenarios[0].Steps[0];
+        Assert.That(step.Arguments, Has.Count.EqualTo(3));
+        Assert.That(step.Arguments[0].Value, Is.EqualTo("100"));
+        Assert.That(step.Arguments[1].Value, Is.EqualTo("\"Savings\""));
+        // Third argument has no parameter metadata, so it defaults to string type with quotes
+        Assert.That(step.Arguments[2].Value, Is.EqualTo("\"Checking\""));
+    }
 }
