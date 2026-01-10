@@ -256,7 +256,21 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             Method = StepProcessor.ConvertToMethodName(scenario.Name)
         };
 
-        // Extract scenario description as remarks
+        ProcessScenarioDescription(scenario, scenarioCrif);
+        ProcessExplicitTag(scenario, scenarioCrif);
+        ProcessScenarioOutlineExamples(scenario, scenarioCrif);
+        ProcessScenarioSteps(scenario, scenarioCrif);
+
+        return scenarioCrif;
+    }
+
+    /// <summary>
+    /// Processes scenario description and converts it to remarks.
+    /// </summary>
+    /// <param name="scenario">The Gherkin scenario.</param>
+    /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
+    private static void ProcessScenarioDescription(Scenario scenario, ScenarioCrif scenarioCrif)
+    {
         if (!string.IsNullOrWhiteSpace(scenario.Description))
         {
             var lines = scenario.Description.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -265,8 +279,15 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
                 Lines = lines.Select(l => l.Trim()).ToList()
             };
         }
+    }
 
-        // Check for @explicit tag with optional reason
+    /// <summary>
+    /// Processes explicit tag and extracts optional reason.
+    /// </summary>
+    /// <param name="scenario">The Gherkin scenario.</param>
+    /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
+    private static void ProcessExplicitTag(Scenario scenario, ScenarioCrif scenarioCrif)
+    {
         var explicitTag = scenario.Tags.FirstOrDefault(t => t.Name == "@explicit" || t.Name.StartsWith("@explicit:"));
         if (explicitTag != null)
         {
@@ -276,40 +297,70 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
                 scenarioCrif.ExplicitReason = explicitTag.Name.Substring("@explicit:".Length);
             }
         }
+    }
 
-        // Handle Scenario Outline examples
-        if (scenario.Examples != null && scenario.Examples.Any())
+    /// <summary>
+    /// Processes scenario outline examples and generates parameters and test cases.
+    /// </summary>
+    /// <param name="scenario">The Gherkin scenario.</param>
+    /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
+    private static void ProcessScenarioOutlineExamples(Scenario scenario, ScenarioCrif scenarioCrif)
+    {
+        if (scenario.Examples == null || !scenario.Examples.Any())
         {
-            var examples = scenario.Examples.First();
-            var headerRow = examples.TableHeader;
-            var dataRows = examples.TableBody;
-
-            // Extract parameters from header
-            foreach (var cell in headerRow.Cells)
-            {
-                scenarioCrif.Parameters.Add(new ParameterCrif
-                {
-                    Type = "string", // Default to string for unimplemented steps
-                    Name = cell.Value,
-                    Last = false // Will be set after all are added
-                });
-            }
-
-            // Set Last flag on final parameter
-            if (scenarioCrif.Parameters.Any())
-            {
-                scenarioCrif.Parameters[scenarioCrif.Parameters.Count - 1].Last = true;
-            }
-
-            // Generate test cases from data rows
-            foreach (var dataRow in dataRows)
-            {
-                var values = dataRow.Cells.Select(c => $"\"{c.Value}\"");
-                scenarioCrif.TestCases.Add(string.Join(", ", values));
-            }
+            return;
         }
 
-        // Convert steps
+        var examples = scenario.Examples.First();
+        ExtractParametersFromHeader(examples.TableHeader, scenarioCrif);
+        GenerateTestCasesFromDataRows(examples.TableBody, scenarioCrif);
+    }
+
+    /// <summary>
+    /// Extracts parameters from scenario outline header row.
+    /// </summary>
+    /// <param name="headerRow">The header row of the examples table.</param>
+    /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
+    private static void ExtractParametersFromHeader(TableRow headerRow, ScenarioCrif scenarioCrif)
+    {
+        foreach (var cell in headerRow.Cells)
+        {
+            scenarioCrif.Parameters.Add(new ParameterCrif
+            {
+                Type = "string", // Default to string for unimplemented steps
+                Name = cell.Value,
+                Last = false // Will be set after all are added
+            });
+        }
+
+        // Set Last flag on final parameter
+        if (scenarioCrif.Parameters.Any())
+        {
+            scenarioCrif.Parameters[scenarioCrif.Parameters.Count - 1].Last = true;
+        }
+    }
+
+    /// <summary>
+    /// Generates test cases from scenario outline data rows.
+    /// </summary>
+    /// <param name="dataRows">The data rows of the examples table.</param>
+    /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
+    private static void GenerateTestCasesFromDataRows(IEnumerable<TableRow> dataRows, ScenarioCrif scenarioCrif)
+    {
+        foreach (var dataRow in dataRows)
+        {
+            var values = dataRow.Cells.Select(c => $"\"{c.Value}\"");
+            scenarioCrif.TestCases.Add(string.Join(", ", values));
+        }
+    }
+
+    /// <summary>
+    /// Processes scenario steps and converts them to CRIF format.
+    /// </summary>
+    /// <param name="scenario">The Gherkin scenario.</param>
+    /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
+    private void ProcessScenarioSteps(Scenario scenario, ScenarioCrif scenarioCrif)
+    {
         var tableCounter = 1;
         foreach (var step in scenario.Steps)
         {
@@ -324,8 +375,6 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
 
             scenarioCrif.Steps.Add(stepCrif);
         }
-
-        return scenarioCrif;
     }
 }
 
