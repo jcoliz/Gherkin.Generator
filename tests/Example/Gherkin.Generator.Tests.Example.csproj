@@ -20,8 +20,8 @@
     <PackageReference Include="NUnit.Analyzers" Version="4.7.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
     
-    <!-- Gherkin.Generator analyzer package (includes Utils as transitive dependency) -->
-    <PackageReference Include="Gherkin.Generator" Version="0.1.5" />
+    <!-- Gherkin.Generator analyzer package (includes Gherkin.Generator.Utils as transitive dependency) -->
+    <PackageReference Include="Gherkin.Generator" Version="0.1.7" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,8 +30,6 @@
 
   <ItemGroup>
     <AdditionalFiles Include="Features\*.feature" />
-    <!-- We use the latest default template from the project to stay current -->
-    <AdditionalFiles Include="..\..\templates\Default.mustache" />
   </ItemGroup>
 
 </Project>
