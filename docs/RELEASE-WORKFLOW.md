@@ -36,7 +36,7 @@ Create a git tag for the release version:
 
 ```powershell
 # Create tag for the version (e.g., 0.0.1)
-git tag 0.0.1
+git tag 0.0.1 -s -m "Description of release"
 
 # Push the tag to GitHub
 git push origin 0.0.1
@@ -50,17 +50,19 @@ git push origin 0.0.1
    - Go to https://github.com/jcoliz/Gherkin.Generator/releases
    - Click "Draft a new release"
 
-2. **Set Release Details**:
+2. **Collect Release Notes**
+   - capture the logs since last tag. e.g.:
+   - run `git log --oneline 0.0.1..HEAD`
+   - include only `feat` lines and user-facing `fix` lines
+   - this exact text will be our release notes
+
+3. **Set Release Details**:
    - **Tag**: Select the tag you just pushed (e.g., `0.0.1`)
    - **Target**: `main` branch (should auto-select based on tag)
-   - **Release Title**: Same as tag (e.g., `0.0.1`)
-   - **Description**: Add release notes describing:
-     - New features
-     - Bug fixes
-     - Breaking changes (if any)
-     - Migration notes (if needed)
+   - **Release Title**: Same as -m on the tag, e.g. "Description of Release"
+   - **Description**: Add release notes as captured above
 
-3. **Publish**:
+4. **Publish**:
    - Click "Publish release"
    - The release workflow will automatically start
 
