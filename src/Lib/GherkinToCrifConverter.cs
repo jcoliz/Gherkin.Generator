@@ -110,10 +110,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         if (feature.Description != null)
         {
             var lines = feature.Description.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var line in lines)
-            {
-                crif.DescriptionLines.Add(line.Trim());
-            }
+            crif.DescriptionLines.AddRange(lines.Select(line => line.Trim()));
         }
     }
 
@@ -168,13 +165,10 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             Description = rule.Description ?? string.Empty
         };
 
-        foreach (var ruleChild in rule.Children)
-        {
-            if (ruleChild is Scenario scenario)
-            {
-                ProcessScenarioInRule(scenario, ruleCrif, crif);
-            }
-        }
+        rule.Children
+            .OfType<Scenario>()
+            .ToList()
+            .ForEach(scenario => ProcessScenarioInRule(scenario, ruleCrif, crif));
 
         crif.Rules.Add(ruleCrif);
     }
@@ -224,9 +218,9 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     private BackgroundCrif ConvertBackground(Background background)
     {
         var backgroundCrif = new BackgroundCrif();
-
         var tableCounter = 1;
-        foreach (var step in background.Steps)
+
+        var steps = background.Steps.Select(step =>
         {
             var stepCrif = _stepProcessor.ConvertStep(step);
 
@@ -237,9 +231,10 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
                 tableCounter++;
             }
 
-            backgroundCrif.Steps.Add(stepCrif);
-        }
+            return stepCrif;
+        });
 
+        backgroundCrif.Steps.AddRange(steps);
         return backgroundCrif;
     }
 
@@ -323,21 +318,20 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
     private static void ExtractParametersFromHeader(TableRow headerRow, ScenarioCrif scenarioCrif)
     {
-        foreach (var cell in headerRow.Cells)
+        var parameters = headerRow.Cells.Select(cell => new ParameterCrif
         {
-            scenarioCrif.Parameters.Add(new ParameterCrif
-            {
-                Type = "string", // Default to string for unimplemented steps
-                Name = cell.Value,
-                Last = false // Will be set after all are added
-            });
-        }
+            Type = "string", // Default to string for unimplemented steps
+            Name = cell.Value,
+            Last = false
+        }).ToList();
 
         // Set Last flag on final parameter
-        if (scenarioCrif.Parameters.Any())
+        if (parameters.Any())
         {
-            scenarioCrif.Parameters[scenarioCrif.Parameters.Count - 1].Last = true;
+            parameters[parameters.Count - 1].Last = true;
         }
+
+        scenarioCrif.Parameters.AddRange(parameters);
     }
 
     /// <summary>
@@ -347,11 +341,13 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
     private static void GenerateTestCasesFromDataRows(IEnumerable<TableRow> dataRows, ScenarioCrif scenarioCrif)
     {
-        foreach (var dataRow in dataRows)
+        var testCases = dataRows.Select(dataRow =>
         {
             var values = dataRow.Cells.Select(c => $"\"{c.Value}\"");
-            scenarioCrif.TestCases.Add(string.Join(", ", values));
-        }
+            return string.Join(", ", values);
+        });
+
+        scenarioCrif.TestCases.AddRange(testCases);
     }
 
     /// <summary>
@@ -362,7 +358,8 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     private void ProcessScenarioSteps(Scenario scenario, ScenarioCrif scenarioCrif)
     {
         var tableCounter = 1;
-        foreach (var step in scenario.Steps)
+
+        var steps = scenario.Steps.Select(step =>
         {
             var stepCrif = _stepProcessor.ConvertStep(step);
 
@@ -373,8 +370,10 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
                 tableCounter++;
             }
 
-            scenarioCrif.Steps.Add(stepCrif);
-        }
+            return stepCrif;
+        });
+
+        scenarioCrif.Steps.AddRange(steps);
     }
 }
 

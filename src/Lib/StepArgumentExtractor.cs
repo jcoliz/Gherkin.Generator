@@ -185,16 +185,14 @@ internal static class StepArgumentExtractor
     {
         // Find all placeholders in the format <parameterName>
         var regex = new Regex(@"<(\w+)>");
-        var matches = regex.Matches(step.Text);
-
-        foreach (Match match in matches)
-        {
-            var parameterName = match.Groups[1].Value;
-            step.Arguments.Add(new ArgumentCrif
+        var arguments = regex.Matches(step.Text)
+            .Cast<Match>()
+            .Select(match => new ArgumentCrif
             {
-                Value = parameterName,
+                Value = match.Groups[1].Value,
                 Last = false
             });
-        }
+
+        step.Arguments.AddRange(arguments);
     }
 }

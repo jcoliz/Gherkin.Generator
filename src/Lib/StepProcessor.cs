@@ -198,10 +198,7 @@ internal class StepProcessor
         if (textParameters.Count > 0)
         {
             var arguments = StepArgumentExtractor.ExtractArguments(matchedStep.Text, step.Text, textParameters);
-            foreach (var arg in arguments)
-            {
-                step.Arguments.Add(arg);
-            }
+            step.Arguments.AddRange(arguments);
         }
     }
 
@@ -323,47 +320,39 @@ internal class StepProcessor
 
             // Extract scenario outline placeholders and add as parameters
             var placeholderRegex = new Regex(@"<(\w+)>");
-            var placeholderMatches = placeholderRegex.Matches(step.Text);
-            foreach (Match match in placeholderMatches)
-            {
-                var parameterName = match.Groups[1].Value;
-                unimplementedStep.Parameters.Add(new ParameterCrif
+            var placeholderParams = placeholderRegex.Matches(step.Text)
+                .Cast<Match>()
+                .Select(match => new ParameterCrif
                 {
                     Type = "string",
-                    Name = parameterName,
+                    Name = match.Groups[1].Value,
                     Last = false
                 });
-            }
+            unimplementedStep.Parameters.AddRange(placeholderParams);
 
             // Extract integers and add as parameters with generated names
             var integerRegex = new Regex(@"\b(\d+)\b");
-            var integerMatches = integerRegex.Matches(step.Text);
-            var valueCounter = 1;
-            foreach (Match match in integerMatches)
-            {
-                unimplementedStep.Parameters.Add(new ParameterCrif
+            var integerParams = integerRegex.Matches(step.Text)
+                .Cast<Match>()
+                .Select((match, index) => new ParameterCrif
                 {
                     Type = "int",
-                    Name = $"value{valueCounter}",
+                    Name = $"value{index + 1}",
                     Last = false
                 });
-                valueCounter++;
-            }
+            unimplementedStep.Parameters.AddRange(integerParams);
 
             // Extract quoted strings and add as parameters with generated names
             var stringRegex = new Regex(@"""[^""]*""");
-            var stringMatches = stringRegex.Matches(step.Text);
-            var stringCounter = 1;
-            foreach (Match match in stringMatches)
-            {
-                unimplementedStep.Parameters.Add(new ParameterCrif
+            var stringParams = stringRegex.Matches(step.Text)
+                .Cast<Match>()
+                .Select((match, index) => new ParameterCrif
                 {
                     Type = "string",
-                    Name = $"string{stringCounter}",
+                    Name = $"string{index + 1}",
                     Last = false
                 });
-                stringCounter++;
-            }
+            unimplementedStep.Parameters.AddRange(stringParams);
 
             if (step.DataTable != null)
             {
