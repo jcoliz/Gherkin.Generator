@@ -180,6 +180,8 @@ public class UnmatchedStepTests
 
         // Then: All steps should be in Unimplemented list
         Assert.That(crif.Unimplemented, Has.Count.EqualTo(3));
+        
+        // And: Text should preserve scenario outline placeholders
         Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("I have <amount> dollars"));
         Assert.That(crif.Unimplemented[1].Text, Is.EqualTo("I create an account"));
         Assert.That(crif.Unimplemented[2].Text, Is.EqualTo("the balance should be <amount>"));
@@ -241,7 +243,9 @@ public class UnmatchedStepTests
 
         // Then: Step should be in Unimplemented list
         Assert.That(crif.Unimplemented, Has.Count.EqualTo(1));
-        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("I have 12 oranges"));
+        
+        // And: Text should have integer replaced with placeholder
+        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("I have {value1} oranges"));
         Assert.That(crif.Unimplemented[0].Keyword, Is.EqualTo(NormalizedKeyword.When));
         Assert.That(crif.Unimplemented[0].Parameters[0].Type, Is.EqualTo("int"));
         Assert.That(crif.Unimplemented[0].Parameters[0].Name, Is.EqualTo("value1"));
@@ -278,7 +282,9 @@ public class UnmatchedStepTests
 
         // Then: Step should be in Unimplemented list
         Assert.That(crif.Unimplemented, Has.Count.EqualTo(1));
-        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("5 transactions with payee \"Something brand new\""));
+        
+        // And: Text should have integer and quoted string replaced with placeholders
+        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("{value1} transactions with payee {string1}"));
         Assert.That(crif.Unimplemented[0].Keyword, Is.EqualTo(NormalizedKeyword.Given));
 
         // And: Step should have detected both the integer and quoted string as parameters
@@ -304,5 +310,153 @@ public class UnmatchedStepTests
         
         // And: Method name should be generated without the integer or quoted string (TransactionsWithPayee)
         Assert.That(step.Method, Is.EqualTo("TransactionsWithPayee"));
+    }
+
+    [Test]
+    public void Convert_WithUnmatchedStepContainingQuotedString_GeneratesCorrectPattern()
+    {
+        // Given: An empty step metadata collection
+        var stepMetadata = new StepMetadataCollection();
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin feature with a step containing a quoted string
+        var gherkin = """
+            Feature: Shopping Cart
+
+            Scenario: Check cart status
+              Then the cart should be "empty"
+            """;
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Step should be in Unimplemented list
+        Assert.That(crif.Unimplemented, Has.Count.EqualTo(1));
+        
+        // And: Text should be the pattern with quoted string replaced by placeholder
+        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("the cart should be {string1}"));
+        
+        // And: Method name should be generated without the quoted string
+        Assert.That(crif.Unimplemented[0].Method, Is.EqualTo("TheCartShouldBe"));
+        
+        // And: Should have one string parameter
+        Assert.That(crif.Unimplemented[0].Parameters, Has.Count.EqualTo(1));
+        Assert.That(crif.Unimplemented[0].Parameters[0].Type, Is.EqualTo("string"));
+        Assert.That(crif.Unimplemented[0].Parameters[0].Name, Is.EqualTo("string1"));
+    }
+
+    [Test]
+    public void Convert_WithUnmatchedStepContainingMultipleQuotedStrings_GeneratesCorrectPattern()
+    {
+        // Given: An empty step metadata collection
+        var stepMetadata = new StepMetadataCollection();
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin feature with a step containing multiple quoted strings
+        var gherkin = """
+            Feature: User Management
+
+            Scenario: Update user details
+              When I set user "john" email to "john@example.com"
+            """;
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Step should be in Unimplemented list
+        Assert.That(crif.Unimplemented, Has.Count.EqualTo(1));
+        
+        // And: Text should replace both quoted strings with numbered placeholders
+        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("I set user {string1} email to {string2}"));
+        
+        // And: Method name should be generated without the quoted strings
+        Assert.That(crif.Unimplemented[0].Method, Is.EqualTo("ISetUserEmailTo"));
+        
+        // And: Should have two string parameters
+        Assert.That(crif.Unimplemented[0].Parameters, Has.Count.EqualTo(2));
+        Assert.That(crif.Unimplemented[0].Parameters[0].Name, Is.EqualTo("string1"));
+        Assert.That(crif.Unimplemented[0].Parameters[1].Name, Is.EqualTo("string2"));
+    }
+
+    [Test]
+    public void Convert_WithUnmatchedStepContainingIntegersAndStrings_GeneratesCorrectPattern()
+    {
+        // Given: An empty step metadata collection
+        var stepMetadata = new StepMetadataCollection();
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin feature with a step containing integers and quoted strings
+        var gherkin = """
+            Feature: Transaction Management
+
+            Scenario: Create transactions
+              Given 5 transactions with payee "Store" and amount 100
+            """;
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Step should be in Unimplemented list
+        Assert.That(crif.Unimplemented, Has.Count.EqualTo(1));
+        
+        // And: Text should replace integers and quoted strings with placeholders
+        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("{value1} transactions with payee {string1} and amount {value2}"));
+        
+        // And: Method name should be generated without the parameters
+        Assert.That(crif.Unimplemented[0].Method, Is.EqualTo("TransactionsWithPayeeAndAmount"));
+        
+        // And: Should have correct parameters in order
+        Assert.That(crif.Unimplemented[0].Parameters, Has.Count.EqualTo(3));
+        Assert.That(crif.Unimplemented[0].Parameters[0].Type, Is.EqualTo("int"));
+        Assert.That(crif.Unimplemented[0].Parameters[0].Name, Is.EqualTo("value1"));
+        Assert.That(crif.Unimplemented[0].Parameters[1].Type, Is.EqualTo("string"));
+        Assert.That(crif.Unimplemented[0].Parameters[1].Name, Is.EqualTo("string1"));
+        Assert.That(crif.Unimplemented[0].Parameters[2].Type, Is.EqualTo("int"));
+        Assert.That(crif.Unimplemented[0].Parameters[2].Name, Is.EqualTo("value2"));
+    }
+
+    [Test]
+    public void Generate_WithUnmatchedStepContainingQuotedString_GeneratesCorrectStubCode()
+    {
+        // Given: An empty step metadata collection
+        var stepMetadata = new StepMetadataCollection();
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin feature with a step containing a quoted string
+        var gherkin = """
+            Feature: Shopping Cart
+
+            Scenario: Check cart status
+              Then the cart should be "empty"
+            """;
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
+
+        // And: Feature is converted to CRIF with project metadata
+        var crif = converter.Convert(feature);
+        crif.Namespace = "Test.Namespace";
+        crif.FileName = "ShoppingCart";
+        crif.BaseClass = "TestBase";
+
+        // When: Generating code from CRIF
+        var templatePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "templates", "Default.mustache");
+        var result = FunctionalTestGenerator.GenerateStringFromFile(templatePath, crif);
+
+        // Then: Generated stub should have correct attribute pattern with placeholder
+        Assert.That(result, Does.Contain("[Then(\"the cart should be {string1}\")]"));
+        
+        // And: Stub method should have correct name without the quoted string
+        Assert.That(result, Does.Contain("public async Task TheCartShouldBe(string string1)"));
+        
+        // And: Summary should show the pattern
+        Assert.That(result, Does.Contain("/// Then the cart should be {string1}"));
+        
+        // And: Should NOT contain HTML-encoded quotes
+        Assert.That(result, Does.Not.Contain("&quot;"));
+        
+        // And: Should NOT contain the literal quoted string in the attribute
+        Assert.That(result, Does.Not.Contain("[Then(\"the cart should be \"empty\"\")]"));
     }
 }
