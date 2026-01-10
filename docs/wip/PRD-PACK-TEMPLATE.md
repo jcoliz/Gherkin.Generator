@@ -1,8 +1,8 @@
 ---
-status: Draft # Draft | In Review | Approved | Implemented
-ado: [Link to ADO Item]
+status: Superseded
 references:
     - docs\USER-GUIDE.md
+    - docs\wip\PRD-EMBED-TEMPLATE.md
 ---
 
 # Product Requirements Document: Pack template into library release
