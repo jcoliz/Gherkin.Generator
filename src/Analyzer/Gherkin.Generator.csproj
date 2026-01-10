@@ -48,6 +48,13 @@
     <None Include="$(OutputPath)\System.Threading.Tasks.Extensions.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Embed Default.mustache template as a resource -->
+    <EmbeddedResource Include="..\..\templates\Default.mustache">
+      <LogicalName>Gherkin.Generator.Templates.Default.mustache</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
   <!-- Custom target to copy dependencies for packing -->
   <Target Name="CopyDependenciesToOutput" AfterTargets="Build">
     <ItemGroup>

@@ -1,3 +1,5 @@
+using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -14,7 +16,9 @@ namespace Gherkin.Generator;
 /// <remarks>
 /// This generator:
 /// - Discovers step definitions from C# source files using Roslyn analysis
-/// - Processes .feature files and .mustache template from AdditionalFiles
+/// - Processes .feature files from AdditionalFiles
+/// - Uses embedded Default.mustache template by default
+/// - Allows override with custom .mustache template in AdditionalFiles
 /// - Generates test code automatically at build time
 /// - Always produces compilable code (generates stubs for unimplemented steps)
 /// </remarks>
@@ -22,6 +26,7 @@ namespace Gherkin.Generator;
 public class GherkinSourceGenerator : IIncrementalGenerator
 {
     private const string DiagnosticCategory = "Gherkin.Generator";
+    private const string EmbeddedTemplateResourceName = "Gherkin.Generator.Templates.Default.mustache";
 
     /// <summary>
     /// Initializes the incremental generator pipeline.
@@ -29,11 +34,12 @@ public class GherkinSourceGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // 1. Collect Mustache templates from AdditionalFiles (any .mustache file)
+        // If no custom template found, use embedded template
         var templateProvider = context.AdditionalTextsProvider
             .Where(file => file.Path.EndsWith(".mustache"))
             .Select((file, cancellationToken) => file.GetText(cancellationToken)?.ToString() ?? string.Empty)
             .Collect()
-            .Select((templates, _) => templates.FirstOrDefault() ?? string.Empty);
+            .Select((templates, _) => templates.FirstOrDefault() ?? LoadEmbeddedTemplate());
 
         // 2. Collect .feature files from AdditionalFiles
         var featureFilesProvider = context.AdditionalTextsProvider
@@ -68,14 +74,15 @@ public class GherkinSourceGenerator : IIncrementalGenerator
         {
             var (((template, featureFiles), stepMetadata), projectMetadata) = source;
 
-            // Skip if no template found
+            // Template should always be available (either from AdditionalFiles or embedded)
+            // But if somehow it's still empty, report an error
             if (string.IsNullOrEmpty(template))
             {
                 spc.ReportDiagnostic(Diagnostic.Create(
                     new DiagnosticDescriptor(
                         "GHERKIN001",
                         "Missing Mustache Template",
-                        "No .mustache template file found in AdditionalFiles. Add a .mustache file to AdditionalFiles in your project.",
+                        "Failed to load template. This should not happen as an embedded template is included.",
                         DiagnosticCategory,
                         DiagnosticSeverity.Error,
                         isEnabledByDefault: true),
@@ -201,5 +208,24 @@ public class GherkinSourceGenerator : IIncrementalGenerator
         // 6. Add generated source to compilation
         var sourceText = SourceText.From(generatedCode, Encoding.UTF8);
         context.AddSource($"{fileName}.feature.g.cs", sourceText);
+    }
+
+    /// <summary>
+    /// Loads the embedded Default.mustache template from the assembly resources.
+    /// </summary>
+    /// <returns>The template content as a string.</returns>
+    private static string LoadEmbeddedTemplate()
+    {
+        var assembly = typeof(GherkinSourceGenerator).Assembly;
+        using var stream = assembly.GetManifestResourceStream(EmbeddedTemplateResourceName);
+        
+        if (stream == null)
+        {
+            throw new InvalidOperationException(
+                $"Embedded template resource '{EmbeddedTemplateResourceName}' not found in assembly.");
+        }
+
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
 }

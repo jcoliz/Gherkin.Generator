@@ -49,15 +49,18 @@ Add the package to your test project:
     ```
 
 2. **Create a Features directory** in your test project
-3. **Copy the template** from [`templates/Default.mustache`](../templates/Default.mustache) to your project
-4. **Configure your project** to include feature files and the template:
+
+3. **Add feature files to AdditionalFiles** in your `.csproj`:
 
     ```xml
     <ItemGroup>
       <AdditionalFiles Include="Features\*.feature" />
-      <AdditionalFiles Include="Templates\Default.mustache" />
     </ItemGroup>
     ```
+
+4. **Build your project** - The generator uses an embedded default template automatically. No manual template copying needed!
+
+That's it! The generator will create test classes from your feature files using the embedded template.
 
 ### Retaining Generated Files
 
@@ -419,6 +422,41 @@ The generator discovers all step definitions and matches them to feature steps a
 
 ## Customizing Templates
 
+The generator includes an embedded Default.mustache template that works automatically. For advanced users who need to customize test generation, you can override the default template.
+
+### Using the Default Template
+
+No action needed! The generator uses an embedded template automatically. This ensures:
+- **Zero setup** - Works immediately after package installation
+- **Version synchronization** - Template always matches generator version
+- **No manual updates** - Package upgrades automatically include template updates
+
+### Creating a Custom Template
+
+To customize the template:
+
+1. **Download the default template** from GitHub:
+
+    ```bash
+    mkdir Templates
+    curl https://raw.githubusercontent.com/jcoliz/Gherkin.Generator/main/templates/Default.mustache -o Templates/MyCustom.mustache
+    ```
+
+2. **Modify the template** for your needs (see Template Structure below)
+
+3. **Add to AdditionalFiles** in your `.csproj`:
+
+    ```xml
+    <ItemGroup>
+      <AdditionalFiles Include="Features\*.feature" />
+      <AdditionalFiles Include="Templates\MyCustom.mustache" />
+    </ItemGroup>
+    ```
+
+4. **Rebuild** - The generator will use your custom template instead of the embedded one
+
+**Note**: When you add a `.mustache` file to AdditionalFiles, it overrides the embedded template. To revert to the default, simply remove your custom template from AdditionalFiles.
+
 Templates use Mustache syntax to control code generation.
 
 ### Template Structure
@@ -465,9 +503,9 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
 - `Method` - Step method name
 - `Arguments` - Method arguments
 
-### Creating Custom Templates
+### Example: Custom Template for xUnit
 
-Copy [`Default.mustache`](../templates/Default.mustache) and modify for your framework:
+Here's how you might modify the template for xUnit instead of NUnit:
 
 ```mustache
 // xUnit example
@@ -486,6 +524,8 @@ public class {{FileName}}_Tests : {{BaseClass}}
     {{/Scenarios}}
 }
 ```
+
+**Reference**: See the complete default template at [`templates/Default.mustache`](../templates/Default.mustache) in the repository.
 
 ## Advanced Features
 

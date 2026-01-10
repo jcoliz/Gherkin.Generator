@@ -1,6 +1,5 @@
 ---
-status: Approved
-ado: [Link to ADO Item]
+status: Implemented
 references:
     - docs\USER-GUIDE.md
     - docs\wip\PACK-TEMPLATE-DESIGN.md
