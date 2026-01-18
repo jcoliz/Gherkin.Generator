@@ -21,7 +21,7 @@
     <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
     
     <!-- Gherkin.Generator analyzer package (includes Gherkin.Generator.Utils as transitive dependency) -->
-    <PackageReference Include="Gherkin.Generator" Version="0.1.7" />
+    <PackageReference Include="Gherkin.Generator" Version="0.1.9" />
   </ItemGroup>
 
   <ItemGroup>
