@@ -1,5 +1,5 @@
 ---
-Status: In review
+Status: Approved
 ---
 
 # Product Requirements Document: Specify tear-down steps for features
@@ -40,9 +40,27 @@ Background:
   And afterward the session is reset
 ```
 
-This keeps setup and teardown together in one place, reads naturally as 
-English, and is valid Gherkin syntax (the parser treats "afterward" as 
+This keeps setup and teardown together in one place, reads naturally as
+English, and is valid Gherkin syntax (the parser treats "afterward" as
 part of the step text).
+
+### Design Notes
+
+- **Case insensitive**: The "afterward" prefix is matched case-insensitively.
+  `And afterward`, `And Afterward`, and `And AFTERWARD` are all recognized.
+- **Any step keyword**: The "afterward" prefix is recognized on any step
+  keyword (`Given`, `When`, `Then`, `And`, `But`, `*`), not just `And`.
+  While `And afterward` is the idiomatic usage, other keywords work to
+  avoid brittleness.
+- **Base class `[TearDown]` interaction**: If the test base class already
+  has a `[TearDown]` method, both the base class and generated teardown
+  will run according to standard NUnit inheritance behavior (derived class
+  `[TearDown]` runs first, then base class). This project has no opinion
+  on the interaction; it follows NUnit conventions.
+- **Documentation**: The User Guide should be updated after this feature
+  is implemented to document the `And afterward` syntax and the
+  `[Afterward]` attribute.
+- **Samples**: The sample tests should be updated to include demonstrating use of this feature.
 
 ### Step Matching with `[Afterward]` Attribute
 
@@ -74,7 +92,7 @@ steps across `[Given]` and `[When]`:
 ```csharp
 public class ShoppingCartSteps
 {
-    [Given("the shopping cart is cleared")]
+    [Given("the shopping cart is empty")]
     [Afterward("the shopping cart is cleared")]
     public async Task TheShoppingCartIsCleared()
     {
