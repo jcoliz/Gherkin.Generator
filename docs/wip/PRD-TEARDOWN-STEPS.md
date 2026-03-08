@@ -1,5 +1,6 @@
 ---
-Status: Approved
+status: Approved
+supersedes: "Previous version used `And afterward` keyword approach (rejected as too complex)"
 ---
 
 # Product Requirements Document: Specify tear-down steps for features
@@ -11,99 +12,107 @@ tear-down steps to put the test into the correct state, and to clean up
 after the test.
 
 Currently, bring-up steps can be accomplished by creating a `Background`
-section. However, there is no Gherkin-native approach to specifying tear-
-down steps.
+section. However, there is no mechanism for specifying tear-down steps
+that run after each scenario.
 
 ## Goals
 
-- Specify tear-down steps to be completed after each scenario in a feature is run
-- Feature files remain valid Gherkin syntax
+- Allow step classes to define tear-down logic that runs after each scenario
+- Keep the implementation simple and low-effort
+- Feature files remain valid Gherkin syntax (no changes to feature file format)
 
 ## Non-goals
 
 - One-time setup or tear-down which happens only once per feature is out of scope for this PRD.
+- Explicit visibility of teardown steps in the feature file is not a goal. Teardown is an implementation concern managed by step writers.
 
-## Solution: `And afterward` keyword in Background
+## Solution: `[After]` attribute with implicit binding
 
-Tear-down steps are specified within the `Background` section using the
-`And afterward` prefix. Steps beginning with "afterward" are routed to a
-`[TearDown]` method in the generated test class, while all other steps
-remain in the `[SetUp]` method as they do today.
+Step classes define methods decorated with `[After]` that automatically
+contribute teardown for any feature that uses their steps. When a
+generated test class references a step class (because its `[Given]`,
+`[When]`, or `[Then]` steps were matched), and that step class contains
+`[After]` methods, those methods are called in the generated `[TearDown]`
+method.
+
+This follows the SpecFlow/Cucumber model where teardown is bound
+implicitly to the step classes that are already in use. The test reader
+doesn't need to understand teardown details. The step writer handles
+cleanup as part of the step class contract.
 
 ### Syntax
 
-```gherkin
-Background:
-  Given the application is running
-  And I am logged in as customer
-  And afterward the shopping cart is cleared
-  And afterward the session is reset
+No changes to feature files. Teardown is specified entirely in step
+class code:
+
+```csharp
+public class ShoppingCartSteps
+{
+    [Given("the cart contains:")]
+    public async Task CartContains(DataTable table) { /* ... */ }
+
+    [When("I add {item} to the cart")]
+    public async Task AddToCart(string item) { /* ... */ }
+
+    [After]
+    public async Task ClearCart()
+    {
+        _context.Cart.Clear();
+    }
+}
 ```
 
-This keeps setup and teardown together in one place, reads naturally as
-English, and is valid Gherkin syntax (the parser treats "afterward" as
-part of the step text).
+Any feature that matches steps from `ShoppingCartSteps` will
+automatically call `ClearCart()` in its `[TearDown]` method.
 
 ### Design Notes
 
-- **Case insensitive**: The "afterward" prefix is matched case-insensitively.
-  `And afterward`, `And Afterward`, and `And AFTERWARD` are all recognized.
-- **Any step keyword**: The "afterward" prefix is recognized on any step
-  keyword (`Given`, `When`, `Then`, `And`, `But`, `*`), not just `And`.
-  While `And afterward` is the idiomatic usage, other keywords work to
-  avoid brittleness.
+- **No feature file changes**: The feature file remains unchanged. This
+  is purely a step-class-side concern.
+- **Implicit binding**: If a step class is referenced by a feature (i.e.,
+  any of its `[Given]`/`[When]`/`[Then]` steps are matched), its `[After]`
+  methods are included in teardown. If the step class is not used by a
+  feature, its `[After]` methods are not included.
+- **Multiple `[After]` methods**: A step class may have multiple `[After]`
+  methods. All are called during teardown.
+- **Ordering within a class**: Multiple `[After]` methods within the same
+  step class are called in declaration order.
+- **Ordering across classes**: When multiple step classes contribute
+  `[After]` methods, the order follows the order in which step classes
+  appear in the generated class references (i.e., the order their steps
+  were first matched in the feature file).
+- **No parameters**: `[After]` methods must be parameterless. The
+  analyzer should emit a warning if an `[After]` method has parameters.
 - **Base class `[TearDown]` interaction**: If the test base class already
   has a `[TearDown]` method, both the base class and generated teardown
   will run according to standard NUnit inheritance behavior (derived class
   `[TearDown]` runs first, then base class). This project has no opinion
   on the interaction; it follows NUnit conventions.
+- **No teardown without steps**: A step class that contains only `[After]`
+  methods but no `[Given]`/`[When]`/`[Then]` methods will never be
+  referenced by any feature, so its `[After]` methods will never run.
+  This is by design, as teardown is tied to step class usage.
 - **Documentation**: The User Guide should be updated after this feature
-  is implemented to document the `And afterward` syntax and the
-  `[Afterward]` attribute.
-- **Samples**: The sample tests should be updated to include demonstrating use of this feature.
+  is implemented to document the `[After]` attribute.
+- **Samples**: The sample tests should be updated to include demonstrating
+  use of this feature.
 
-### Step Matching with `[Afterward]` Attribute
+### Step Metadata
 
-Tear-down steps match exclusively against step definitions decorated with
-the `[Afterward]` attribute. The "afterward" prefix is stripped from the
-step text before matching, so `And afterward the shopping cart is cleared`
-matches against `[Afterward("the shopping cart is cleared")]`.
+The `[After]` attribute is discovered during the same step metadata
+extraction pass that discovers `[Given]`/`[When]`/`[Then]` attributes.
+The metadata for `[After]` methods is stored alongside the existing step
+metadata, associated with the step class.
 
-```csharp
-public class ShoppingCartSteps
-{
-    [Afterward("the shopping cart is cleared")]
-    public async Task TheShoppingCartIsCleared()
-    {
-        _context.Cart.Clear();
-    }
-}
-```
-
-The `[Afterward]` attribute creates a dedicated keyword category for
-teardown steps, keeping them separate from `[Given]`/`[When]`/`[Then]`
-matching. This prevents accidental collisions where a setup step and a
-teardown step share the same text but have different implementations.
-
-A step definition can be made available in multiple contexts by applying
-multiple attributes, following the same pattern already used for sharing
-steps across `[Given]` and `[When]`:
-
-```csharp
-public class ShoppingCartSteps
-{
-    [Given("the shopping cart is empty")]
-    [Afterward("the shopping cart is cleared")]
-    public async Task TheShoppingCartIsCleared()
-    {
-        _context.Cart.Clear();
-    }
-}
-```
+The `[After]` attribute does not participate in step matching. It is not
+a keyword in the `NormalizedKeyword` enum. Instead, the generator checks
+whether any referenced step class has `[After]` methods, and if so,
+generates a `[TearDown]` method that calls them.
 
 ### Generated Output
 
-The Background section generates two test lifecycle methods:
+When a feature uses step classes that have `[After]` methods, the
+generated test class includes a `[TearDown]` method:
 
 ```csharp
 [SetUp]
@@ -119,15 +128,16 @@ public async Task SetupAsync()
 [TearDown]
 public async Task TeardownAsync()
 {
-    // And afterward the shopping cart is cleared
-    await ShoppingCartSteps.TheShoppingCartIsCleared();
-
-    // And afterward the session is reset
-    await SessionSteps.TheSessionIsReset();
+    await ShoppingCartSteps.ClearCart();
 }
 ```
 
-### Example: Complete Feature File
+If no referenced step classes have `[After]` methods, no `[TearDown]`
+method is generated.
+
+### Example: Complete Feature File and Step Classes
+
+Feature file (unchanged from today's format):
 
 ```gherkin
 Feature: Shopping Cart
@@ -138,7 +148,6 @@ Feature: Shopping Cart
 Background:
   Given the application is running
   And I am logged in as customer
-  And afterward the shopping cart is cleared
 
 Rule: Adding Items
 
@@ -153,107 +162,112 @@ Scenario: Add multiple items
   Then the cart should contain 2 items
 ```
 
-## User Stories
-
-### Story 1: User - Specifies tear-down steps
-
-**As a** developer creating tests in my project
-**I want** to specify tear-down steps in my feature file's Background section
-**So that** my environment is returned to a clean state after each scenario
-
-**Acceptance Criteria**:
-- [ ] Steps in Background prefixed with "afterward" are generated into a `[TearDown]` method
-- [ ] The "afterward" prefix is stripped before step matching
-- [ ] "Afterward" steps match exclusively against `[Afterward]` step definition attributes
-- [ ] Non-"afterward" Background steps continue to generate into the `[SetUp]` method as before
-- [ ] Tear-down steps support the same step matching as setup steps (including parameterized steps and data tables)
-- [ ] Feature files with "afterward" steps remain valid Gherkin and parse without errors
-- [ ] Features without "afterward" steps continue to work unchanged (no `[TearDown]` method generated)
-- [ ] A step definition can be shared across contexts by applying both `[Given]` and `[Afterward]` attributes
-
-### Story 2: User - Gets stubs for unimplemented tear-down steps
-
-**As a** developer writing a feature file
-**I want** unimplemented `And afterward` steps to generate stub methods with `[Afterward]` attributes
-**So that** I can copy them into my step definition classes and implement them
-
-When an `And afterward` step has no matching `[Afterward]` step definition,
-the generator should produce a stub method in the generated file, following
-the same pattern used for unimplemented `[Given]`/`[When]`/`[Then]` steps
-today.
-
-**Example**: Given this feature file:
-
-```gherkin
-Background:
-  Given the application is running
-  And afterward the shopping cart is cleared
-```
-
-If no `[Afterward("the shopping cart is cleared")]` step definition exists,
-the generated file should include:
+Step class with teardown:
 
 ```csharp
-#region Stubs for Unimplemented Steps
-
-/// <summary>
-/// Afterward the shopping cart is cleared
-/// </summary>
-[Afterward("the shopping cart is cleared")]
-public async Task TheShoppingCartIsCleared()
+public class ShoppingCartSteps
 {
-    throw new NotImplementedException();
+    private readonly FunctionalTestBase _context;
+
+    public ShoppingCartSteps(FunctionalTestBase context)
+    {
+        _context = context;
+    }
+
+    [When("I add {item} to the cart")]
+    public async Task AddToCart(string item)
+    {
+        _context.Cart.AddItem(item);
+    }
+
+    [Then("the cart should contain {quantity} item")]
+    [Then("the cart should contain {quantity} items")]
+    public async Task CartShouldContainItems(string quantity)
+    {
+        Assert.That(_context.Cart.ItemCount, Is.EqualTo(int.Parse(quantity)));
+    }
+
+    [After]
+    public async Task ClearCart()
+    {
+        _context.Cart.Clear();
+    }
 }
-
-#endregion
 ```
 
-The developer copies this stub into a step definition class, implements
-the body, and rebuilds. On the next build, the generator matches the step
-and the stub is no longer produced.
+## User Stories
+
+### Story 1: User - Creates `[After]` attribute
+
+**As a** developer using Gherkin.Generator
+**I want** an `[After]` attribute available in the Utils package
+**So that** I can mark step methods as teardown logic
 
 **Acceptance Criteria**:
-- [ ] Unimplemented "afterward" steps generate stub methods with `[Afterward]` attribute
-- [ ] Stub methods follow the same format as existing unimplemented step stubs (summary comment, attribute, `throw new NotImplementedException()`)
-- [ ] The step text in the `[Afterward]` attribute has the "afterward" prefix stripped
-- [ ] Stubs support parameterized step text (placeholders produce method parameters)
-- [ ] Stubs support data table parameters
-- [ ] The `[TearDown]` method still calls the stub via `this.MethodName()` (same as unimplemented setup steps use `this`)
-- [ ] Once the step is implemented in a step class, the stub is no longer generated
+- [ ] `[After]` attribute is added to the `Gherkin.Generator.Utils` package
+- [ ] `[After]` attribute has `AllowMultiple = false` (a method only needs one)
+- [ ] `[After]` attribute takes no parameters (unlike `[Given]`/`[When]`/`[Then]` which take a pattern)
+- [ ] `[After]` attribute targets methods only
 
-### Story 3: User - Gets warning for `And afterward` in scenarios
+### Story 2: User - Tear-down methods are discovered and generated
 
-**As a** developer writing a feature file
-**I want** to be warned if I use `And afterward` inside a scenario
-**So that** I know to move teardown steps to the Background section
-
-The `And afterward` prefix is only meaningful in Background sections. If
-a developer writes `And afterward` inside a Scenario, the generator should
-emit a compiler warning and skip the step entirely (no generated code for
-that step).
-
-**Example**: Given this feature file:
-
-```gherkin
-Scenario: Add item to cart
-  Given the application is running
-  When I add "Widget" to the cart
-  Then the cart should contain 1 item
-  And afterward the shopping cart is cleared
-```
-
-The generator should:
-- Emit a warning: `"afterward" steps are only supported in Background sections`
-- Not generate any code for the `And afterward` step in the test method
+**As a** developer using Gherkin.Generator
+**I want** `[After]` methods from my step classes to be called in a generated `[TearDown]` method
+**So that** my test environment is cleaned up after each scenario
 
 **Acceptance Criteria**:
-- [ ] `And afterward` steps appearing in a Scenario emit a compiler warning
-- [ ] The warning message clearly states that "afterward" is only supported in Background sections
-- [ ] No code is generated for the `And afterward` step in the scenario's test method
-- [ ] The rest of the scenario's steps are generated normally
+- [ ] Step metadata extraction discovers `[After]`-decorated methods alongside `[Given]`/`[When]`/`[Then]`
+- [ ] When a step class is referenced by a feature (via matched steps), its `[After]` methods are included in teardown
+- [ ] A `[TearDown]` method is generated that calls all `[After]` methods from referenced step classes
+- [ ] `[After]` methods are called in declaration order within a class
+- [ ] Cross-class ordering follows the order step classes were first referenced
+- [ ] Features that don't reference any step classes with `[After]` methods do not generate a `[TearDown]` method
+- [ ] The Mustache template is updated to support the optional `[TearDown]` section
+
+### Story 3: User - Gets warning for invalid `[After]` methods
+
+**As a** developer using Gherkin.Generator
+**I want** to be warned if my `[After]` methods have parameters
+**So that** I know to fix them since teardown methods cannot accept arguments
+
+**Acceptance Criteria**:
+- [ ] The analyzer emits a warning when an `[After]`-decorated method has parameters
+- [ ] The warning message clearly states that `[After]` methods must be parameterless
 - [ ] The warning does not block compilation (it is a warning, not an error)
 
+## Complexity Assessment
+
+This approach is significantly simpler than the previously-considered
+`And afterward` keyword approach:
+
+| Concern | `And afterward` approach | `[After]` implicit binding |
+|---|---|---|
+| Feature file syntax | New keyword pattern to parse | No changes |
+| New attribute | `[Afterward]` with pattern text | `[After]` with no parameters |
+| Step matching | New keyword category for teardown | No step matching needed |
+| Stub generation | Must generate `[Afterward]` stubs | Not applicable |
+| Warning for misuse | Must detect in scenarios | Only: parameters on `[After]` |
+| CRIF model changes | New teardown step list | Only: `[After]` method list per class |
+| Template changes | Teardown section with step calls | Teardown section with simple method calls |
+| User stories | 3 stories, complex acceptance criteria | 3 stories, straightforward criteria |
+
+The `[After]` approach requires changes only in the step metadata layer
+and code generation template. No Gherkin parsing changes, no new step
+matching logic, no stub generation for a new keyword category.
+
 ## Alternatives Considered
+
+### `And afterward` keyword in Background
+
+Tear-down steps specified within the `Background` section using the
+`And afterward` prefix. Steps beginning with "afterward" are routed to a
+`[TearDown]` method, while all other steps remain in the `[SetUp]` method.
+
+**Rejected because**: Too complex for the resulting gain. Requires new
+Gherkin keyword parsing, a new `[Afterward]` attribute with pattern
+matching, new stub generation logic for unimplemented teardown steps,
+and a new warning for misuse in scenarios. The amount of work is
+disproportionate to the value delivered.
 
 ### `@teardown`-tagged Scenario
 
@@ -280,23 +294,14 @@ Feature: Shopping Cart
 
 **Rejected because**: Introduces a new binding mechanism (by class name)
 that differs from the text-based step matching used throughout the system.
-Requires a new `[After]` attribute. Teardown intent is not visible as
-steps in the feature file.
-
-### `[After]` attribute with implicit binding
-
-Step classes with `[After]` methods automatically contribute teardown for
-any feature that uses their steps, following the SpecFlow/Cucumber model.
-
-**Rejected because**: Implicit binding is surprising — adding a new step
-class to a feature silently adds teardown. No feature-file visibility of
-teardown behavior. Ordering across multiple step classes is ambiguous.
+Teardown intent is not visible as steps in the feature file, and the tag
+creates coupling to class names.
 
 ### Matching `And afterward` against `[Given]` instead of `[Afterward]`
 
-An earlier version of this proposal matched "afterward" steps against
-`[Given]` step definitions (since `And` in a Background normalizes to
-`Given`).
+An earlier version of the `And afterward` proposal matched "afterward"
+steps against `[Given]` step definitions (since `And` in a Background
+normalizes to `Given`).
 
 **Rejected because**: No semantic distinction between setup and teardown
 step definitions. A developer reading `[Given("the shopping cart is
