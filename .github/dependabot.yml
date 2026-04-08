@@ -9,6 +9,12 @@ updates:
       all-nuget:
         patterns:
           - "*"
+    ignore:
+      # Roslyn packages must match the compiler version shipped with the target .NET SDK.
+      # Updating these independently causes CS9057 warnings for consumers.
+      # These should only be updated manually when targeting a newer SDK.
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp"
+      - dependency-name: "Microsoft.CodeAnalysis.Analyzers"
 
   - package-ecosystem: "github-actions"
     directory: "/"
