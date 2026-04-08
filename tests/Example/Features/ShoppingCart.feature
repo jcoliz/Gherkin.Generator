@@ -9,6 +9,7 @@ Background:
 
 Rule: Adding Items
 
+@category:smoke
 Scenario: Add single item to empty cart
   When I add "Widget" to the cart
   Then the cart should contain 1 item
@@ -25,6 +26,7 @@ Examples:
 
 Rule: Removing Items
 
+@order:1
 Scenario: Remove item from cart
   Given the cart contains:
     | Item   | Quantity |
