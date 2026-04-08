@@ -243,6 +243,15 @@ public class ScenarioCrif
     }
 
     /// <summary>
+    /// List of NUnit category names for this scenario.
+    /// </summary>
+    /// <remarks>
+    /// Set by @category:name tags on the scenario. Multiple categories are supported.
+    /// Uses a simple List of string so Mustache can render with {{.}} directly.
+    /// </remarks>
+    public List<string> Categories { get; set; } = [];
+
+    /// <summary>
     /// Optional execution order for this scenario.
     /// </summary>
     /// <remarks>

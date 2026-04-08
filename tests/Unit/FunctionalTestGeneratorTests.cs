@@ -640,6 +640,155 @@ public class FunctionalTestGeneratorTests
 
     #endregion
 
+    #region Category Tag Tests
+
+    /// <summary>
+    /// Generator produces Category attribute when Categories has a single item.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithSingleCategory_ProducesCategoryAttribute()
+    {
+        // Given: A CRIF with one category
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Test",
+                Description = "Test",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "Categorized test",
+                        Method = "CategorizedTest",
+                        Categories = ["smoke"],
+                        Steps = []
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: Category attribute is generated
+        Assert.That(result, Does.Contain("[Category(\"smoke\")]"));
+    }
+
+    /// <summary>
+    /// Generator produces multiple Category attributes when Categories has multiple items.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithMultipleCategories_ProducesMultipleCategoryAttributes()
+    {
+        // Given: A CRIF with multiple categories
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Test",
+                Description = "Test",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "Multi category test",
+                        Method = "MultiCategoryTest",
+                        Categories = ["smoke", "regression"],
+                        Steps = []
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: Both Category attributes are generated
+        Assert.That(result, Does.Contain("[Category(\"smoke\")]"));
+        Assert.That(result, Does.Contain("[Category(\"regression\")]"));
+    }
+
+    /// <summary>
+    /// Generator does not produce Category attribute when Categories is empty.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithoutCategories_DoesNotProduceCategoryAttribute()
+    {
+        // Given: A CRIF without categories
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Test",
+                Description = "Test",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "Normal test",
+                        Method = "NormalTest",
+                        Steps = []
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: No Category attribute
+        Assert.That(result, Does.Contain("[Test]"));
+        Assert.That(result, Does.Not.Contain("[Category("));
+    }
+
+    /// <summary>
+    /// Generator produces correct attribute ordering: Explicit, Category, Order, Test.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithCategoryAndOrder_ProducesCorrectAttributeOrdering()
+    {
+        // Given: A CRIF with Category, Order, and Explicit
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Test",
+                Description = "Test",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "Full attribute test",
+                        Method = "FullAttributeTest",
+                        IsExplicit = true,
+                        Categories = ["smoke"],
+                        Order = 1,
+                        Steps = []
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: Attributes appear in correct order: Explicit, Category, Order, Test
+        var explicitIndex = result.IndexOf("[Explicit]");
+        var categoryIndex = result.IndexOf("[Category(\"smoke\")]");
+        var orderIndex = result.IndexOf("[Order(1)]");
+        var testIndex = result.IndexOf("[Test]");
+        Assert.That(explicitIndex, Is.LessThan(categoryIndex), "Explicit should appear before Category");
+        Assert.That(categoryIndex, Is.LessThan(orderIndex), "Category should appear before Order");
+        Assert.That(orderIndex, Is.LessThan(testIndex), "Order should appear before Test");
+    }
+
+    #endregion
+
     #region Unimplemented Steps Tests
 
     /// <summary>

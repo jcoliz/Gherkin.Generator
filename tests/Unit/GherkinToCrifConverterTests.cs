@@ -1029,6 +1029,145 @@ public class GherkinToCrifConverterTests
         Assert.That(crif.Rules[0].Scenarios[0].ExplicitReason, Is.EqualTo("work_in_progress"));
     }
 
+    [Test]
+    public void Convert_ScenarioWithSingleCategoryTag_ExtractsCategory()
+    {
+        // Given: A scenario with @category:smoke tag
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            @category:smoke
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Categories should contain "smoke"
+        Assert.That(crif.Rules[0].Scenarios[0].Categories, Has.Count.EqualTo(1));
+        Assert.That(crif.Rules[0].Scenarios[0].Categories[0], Is.EqualTo("smoke"));
+    }
+
+    [Test]
+    public void Convert_ScenarioWithMultipleCategoryTags_ExtractsAllCategories()
+    {
+        // Given: A scenario with multiple @category tags
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            @category:smoke @category:regression
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Categories should contain both values
+        Assert.That(crif.Rules[0].Scenarios[0].Categories, Has.Count.EqualTo(2));
+        Assert.That(crif.Rules[0].Scenarios[0].Categories, Contains.Item("smoke"));
+        Assert.That(crif.Rules[0].Scenarios[0].Categories, Contains.Item("regression"));
+    }
+
+    [Test]
+    public void Convert_ScenarioWithEmptyCategoryTag_IgnoresEmptyValue()
+    {
+        // Given: A scenario with @category: (empty value)
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            @category:
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Categories should be empty (empty value silently ignored)
+        Assert.That(crif.Rules[0].Scenarios[0].Categories, Is.Empty);
+    }
+
+    [Test]
+    public void Convert_ScenarioWithoutCategoryTag_CategoriesIsEmpty()
+    {
+        // Given: A scenario without @category tag
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Categories should be empty
+        Assert.That(crif.Rules[0].Scenarios[0].Categories, Is.Empty);
+    }
+
+    [Test]
+    public void Convert_ScenarioWithCategoryAndExplicitTags_BothAreSet()
+    {
+        // Given: A scenario with both @category and @explicit tags
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            @explicit:wip @category:smoke
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Categories should be set
+        Assert.That(crif.Rules[0].Scenarios[0].Categories, Contains.Item("smoke"));
+
+        // And: IsExplicit should also be set
+        Assert.That(crif.Rules[0].Scenarios[0].IsExplicit, Is.True);
+    }
+
+    [Test]
+    public void Convert_ScenarioWithAllThreeTags_AllAreSet()
+    {
+        // Given: A scenario with @category, @order, and @explicit tags
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            @category:smoke @order:1 @explicit:wip
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: All tag values should be set
+        Assert.That(crif.Rules[0].Scenarios[0].Categories, Contains.Item("smoke"));
+        Assert.That(crif.Rules[0].Scenarios[0].Order, Is.EqualTo(1));
+        Assert.That(crif.Rules[0].Scenarios[0].IsExplicit, Is.True);
+    }
+
     /// <summary>
     /// Helper method to parse Gherkin text into a GherkinDocument.
     /// </summary>

@@ -253,6 +253,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
 
         ProcessScenarioDescription(scenario, scenarioCrif);
         ProcessExplicitTag(scenario, scenarioCrif);
+        ProcessCategoryTags(scenario, scenarioCrif);
         ProcessOrderTag(scenario, scenarioCrif);
         ProcessScenarioOutlineExamples(scenario, scenarioCrif);
         ProcessScenarioSteps(scenario, scenarioCrif);
@@ -291,6 +292,24 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             if (explicitTag.Name.StartsWith("@explicit:"))
             {
                 scenarioCrif.ExplicitReason = explicitTag.Name.Substring("@explicit:".Length);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Processes category tags and extracts category names.
+    /// </summary>
+    /// <param name="scenario">The Gherkin scenario.</param>
+    /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
+    private static void ProcessCategoryTags(Scenario scenario, ScenarioCrif scenarioCrif)
+    {
+        var categoryTags = scenario.Tags.Where(t => t.Name.StartsWith("@category:"));
+        foreach (var tag in categoryTags)
+        {
+            var value = tag.Name.Substring("@category:".Length);
+            if (!string.IsNullOrEmpty(value))
+            {
+                scenarioCrif.Categories.Add(value);
             }
         }
     }
