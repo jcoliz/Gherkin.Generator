@@ -223,13 +223,17 @@ Examples:
 
 When using the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute, feature tags are **optional** and only needed to override defaults.
 
-**Override tags (when needed):**
+**Feature-level tags (on the `Feature:` line):**
 - `@namespace:` - Override the default namespace for this feature only
 - `@baseclass:` - Override the default base class (supports fully-qualified names)
 - `@using:` - Add using directives (can use multiple times)
-- `@explicit` - Mark scenario as explicit (requires manual execution)
 
-**Example with overrides:**
+**Scenario-level tags (on individual scenarios):**
+- `@explicit` or `@explicit:reason` - Mark scenario as explicit (requires manual execution)
+- `@category:name` - Add NUnit `[Category]` attribute (can use multiple times)
+- `@order:n` - Add NUnit `[Order]` attribute for test execution order
+
+**Example with feature-level overrides:**
 
 ```gherkin
 @namespace:MyApp.Tests.Integration
@@ -237,7 +241,27 @@ When using the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.c
 Feature: User Login
 ```
 
-**Best practice:** Avoid tags unless you need feature-specific overrides. Use the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute for project-wide defaults.
+**Example with scenario-level tags:**
+
+```gherkin
+Feature: Transaction Management
+
+Rule: Transaction Creation
+
+@category:smoke @order:1
+Scenario: Create a new transaction
+  Given I am logged in
+  When I create a transaction
+  Then the transaction is saved
+
+@category:smoke @category:regression @order:2
+Scenario: Verify transaction in list
+  Given I am logged in
+  When I view the transactions list
+  Then I should see the transaction
+```
+
+**Best practice:** Avoid feature-level tags unless you need feature-specific overrides. Use the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute for project-wide defaults.
 
 ## Authoring Step Definitions
 
@@ -492,7 +516,10 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
 **Scenario-level:**
 - `Name` - Scenario name
 - `Method` - PascalCase method name
-- `ExplicitTag` - Boolean for [Explicit] attribute
+- `IsExplicit` - Boolean for `[Explicit]` attribute
+- `ExplicitReason` - Optional reason string for `[Explicit("reason")]`
+- `Categories` - List of category names for `[Category]` attributes
+- `HasOrder` / `Order` - Boolean and integer for `[Order(n)]` attribute
 - `TestCases` - List of test case parameters (scenario outlines)
 - `Parameters` - Method parameters
 
