@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="Gherkin" Version="37.0.1" />
+    <PackageReference Include="Gherkin" Version="39.0.0" />
     <PackageReference Include="Stubble.Core" Version="1.10.8" />
   </ItemGroup>
 
