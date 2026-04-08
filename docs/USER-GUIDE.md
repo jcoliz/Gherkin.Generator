@@ -9,6 +9,8 @@ Complete guide for using Gherkin.Generator to create behavior-driven tests with 
 - [Authoring Step Definitions](#authoring-step-definitions)
 - [Customizing Templates](#customizing-templates)
 - [Advanced Features](#advanced-features)
+  - [Test Categories](#test-categories)
+  - [Test Ordering](#test-ordering)
 - [Troubleshooting](#troubleshooting)
 
 ## Getting Started
@@ -599,6 +601,106 @@ public async Task PerformanceTest()
     // Implementation
 }
 ```
+
+### Test Categories
+
+Organize tests into categories for selective execution using `@category:name` tags:
+
+```gherkin
+@category:smoke
+Scenario: Quick validation test
+  Given the application is running
+  When I check the health endpoint
+  Then I should get a 200 response
+```
+
+Generates:
+
+```csharp
+[Category("smoke")]
+[Test]
+public async Task QuickValidationTest()
+{
+    // Implementation
+}
+```
+
+A scenario can have multiple categories:
+
+```gherkin
+@category:smoke @category:regression
+Scenario: Important test
+  Given the application is running
+  When I perform a critical action
+  Then the result is correct
+```
+
+Generates:
+
+```csharp
+[Category("smoke")]
+[Category("regression")]
+[Test]
+public async Task ImportantTest()
+{
+    // Implementation
+}
+```
+
+**Running tests by category** with `dotnet test`:
+
+```bash
+# Run only smoke tests
+dotnet test --filter "TestCategory=smoke"
+
+# Run smoke OR regression tests
+dotnet test --filter "TestCategory=smoke|TestCategory=regression"
+
+# Exclude slow tests
+dotnet test --filter "TestCategory!=slow"
+```
+
+### Test Ordering
+
+Control test execution order using `@order:n` tags:
+
+```gherkin
+@order:1
+Scenario: First test to run
+  Given the application is running
+  When I perform setup
+  Then setup is complete
+
+@order:2
+Scenario: Second test to run
+  Given setup is complete
+  When I perform the main action
+  Then the action succeeds
+```
+
+Generates:
+
+```csharp
+[Order(1)]
+[Test]
+public async Task FirstTestToRun()
+{
+    // Implementation
+}
+
+[Order(2)]
+[Test]
+public async Task SecondTestToRun()
+{
+    // Implementation
+}
+```
+
+**Notes:**
+- Ordered tests run before unordered tests
+- Tests with the same order value run in an unspecified order relative to each other
+- Non-integer values (e.g., `@order:abc`) are silently ignored
+- If duplicate `@order` tags appear on the same scenario, the last value wins
 
 ### Scenario Descriptions
 
