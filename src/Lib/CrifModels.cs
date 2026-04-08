@@ -243,6 +243,22 @@ public class ScenarioCrif
     }
 
     /// <summary>
+    /// Optional execution order for this scenario.
+    /// </summary>
+    /// <remarks>
+    /// Set by @order:n tag on the scenario. Ordered tests run before unordered tests.
+    /// </remarks>
+    public int? Order { get; set; }
+
+    /// <summary>
+    /// Whether this scenario has an Order attribute.
+    /// </summary>
+    /// <remarks>
+    /// Needed for Mustache conditional rendering since Mustache cannot check for null integers.
+    /// </remarks>
+    public bool HasOrder => Order.HasValue;
+
+    /// <summary>
     /// List of test case parameters for parameterized tests (e.g., ["\"value1\"", "123"]).
     /// </summary>
     public List<string> TestCases { get; set; } = [];

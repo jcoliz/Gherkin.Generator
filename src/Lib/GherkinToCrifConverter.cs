@@ -253,6 +253,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
 
         ProcessScenarioDescription(scenario, scenarioCrif);
         ProcessExplicitTag(scenario, scenarioCrif);
+        ProcessOrderTag(scenario, scenarioCrif);
         ProcessScenarioOutlineExamples(scenario, scenarioCrif);
         ProcessScenarioSteps(scenario, scenarioCrif);
 
@@ -290,6 +291,24 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             if (explicitTag.Name.StartsWith("@explicit:"))
             {
                 scenarioCrif.ExplicitReason = explicitTag.Name.Substring("@explicit:".Length);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Processes order tag and extracts the integer value.
+    /// </summary>
+    /// <param name="scenario">The Gherkin scenario.</param>
+    /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
+    private static void ProcessOrderTag(Scenario scenario, ScenarioCrif scenarioCrif)
+    {
+        var orderTags = scenario.Tags.Where(t => t.Name.StartsWith("@order:"));
+        foreach (var tag in orderTags)
+        {
+            var value = tag.Name.Substring("@order:".Length);
+            if (int.TryParse(value, out var order))
+            {
+                scenarioCrif.Order = order;
             }
         }
     }

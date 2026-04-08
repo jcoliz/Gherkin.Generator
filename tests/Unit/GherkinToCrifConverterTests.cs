@@ -907,6 +907,128 @@ public class GherkinToCrifConverterTests
         Assert.That(scenario.TestCases[4], Is.EqualTo("\"500\""));
     }
 
+    [Test]
+    public void Convert_ScenarioWithOrderTag_SetsOrder()
+    {
+        // Given: A scenario with @order:1 tag
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            @order:1
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Order should be set to 1
+        Assert.That(crif.Rules[0].Scenarios[0].Order, Is.EqualTo(1));
+
+        // And: HasOrder should be true
+        Assert.That(crif.Rules[0].Scenarios[0].HasOrder, Is.True);
+    }
+
+    [Test]
+    public void Convert_ScenarioWithoutOrderTag_OrderIsNull()
+    {
+        // Given: A scenario without @order tag
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Order should be null
+        Assert.That(crif.Rules[0].Scenarios[0].Order, Is.Null);
+
+        // And: HasOrder should be false
+        Assert.That(crif.Rules[0].Scenarios[0].HasOrder, Is.False);
+    }
+
+    [Test]
+    public void Convert_ScenarioWithInvalidOrderTag_OrderIsIgnored()
+    {
+        // Given: A scenario with @order:abc (non-integer)
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            @order:abc
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Order should be null (invalid value silently ignored)
+        Assert.That(crif.Rules[0].Scenarios[0].Order, Is.Null);
+
+        // And: HasOrder should be false
+        Assert.That(crif.Rules[0].Scenarios[0].HasOrder, Is.False);
+    }
+
+    [Test]
+    public void Convert_ScenarioWithDuplicateOrderTags_LastWins()
+    {
+        // Given: A scenario with duplicate @order tags
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            @order:1 @order:2
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Last order value should win
+        Assert.That(crif.Rules[0].Scenarios[0].Order, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Convert_ScenarioWithOrderAndExplicitTags_BothAreSet()
+    {
+        // Given: A scenario with both @order and @explicit tags
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            @explicit:work_in_progress @order:5
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Order should be set
+        Assert.That(crif.Rules[0].Scenarios[0].Order, Is.EqualTo(5));
+
+        // And: IsExplicit should also be set
+        Assert.That(crif.Rules[0].Scenarios[0].IsExplicit, Is.True);
+        Assert.That(crif.Rules[0].Scenarios[0].ExplicitReason, Is.EqualTo("work_in_progress"));
+    }
+
     /// <summary>
     /// Helper method to parse Gherkin text into a GherkinDocument.
     /// </summary>

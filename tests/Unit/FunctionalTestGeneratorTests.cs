@@ -528,6 +528,118 @@ public class FunctionalTestGeneratorTests
 
     #endregion
 
+    #region Order Tag Tests
+
+    /// <summary>
+    /// Generator produces Order attribute when HasOrder is true.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithOrder_ProducesOrderAttribute()
+    {
+        // Given: A CRIF with Order set
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Test",
+                Description = "Test",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "Ordered test",
+                        Method = "OrderedTest",
+                        Order = 1,
+                        Steps = []
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: Order attribute is generated
+        Assert.That(result, Does.Contain("[Order(1)]"));
+    }
+
+    /// <summary>
+    /// Generator does not produce Order attribute when Order is null.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithoutOrder_DoesNotProduceOrderAttribute()
+    {
+        // Given: A CRIF without Order set
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Test",
+                Description = "Test",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "Normal test",
+                        Method = "NormalTest",
+                        Steps = []
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: No Order attribute
+        Assert.That(result, Does.Contain("[Test]"));
+        Assert.That(result, Does.Not.Contain("[Order("));
+    }
+
+    /// <summary>
+    /// Generator produces Order attribute in correct position relative to other attributes.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithOrderAndExplicit_ProducesCorrectAttributeOrdering()
+    {
+        // Given: A CRIF with both Explicit and Order set
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Test",
+                Description = "Test",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "Ordered explicit test",
+                        Method = "OrderedExplicitTest",
+                        IsExplicit = true,
+                        ExplicitReason = "wip",
+                        Order = 3,
+                        Steps = []
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: Explicit appears before Order, Order appears before Test
+        var explicitIndex = result.IndexOf("[Explicit(\"wip\")]");
+        var orderIndex = result.IndexOf("[Order(3)]");
+        var testIndex = result.IndexOf("[Test]");
+        Assert.That(explicitIndex, Is.LessThan(orderIndex), "Explicit should appear before Order");
+        Assert.That(orderIndex, Is.LessThan(testIndex), "Order should appear before Test");
+    }
+
+    #endregion
+
     #region Unimplemented Steps Tests
 
     /// <summary>

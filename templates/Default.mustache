@@ -65,6 +65,9 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
     {{#IsExplicit}}
     [Explicit{{#ExplicitReason}}("{{.}}"){{/ExplicitReason}}]
     {{/IsExplicit}}
+    {{#HasOrder}}
+    [Order({{Order}})]
+    {{/HasOrder}}
     {{#TestCases}}
     [TestCase({{{.}}})]
     {{/TestCases}}
