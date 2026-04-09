@@ -24,6 +24,7 @@ public class ApplicationSteps
     [Given("the application is running")]
     public async Task ApplicationIsRunning()
     {
+        Console.WriteLine("test: {0}", TestContext.CurrentContext.Test.Name);
         await _context.LaunchApplicationAsync();
     }
 
