@@ -131,4 +131,22 @@ public class ShoppingCartSteps
         await Task.CompletedTask;
     }
 
+    /// <summary>
+    /// When I request recommendations
+    /// </summary>
+    [When("I request recommendations")]
+    public async Task IRequestRecommendations()
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Then the recommendations should include {string1}
+    /// </summary>
+    [Then("the recommendations should include {string1}")]
+    public async Task TheRecommendationsShouldInclude(string string1)
+    {
+        throw new NotImplementedException();
+    }
+
 }

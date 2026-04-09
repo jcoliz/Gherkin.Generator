@@ -45,3 +45,15 @@ Scenario: Clear cart
     | Gadget | 1        |
   When I clear the cart
   Then the cart should be "empty"
+
+Rule: Generating Recommendations
+
+@explicit:flaky-test
+Scenario: Generate recommendations based on cart contents
+  Given the cart contains:
+    | Item   | Quantity |
+    | Widget | 2        |
+    | Gadget | 1        |
+  When I request recommendations
+  Then the recommendations should include "Widget Pro"
+  And the recommendations should include "Gadget Plus"
