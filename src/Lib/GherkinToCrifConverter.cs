@@ -197,6 +197,12 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="crif">The CRIF object for tracking unimplemented steps.</param>
     private void ProcessScenarioInRule(Scenario scenario, RuleCrif ruleCrif, FeatureCrif crif)
     {
+        // Skip hidden scenarios
+        if (scenario.Tags.Any(t => t.Name == "@hidden"))
+        {
+            return;
+        }
+
         var scenarioCrif = ConvertScenario(scenario);
         ruleCrif.Scenarios.Add(scenarioCrif);
         

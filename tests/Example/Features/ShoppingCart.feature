@@ -57,3 +57,12 @@ Scenario: Generate recommendations based on cart contents
   When I request recommendations
   Then the recommendations should include "Widget Pro"
   And the recommendations should include "Gadget Plus"
+
+# In next release, no code will be generated for this scenario.
+# The @hidden tag hides it entirely from the test suite.
+
+@hidden
+Scenario: Generate recommendations with empty cart
+  Given the cart is empty
+  When I request recommendations
+  Then the recommendations should be "empty"

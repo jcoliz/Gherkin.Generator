@@ -1168,6 +1168,26 @@ public class GherkinToCrifConverterTests
         Assert.That(crif.Rules[0].Scenarios[0].IsExplicit, Is.True);
     }
 
+    [Test]
+    public void Convert_HiddenScenario_NotConverted()
+    {
+        // Given: A scenario with @hidden tag
+        var gherkin = """
+            Feature: Transaction Management
+
+            @hidden
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: The scenario should not be included in the CRIF
+        Assert.That(crif.Rules[0].Scenarios, Is.Empty);
+    }
+
     /// <summary>
     /// Helper method to parse Gherkin text into a GherkinDocument.
     /// </summary>
