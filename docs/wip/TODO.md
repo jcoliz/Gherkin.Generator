@@ -66,3 +66,7 @@ public async Task TheCartShouldBe(string string1)
     throw new NotImplementedException();
 }
 ```
+
+- [ ] For steps with no namespace (global), don't add a using
+- [ ] For steps with no namespace (global), warn the user
+- [ ] Can we pack in the default template and install it in user's Templates folder? Also when they update, it would bring the latest. They could use it, or they could copy to a new file and customize it.
