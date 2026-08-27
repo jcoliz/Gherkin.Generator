@@ -44,13 +44,12 @@ public static class StepCatalogBuilder
 
             foreach (var keyword in KeywordOrder)
             {
-                var texts = fileGroup
+                var entries = fileGroup
                     .Where(s => s.NormalizedKeyword == keyword)
-                    .Select(s => s.Text)
-                    .OrderBy(t => t, StringComparer.OrdinalIgnoreCase);
+                    .OrderBy(s => s.Text, StringComparer.OrdinalIgnoreCase);
 
                 var any = false;
-                foreach (var text in texts)
+                foreach (var entry in entries)
                 {
                     if (!any)
                     {
@@ -58,7 +57,7 @@ public static class StepCatalogBuilder
                         any = true;
                     }
 
-                    builder.AppendLine($"* {keyword} {text}");
+                    builder.AppendLine($"* {keyword} {entry.Text} (`{entry.Class}.{entry.Method}`)");
                 }
             }
         }

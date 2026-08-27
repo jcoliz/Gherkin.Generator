@@ -144,4 +144,18 @@ public class StepCatalogBuilderTests
         // Then: The placeholder is preserved exactly
         Assert.That(result, Does.Contain("* Given I have {count} items"));
     }
+
+    [Test]
+    public void Build_IncludesImplementingSymbol()
+    {
+        // Given: A step declared by a specific class and method
+        var steps = new StepMetadataCollection();
+        steps.Add(Step(NormalizedKeyword.Given, "selected the first {count} items", "ManageSteps.cs", method: "SelectFirstItems", cls: "ManageSteps"));
+
+        // When: Building the catalog
+        var result = StepCatalogBuilder.Build(steps);
+
+        // Then: The Type.MethodName symbol is included alongside the binding text
+        Assert.That(result, Does.Contain("* Given selected the first {count} items (`ManageSteps.SelectFirstItems`)"));
+    }
 }
