@@ -11,6 +11,7 @@ Complete guide for using Gherkin.Generator to create behavior-driven tests with 
 - [Advanced Features](#advanced-features)
   - [Test Categories](#test-categories)
   - [Test Ordering](#test-ordering)
+  - [Step Catalog](#step-catalog)
 - [Troubleshooting](#troubleshooting)
 
 ## Getting Started
@@ -578,6 +579,35 @@ public async Task IAmLoggedIn()
 ```
 
 Copy these stubs to your step classes, implement them, and then rebuild.
+
+### Step Catalog
+
+Every time your test assembly loads (via `dotnet test`, `dotnet test --filter`, or test discovery in your IDE), the generator writes a Markdown catalog of every step binding it discovered, beside the test assembly:
+
+```
+bin/Debug/net10.0/MyApp.Tests.StepCatalog.md
+```
+
+The catalog groups steps by declaring source file, with one table per file, listing the exact binding text (including parameter placeholders) and the implementing `Type.Method` symbol:
+
+```markdown
+# Step Catalog
+
+## NavigationSteps.cs
+
+| Keyword | Step | Implementation |
+| --- | --- | --- |
+| Given | the application is running | `NavigationSteps.GivenTheApplicationIsRunning` |
+| When | I navigate to `{page}` | `NavigationSteps.WhenINavigateTo` |
+```
+
+Before writing a new step, search this file for existing bindings you can reuse instead of creating a near-duplicate.
+
+**Notes:**
+- No configuration is required — the catalog is generated automatically for every test project that references `Gherkin.Generator`.
+- Aliased steps (multiple `[Given]`/`[When]`/`[Then]` attributes on one method) each get their own row, since the catalog describes which phrases can be matched, not which methods implement them.
+- Only steps visible in your project's own source are included; steps declared in an already-compiled referenced assembly are not discoverable by the generator and won't appear.
+- The write is idempotent and never fails a test run — if the file can't be written (e.g. read-only output directory), a warning is traced but tests continue normally.
 
 ### Explicit Tests
 

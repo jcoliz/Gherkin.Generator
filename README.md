@@ -14,6 +14,7 @@ A source generator that converts Gherkin `.feature` files into executable C# tes
 - **Scenario support** - Handles standard scenarios and scenario outlines with example tables
 - **Flexible templating** - Uses Mustache templates for customizable code generation
 - **Step matching** - Discovers and maps Gherkin steps to your step implementation methods
+- **Step catalog** - Outputs a catalog of all available steps, to make step re-use quick and easy
 
 ## Why Gherkin.Generator?
 
