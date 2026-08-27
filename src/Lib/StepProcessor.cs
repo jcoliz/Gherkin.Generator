@@ -38,9 +38,9 @@ internal class StepProcessor
         };
 
         // Convert data table if present
-        if (step.Argument is DataTable dataTable)
+        if (step.DataTable != null)
         {
-            stepCrif.DataTable = ConvertDataTable(dataTable);
+            stepCrif.DataTable = ConvertDataTable(step.DataTable);
         }
 
         return stepCrif;
