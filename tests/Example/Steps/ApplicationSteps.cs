@@ -37,4 +37,15 @@ public class ApplicationSteps
     {
         await _context.LoginAsAsync(userType);
     }
+
+    /// <summary>
+    /// A step that is never used in any scenario, included to test that unused steps do not appear in the generated catalog.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    [Given("a step that is never used")]
+    public async Task AStepThatIsNeverUsed()
+    {
+        throw new NotImplementedException("This step is never used in any scenario and should not appear in the catalog.");
+    }
 }

@@ -50,6 +50,7 @@ too much time is spent searching through steps files.
 - [ ] The steps are further organized by keyword (Given/Then/When)
 - [ ] Within each of those categories, the steps are listed alphabetically
 - [ ] Existing generated test output remains unchanged except for the new catalog artifact.
+- [x] Each step includes the symbol which implements the step, so author can review details of the step, in the form Type.MethodName (Would be nice)
 
 ### Story 2: Developer - Understand step behavior
 **As a** developer of an application writing tests to use this library
@@ -63,7 +64,7 @@ too much time is spent searching through steps files.
 - [ ] Missing XML documentation or metadata does not prevent a step from appearing in the catalog
 - [ ] XML documentation support is independent of the initial catalog of exact binding phrases
 - [ ] The design documents whether XML documentation is read from source, compiler-generated XML files, or another supported input
-- [ ] Each step includes the symbol which implements the step, so author can review details of the step, in the form Type.MethodName (Would be nice)
+
 ---
 
 ## Technical Approach
@@ -85,12 +86,12 @@ The following illustrates the information and organization the catalog should pr
 
 ## ManageSteps.cs
 
-* Given selected the first {count} items
+* Given selected the first {count} items (`ManageSteps.SelectFirstItems`)
 
-* When changing the bulk store to {string1}
-* When selecting the first item
+* When changing the bulk store to {string1} (`ManageSteps.ChangeBulkStore`)
+* When selecting the first item (`ManageSteps.SelectFirstItem`)
 
-* Then the store is still selected
+* Then the store is still selected (`ManageSteps.StoreIsStillSelected`)
 ```
 
 ## Key Business Rules
