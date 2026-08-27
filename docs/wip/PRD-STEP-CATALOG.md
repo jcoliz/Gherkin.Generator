@@ -1,9 +1,9 @@
 ---
 project: Gherkin.Generator
-status: Draft # Draft | In Review | Approved | Implemented
+status: Approved (for Story 1) # Draft | In Review | Approved | Implemented
 target_release: [Release Milestone when predominance of work is expected]
 design_document: [Link to design document]
-issue: 23
+issue: 23 (Only for Story 1)
 ---
 
 # Product Requirements Document: Step Catalog
@@ -43,7 +43,7 @@ too much time is spent searching through steps files.
 **So that** I can re-use existing steps and quickly know if I need to write new ones
 
 **Acceptance Criteria**:
-- [ ] A steps catalog file is created when the tests are built
+- [ ] A steps catalog file is created beside the test assembly when the test assembly is loaded (discovery or execution), not only on build.
 - [ ] The catalog contains every binding available to the generated tests, including inherited or referenced-library bindings, or explicitly documents that it contains only bindings declared in the consuming project.
 - [ ] The exact matching language from the step attribute including parameter placeholders
 - [ ] The steps are grouped by source file
@@ -68,7 +68,15 @@ too much time is spent searching through steps files.
 
 ## Technical Approach
 
-The catalog should be made available as a build-produced artifact that developers can easily open or discover. Markdown is one possible presentation format; the implementation may choose the output mechanism and format that best fits Gherkin.Generator and the consuming build environment, provided the acceptance criteria are met.
+The catalog is produced at runtime rather than at build time, to avoid the file-system restrictions and non-determinism concerns of writing arbitrary files from a Roslyn source generator.
+
+- **Discovery scope**: Reuse `StepMethodAnalyzer`'s existing compilation-wide scan (the same data already used for step matching). This only sees syntax trees in the consuming project's own compilation, so the catalog's scope is identical to what the matcher can actually bind against — referenced, already-compiled assemblies and out-of-project base classes are not visible and are not included.
+- **Emission mechanism**: The generator emits a small generated class containing the rendered Markdown catalog as a string constant, plus a `[ModuleInitializer]` method that writes it to disk. Module initializers run exactly once, automatically, the moment the test assembly is loaded by the CLR — including during test *discovery* (e.g. Test Explorer refresh, `dotnet test --list-tests`), not just execution. This avoids coupling to any specific test framework's lifecycle (e.g. NUnit `[SetUpFixture]`), sidesteps collisions with a consumer's own assembly-level fixtures, and guarantees the catalog is written regardless of test filtering, skipping, or failure.
+- **Name and location**: The catalog is written beside the test assembly (`AppContext.BaseDirectory`) using a deterministic name derived from the assembly, e.g. `{AssemblyName}.StepCatalog.md`. This avoids needing to plumb the source project directory into the generator via MSBuild properties.
+- **Concurrent / repeated writes**: Before writing, compare the newly rendered content against any existing file content and skip the write if unchanged (avoids timestamp churn across parallel or repeated loads). When a write is needed, write to a uniquely-named temp file in the same directory and atomically replace the target via `File.Move(tmp, final, overwrite: true)`.
+- **Write failure behavior**: All I/O is wrapped in a broad `try/catch`. A failed write (locked file, permissions, read-only output dir) is reported via `Console.Error`/`Trace.TraceWarning` and never throws — a catalog write failure must never fail or crash an otherwise valid test run. There is no "mandatory" mode at this time.
+
+Markdown is the presentation format used for the examples below; the implementation may adjust formatting details provided the acceptance criteria are met.
 
 The following illustrates the information and organization the catalog should provide. It is not intended to prescribe the output format or implementation.
 
@@ -109,7 +117,8 @@ When a single step is represented by multiple attributes, such as the following,
 
 ## Open Questions
 
-- [ ] Exact method of presenting the catalog needs to be determined
+- [x] Exact method of presenting the catalog: resolved, see Technical Approach (module-initializer write beside the test assembly).
+- [ ] Exact deterministic name/format if `{AssemblyName}.StepCatalog.md` collides with an existing consumer file convention.
 
 ---
 
