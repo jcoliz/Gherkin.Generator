@@ -162,38 +162,60 @@ Our CI/CD pipeline could be improved to:
 
 This would ensure that every commit produces a working, deployable generator.
 
-## Future: Pre-Release Testing Strategy
+## Pre-Release Testing with a Local Package Feed
 
-For a more robust release process, we should adopt a **pre-release validation pattern**:
+To validate in-development generator changes end-to-end before publishing, pack the generator to a
+local folder feed and point the Example project at it. This is automated by two scripts in
+[`scripts/`](../../scripts/):
 
-### Recommended Future Workflow
+### Running the Validation
 
-1. **Pack as pre-release version** (e.g., `1.2.0-beta.1`)
+```powershell
+.\scripts\Test-PreReleasePackage.ps1
+```
+
+This script:
+
+1. **Packs a pre-release version** of both `src/Analyzer` and `src/Utils` into `./local-packages`.
+   Both must be packed with the same version—`Gherkin.Generator.Utils` is a real package dependency
+   of the generator, not embedded in its analyzer payload, so packing only `src/Analyzer` fails
+   restore with `NU1101`.
    ```powershell
-   dotnet pack src/Analyzer --version-suffix beta.1
+   dotnet pack src/Analyzer -c Release -p:Version=<version> -o ./local-packages
+   dotnet pack src/Utils -c Release -p:Version=<version> -o ./local-packages
    ```
+   By default the version is timestamped (e.g. `0.0.1-local.20260826193044`) so repeated runs don't
+   collide with stale entries in the local NuGet cache. Pass `-Version` to pin a specific value.
 
-2. **Publish to NuGet as pre-release** or local feed
+2. **Updates the Example project** to reference the pre-release version from the local feed:
    ```powershell
-   dotnet nuget push ./local-packages/*.nupkg --source local
+   dotnet add tests/Example package Gherkin.Generator --version <version> --source ./local-packages
    ```
 
-3. **Update Example project** to reference pre-release version:
-   ```xml
-   <PackageReference Include="Gherkin.Generator" Version="1.2.0-beta.1" />
+3. **Restores using both the local feed and nuget.org**—the Example project's other dependencies
+   (NUnit, etc.) still need to resolve from nuget.org:
+   ```powershell
+   dotnet restore tests/Example --source ./local-packages --source https://api.nuget.org/v3/index.json
    ```
 
-4. **Run Example tests** against pre-release version
-   - Build Example project (triggers generation)
-   - Execute generated tests
-   - Verify all tests pass
+4. **Runs the Example project's tests** against the pre-release build. Note `dotnet test` doesn't
+   accept `--source`, so the restore step above must run first:
+   ```powershell
+   dotnet test tests/Example
+   ```
 
-5. **If tests pass:** Promote the same bits to release version
-   - Republish same package with release version (e.g., `1.2.0`)
-   - No code changes between pre-release and release
-   - Same binary artifacts, just version number changes
+If all tests pass, the pre-release bits are validated end-to-end and the same artifacts can be
+republished under the intended release version with no code changes.
 
-6. **If tests fail:** Fix issues and repeat with new pre-release version
+### Undoing the Validation
+
+```powershell
+.\scripts\Undo-PreReleasePackage.ps1
+```
+
+This reverts `tests/Example/Gherkin.Generator.Tests.Example.csproj` to its committed state via
+`git checkout`, deletes `./local-packages`, and restores the Example project against its committed
+package version—returning the repository to a clean state.
 
 ## Why Can't Example Tests Validate In-Development Generator Changes?
 
