@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Gherkin.Generator.Lib;
 
@@ -9,10 +10,10 @@ namespace Gherkin.Generator.Lib;
 /// Renders a Markdown catalog of all step bindings discovered by <see cref="StepMethodAnalyzer"/>.
 /// </summary>
 /// <remarks>
-/// Steps are grouped by declaring source file, then by keyword (Given/When/Then), then listed
-/// alphabetically by exact binding text. Aliased steps (multiple attributes on one method) each
-/// appear as their own entry, since the catalog describes which phrases are available to match,
-/// not which methods implement them.
+/// Steps are grouped by declaring source file into one table per file, with rows ordered by
+/// keyword (Given/When/Then) then alphabetically by exact binding text. Aliased steps (multiple
+/// attributes on one method) each appear as their own row, since the catalog describes which
+/// phrases are available to match, not which methods implement them.
 /// </remarks>
 public static class StepCatalogBuilder
 {
@@ -22,6 +23,8 @@ public static class StepCatalogBuilder
         NormalizedKeyword.When,
         NormalizedKeyword.Then
     ];
+
+    private static readonly Regex PlaceholderPattern = new(@"\{[^}]+\}", RegexOptions.Compiled);
 
     /// <summary>
     /// Builds the Markdown step catalog from the given step metadata collection.
@@ -41,6 +44,9 @@ public static class StepCatalogBuilder
         {
             builder.AppendLine();
             builder.AppendLine($"## {fileGroup.Key}");
+            builder.AppendLine();
+            builder.AppendLine("| Keyword | Step | Implementation |");
+            builder.AppendLine("| --- | --- | --- |");
 
             foreach (var keyword in KeywordOrder)
             {
@@ -48,20 +54,22 @@ public static class StepCatalogBuilder
                     .Where(s => s.NormalizedKeyword == keyword)
                     .OrderBy(s => s.Text, StringComparer.OrdinalIgnoreCase);
 
-                var any = false;
                 foreach (var entry in entries)
                 {
-                    if (!any)
-                    {
-                        builder.AppendLine();
-                        any = true;
-                    }
-
-                    builder.AppendLine($"* {keyword} {entry.Text} (`{entry.Class}.{entry.Method}`)");
+                    var stepText = HighlightPlaceholders(entry.Text);
+                    builder.AppendLine($"| {keyword} | {stepText} | `{entry.Class}.{entry.Method}` |");
                 }
             }
         }
 
         return builder.ToString();
     }
+
+    /// <summary>
+    /// Wraps each <c>{placeholder}</c> in the step text with backticks so parameters stand out in the table.
+    /// </summary>
+    /// <param name="text">Raw step binding text.</param>
+    /// <returns>Step text with placeholders wrapped in backticks.</returns>
+    private static string HighlightPlaceholders(string text) =>
+        PlaceholderPattern.Replace(text, m => $"`{m.Value}`");
 }

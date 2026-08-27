@@ -85,9 +85,9 @@ public class StepCatalogBuilderTests
         var result = StepCatalogBuilder.Build(steps);
 
         // Then: Given appears before When, which appears before Then
-        var givenIndex = result.IndexOf("* Given", StringComparison.Ordinal);
-        var whenIndex = result.IndexOf("* When", StringComparison.Ordinal);
-        var thenIndex = result.IndexOf("* Then", StringComparison.Ordinal);
+        var givenIndex = result.IndexOf("| Given |", StringComparison.Ordinal);
+        var whenIndex = result.IndexOf("| When |", StringComparison.Ordinal);
+        var thenIndex = result.IndexOf("| Then |", StringComparison.Ordinal);
         Assert.That(givenIndex, Is.LessThan(whenIndex));
         Assert.That(whenIndex, Is.LessThan(thenIndex));
     }
@@ -126,9 +126,9 @@ public class StepCatalogBuilderTests
         var result = StepCatalogBuilder.Build(steps);
 
         // Then: All three phrases appear as separate entries, despite sharing one method
-        Assert.That(result, Does.Contain("* Given user is logged in"));
-        Assert.That(result, Does.Contain("* Given user has logged in"));
-        Assert.That(result, Does.Contain("* When user logs in"));
+        Assert.That(result, Does.Contain("| Given | user is logged in |"));
+        Assert.That(result, Does.Contain("| Given | user has logged in |"));
+        Assert.That(result, Does.Contain("| When | user logs in |"));
     }
 
     [Test]
@@ -141,8 +141,8 @@ public class StepCatalogBuilderTests
         // When: Building the catalog
         var result = StepCatalogBuilder.Build(steps);
 
-        // Then: The placeholder is preserved exactly
-        Assert.That(result, Does.Contain("* Given I have {count} items"));
+        // Then: The placeholder is preserved, wrapped in backticks to stand out in the table
+        Assert.That(result, Does.Contain("| Given | I have `{count}` items |"));
     }
 
     [Test]
@@ -155,7 +155,25 @@ public class StepCatalogBuilderTests
         // When: Building the catalog
         var result = StepCatalogBuilder.Build(steps);
 
-        // Then: The Type.MethodName symbol is included alongside the binding text
-        Assert.That(result, Does.Contain("* Given selected the first {count} items (`ManageSteps.SelectFirstItems`)"));
+        // Then: The Type.MethodName symbol is included as the Implementation column
+        Assert.That(result, Does.Contain("| Given | selected the first `{count}` items | `ManageSteps.SelectFirstItems` |"));
+    }
+
+    [Test]
+    public void Build_EachFileGroup_HasOwnTableHeader()
+    {
+        // Given: Steps declared in two different files
+        var steps = new StepMetadataCollection();
+        steps.AddRange([
+            Step(NormalizedKeyword.Given, "I am logged in", "AuthSteps.cs"),
+            Step(NormalizedKeyword.Given, "I have an item", "ManageSteps.cs")
+        ]);
+
+        // When: Building the catalog
+        var result = StepCatalogBuilder.Build(steps);
+
+        // Then: The table header/separator row appears once per file
+        var headerCount = result.Split("| Keyword | Step | Implementation |").Length - 1;
+        Assert.That(headerCount, Is.EqualTo(2));
     }
 }
