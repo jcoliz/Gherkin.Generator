@@ -32,13 +32,14 @@ public static class StepMethodAnalyzer
         {
             var semanticModel = compilation.GetSemanticModel(syntaxTree);
             var root = syntaxTree.GetRoot();
+            var sourceFile = System.IO.Path.GetFileName(syntaxTree.FilePath);
 
             // Find all class declarations
             var classDeclarations = root.DescendantNodes().OfType<ClassDeclarationSyntax>();
 
             foreach (var classDecl in classDeclarations)
             {
-                AnalyzeClass(classDecl, semanticModel, collection);
+                AnalyzeClass(classDecl, semanticModel, sourceFile, collection);
             }
         }
 
@@ -123,8 +124,9 @@ public static class StepMethodAnalyzer
     /// </summary>
     /// <param name="classDecl">The class declaration syntax node.</param>
     /// <param name="semanticModel">Semantic model for symbol resolution.</param>
+    /// <param name="sourceFile">File name (without directory) of the source file declaring this class.</param>
     /// <param name="collection">Collection to add discovered step metadata to.</param>
-    private static void AnalyzeClass(ClassDeclarationSyntax classDecl, SemanticModel semanticModel, StepMetadataCollection collection)
+    private static void AnalyzeClass(ClassDeclarationSyntax classDecl, SemanticModel semanticModel, string sourceFile, StepMetadataCollection collection)
     {
         var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
         if (classSymbol == null)
@@ -138,7 +140,7 @@ public static class StepMethodAnalyzer
 
         foreach (var methodDecl in methodDeclarations)
         {
-            AnalyzeMethod(methodDecl, semanticModel, className, namespaceName, collection);
+            AnalyzeMethod(methodDecl, semanticModel, className, namespaceName, sourceFile, collection);
         }
     }
 
@@ -149,12 +151,14 @@ public static class StepMethodAnalyzer
     /// <param name="semanticModel">Semantic model for symbol resolution.</param>
     /// <param name="className">Name of the containing class.</param>
     /// <param name="namespaceName">Namespace of the containing class.</param>
+    /// <param name="sourceFile">File name (without directory) of the source file declaring this method.</param>
     /// <param name="collection">Collection to add discovered step metadata to.</param>
     private static void AnalyzeMethod(
         MethodDeclarationSyntax methodDecl,
         SemanticModel semanticModel,
         string className,
         string namespaceName,
+        string sourceFile,
         StepMetadataCollection collection)
     {
         var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
@@ -195,7 +199,8 @@ public static class StepMethodAnalyzer
                     Method = methodName,
                     Class = className,
                     Namespace = namespaceName,
-                    Parameters = parameters
+                    Parameters = parameters,
+                    SourceFile = sourceFile
                 };
 
                 collection.Add(metadata);
