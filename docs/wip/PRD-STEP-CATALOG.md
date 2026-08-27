@@ -86,12 +86,12 @@ The following illustrates the information and organization the catalog should pr
 
 ## ManageSteps.cs
 
-* Given selected the first {count} items (`ManageSteps.SelectFirstItems`)
-
-* When changing the bulk store to {string1} (`ManageSteps.ChangeBulkStore`)
-* When selecting the first item (`ManageSteps.SelectFirstItem`)
-
-* Then the store is still selected (`ManageSteps.StoreIsStillSelected`)
+| Keyword | Step | Implementation |
+| --- | --- | --- |
+| Given | selected the first `{count}` items | `ManageSteps.SelectFirstItems` |
+| When | changing the bulk store to `{string1}` | `ManageSteps.ChangeBulkStore` |
+| When | selecting the first item | `ManageSteps.SelectFirstItem` |
+| Then | the store is still selected | `ManageSteps.StoreIsStillSelected` |
 ```
 
 ## Key Business Rules
