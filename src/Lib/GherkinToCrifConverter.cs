@@ -447,6 +447,11 @@ public class StepMetadataCollection
     }
 
     /// <summary>
+    /// All step metadata currently in the collection.
+    /// </summary>
+    public IReadOnlyList<StepMetadata> All => _steps;
+
+    /// <summary>
     /// Finds a step definition matching the given Gherkin step.
     /// </summary>
     /// <param name="normalizedKeyword">Normalized keyword (Given, When, or Then).</param>
@@ -549,6 +554,11 @@ public class StepMetadata
     /// Method parameters with types and names.
     /// </summary>
     public List<StepParameter> Parameters { get; set; } = [];
+
+    /// <summary>
+    /// File name (without directory) of the source file declaring this step, e.g. "ManageSteps.cs".
+    /// </summary>
+    public string SourceFile { get; set; } = string.Empty;
 }
 
 /// <summary>
