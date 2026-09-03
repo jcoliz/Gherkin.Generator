@@ -26,19 +26,22 @@ This PRD introduces explicit, declarative state requirements so the generator ca
 - [X] Allow step methods to declare what shared state they provide after they run.
 - [X] Model shared state as scenario-scoped, not global, so the requirement is evaluated within the current generated test flow.
 - [X] Surface state requirements and state creation directly in generated test bodies as comments.
-- [ ] Allow the generator to warn when a required state item is not provided earlier in the same scenario path.
+- [X] Allow the generator to warn when a required state item is not provided earlier in the same scenario path.
 - [X] Allow generated test comments to identify when a required state is satisfied by base-provided infrastructure state.
-- [ ] Ensure the feature works with standard step ordering, including Background steps and consecutive scenario steps.
+- [X] Ensure the feature works with standard step ordering, including Background steps and consecutive scenario steps.
+
+Possible future goal to consider:
+
 - [ ] Include state mutations in the step catalog.
 
 ### Non-Goals
 
-- [ ] This feature does not define the methodology for steps to share state. That is app-specific.
-- [ ] This feature does not define a full dependency injection or runtime state framework.
-- [ ] This feature does not require a separate global state registry or persistence layer across scenarios.
-- [ ] This feature does not attempt to infer semantic correctness of the state description beyond explicit annotations.
-- [ ] This feature does not change Gherkin syntax or require changes to the feature file format.
-- [ ] This feature is not a replacement for ordinary compile-time validation or runtime assertions in step implementations.
+- This feature does not define the methodology for steps to share state. That is app-specific.
+- This feature does not define a full dependency injection or runtime state framework.
+- This feature does not require a separate global state registry or persistence layer across scenarios.
+- This feature does not attempt to infer semantic correctness of the state description beyond explicit annotations.
+- This feature does not change Gherkin syntax or require changes to the feature file format.
+- This feature is not a replacement for ordinary compile-time validation or runtime assertions in step implementations.
 
 ---
 
@@ -95,15 +98,15 @@ State is only considered within the current generated test and the steps that ru
 **So that** missing shared state is immediately visible during test generation or compilation
 
 **Acceptance Criteria**:
-- [ ] The generator can determine, for each step in order, whether required state has already been provided by an earlier step in the scenario.
-- [ ] The generator captures state provided by the test infrastructure from `BaseProvides` annotations declared on the generated test base class before evaluating Background and scenario steps.
-- [ ] If required state is absent, the generated method emits a compiler warning before the step call.
-- [ ] The warning includes the missing state name and its description.
-- [ ] A step with no missing requirements emits no warning.
-- [ ] The check includes Background steps as part of the scenario preconditions.
-- [ ] A required state that is satisfied by `BaseProvides` does not emit a warning.
+- [X] The generator can determine, for each step in order, whether required state has already been provided by an earlier step in the scenario.
+- [X] The generator captures state provided by the test infrastructure from `BaseProvides` annotations declared on the generated test base class before evaluating Background and scenario steps.
+- [X] If required state is absent, the generated method emits a compiler warning before the step call.
+- [X] The warning includes the missing state name and its description.
+- [X] A step with no missing requirements emits no warning.
+- [X] The check includes Background steps as part of the scenario preconditions.
+- [X] A required state that is satisfied by `BaseProvides` does not emit a warning.
 
-### Story 4: Developer - Maintain understandable step contracts in the step catalog
+### Story 4: Developer - Maintain understandable step contracts
 **As a** developer maintaining a library of steps
 **I want** the shared-state contract to be explicit and reviewable in the source code
 **So that** I can reason about step ordering and avoid hidden coupling

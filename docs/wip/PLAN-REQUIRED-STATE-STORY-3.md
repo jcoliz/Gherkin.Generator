@@ -1,5 +1,5 @@
 ---
-status: Approved # Draft | In Review | Approved | Implemented
+status: Implemented # Draft | In Review | Approved | Implemented
 prd_document: PRD-REQUIRED-STATE.md
 issue: 25
 story: 3
