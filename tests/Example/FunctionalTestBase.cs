@@ -26,7 +26,7 @@ public abstract class FunctionalTestBase
     /// <summary>
     /// Gets the current logged-in user type.
     /// </summary>
-    public string? CurrentUserType { get; private set; }
+    public string? CurrentUserType { get; set; }
 
     /// <summary>
     /// Launches the application.
