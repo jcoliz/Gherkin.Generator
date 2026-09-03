@@ -112,9 +112,9 @@ State is only considered within the current generated test and the steps that ru
 **So that** I can reason about step ordering and avoid hidden coupling
 
 **Acceptance Criteria**:
-- [ ] A state dependency can be identified by name without reading the full implementation body.
-- [ ] Authors can document why a state matters, not just what it is called.
-- [ ] The contract is visible from the step definition itself and can be inspected by code review tools.
+- [X] A state dependency can be identified by name without reading the full implementation body.
+- [X] Authors can document why a state matters, not just what it is called.
+- [X] The contract is visible from the step definition itself and can be inspected by code review tools.
 
 ---
 
