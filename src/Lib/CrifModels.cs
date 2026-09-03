@@ -365,6 +365,11 @@ public class StepCrif
     public List<SharedStateCrif> RequiresState { get; set; } = [];
 
     /// <summary>
+    /// List of state names that are required but not yet available when this step begins.
+    /// </summary>
+    public List<SharedStateCrif> MissingRequiredState { get; set; } = [];
+
+    /// <summary>
     /// List of state names that this step provides after executing.
     /// </summary>
     public List<SharedStateCrif> ProvidesState { get; set; } = [];

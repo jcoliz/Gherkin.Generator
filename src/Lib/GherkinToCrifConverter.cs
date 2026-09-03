@@ -57,6 +57,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             ProcessBackground(feature.Feature, crif);
             ProcessFeatureChildren(feature.Feature.Children, crif);
             MarkBaseProvidedRequirements(crif, projectMetadata);
+            EvaluateMissingRequiredState(crif, projectMetadata);
             AddUtilsNamespaceIfNeeded(crif);
         }
 
@@ -467,6 +468,66 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             foreach (var requiredState in step.RequiresState)
             {
                 requiredState.ProvidedByBase = baseProvidedNames.Contains(requiredState.Name);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Evaluates required-state availability in scenario execution order and records missing entries for warnings.
+    /// </summary>
+    /// <param name="crif">The CRIF object containing generated steps.</param>
+    /// <param name="projectMetadata">Project metadata containing scenario-start state names.</param>
+    private static void EvaluateMissingRequiredState(FeatureCrif crif, ProjectMetadata? projectMetadata)
+    {
+        var knownState = new HashSet<string>(
+            projectMetadata?.BaseProvidesState
+                .Where(s => !string.IsNullOrWhiteSpace(s.Name))
+                .Select(s => s.Name) ?? Enumerable.Empty<string>(),
+            StringComparer.Ordinal);
+
+        if (crif.Background != null)
+        {
+            EvaluateMissingRequiredState(crif.Background.Steps, knownState);
+        }
+
+        foreach (var scenario in crif.Rules.SelectMany(r => r.Scenarios))
+        {
+            EvaluateMissingRequiredState(scenario.Steps, knownState);
+        }
+    }
+
+    /// <summary>
+    /// Evaluates required-state availability for a collection of steps in execution order.
+    /// </summary>
+    /// <param name="steps">Steps to evaluate in order.</param>
+    /// <param name="knownState">Scenario state known to be available before the current step.</param>
+    private static void EvaluateMissingRequiredState(IEnumerable<StepCrif> steps, HashSet<string> knownState)
+    {
+        foreach (var step in steps)
+        {
+            var missing = new List<SharedStateCrif>();
+            foreach (var requiredState in step.RequiresState)
+            {
+                if (requiredState.ProvidedByBase || knownState.Contains(requiredState.Name))
+                {
+                    continue;
+                }
+
+                missing.Add(new SharedStateCrif
+                {
+                    Name = requiredState.Name,
+                    Description = requiredState.Description
+                });
+            }
+
+            step.MissingRequiredState = missing;
+
+            foreach (var providedState in step.ProvidesState)
+            {
+                if (!string.IsNullOrWhiteSpace(providedState.Name))
+                {
+                    knownState.Add(providedState.Name);
+                }
             }
         }
     }

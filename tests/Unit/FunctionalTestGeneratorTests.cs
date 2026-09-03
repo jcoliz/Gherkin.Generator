@@ -249,6 +249,141 @@ public class FunctionalTestGeneratorTests
         Assert.That(result, Does.Contain("// * Requires SessionToken: The authentication token created during login"));
     }
 
+    /// <summary>
+    /// Generator emits a warning comment before a step call when a required state has not been provided earlier in the scenario.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithMissingRequiredState_EmitsWarningCommentBeforeStepCall()
+    {
+        // Given: A scenario whose second step requires state that was never provided earlier
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Authentication",
+                Description = "Authentication state flow",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "User logs in with an existing account",
+                        Method = "UserLogsInWithAnExistingAccount",
+                        Steps =
+                        [
+                            new StepCrif
+                            {
+                                Keyword = DisplayKeyword.Given,
+                                Text = "a user account exists",
+                                Owner = "AuthSteps",
+                                Method = "GivenAUserAccountExists",
+                                ProvidesState =
+                                [
+                                    new SharedStateCrif { Name = "DefaultUser", Description = "the default user" }
+                                ],
+                                Arguments = []
+                            },
+                            new StepCrif
+                            {
+                                Keyword = DisplayKeyword.When,
+                                Text = "user logs in with the new password",
+                                Owner = "PasswordSteps",
+                                Method = "UserCanLogInWithTheNewPassword",
+                                RequiresState =
+                                [
+                                    new SharedStateCrif
+                                    {
+                                        Name = "SessionToken",
+                                        Description = "the authentication token created during login"
+                                    }
+                                ],
+                                MissingRequiredState =
+                                [
+                                    new SharedStateCrif
+                                    {
+                                        Name = "SessionToken",
+                                        Description = "the authentication token created during login"
+                                    }
+                                ],
+                                Arguments = []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: Warning comment is rendered before the step call
+        Assert.That(result, Does.Contain("#warning missing required state SessionToken: the authentication token created during login"));
+        Assert.That(result, Does.Contain("await PasswordSteps.UserCanLogInWithTheNewPassword();"));
+    }
+
+    /// <summary>
+    /// Generator emits no warning for steps whose required state is already available.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithSatisfiedRequirements_EmitsNoWarningComment()
+    {
+        // Given: A scenario where state is provided before it is required
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Authentication",
+                Description = "Authentication state flow",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "User logs in with an existing account",
+                        Method = "UserLogsInWithAnExistingAccount",
+                        Steps =
+                        [
+                            new StepCrif
+                            {
+                                Keyword = DisplayKeyword.Given,
+                                Text = "a user account exists",
+                                Owner = "AuthSteps",
+                                Method = "GivenAUserAccountExists",
+                                ProvidesState =
+                                [
+                                    new SharedStateCrif { Name = "SessionToken", Description = "the authentication token" }
+                                ],
+                                Arguments = []
+                            },
+                            new StepCrif
+                            {
+                                Keyword = DisplayKeyword.When,
+                                Text = "user logs in with the new password",
+                                Owner = "PasswordSteps",
+                                Method = "UserCanLogInWithTheNewPassword",
+                                RequiresState =
+                                [
+                                    new SharedStateCrif
+                                    {
+                                        Name = "SessionToken",
+                                        Description = "the authentication token"
+                                    }
+                                ],
+                                Arguments = []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: The requirement is satisfied, so no warning is rendered
+        Assert.That(result, Does.Not.Contain("#warning missing required state"));
+    }
+
     #endregion
 
     #region DataTable Tests

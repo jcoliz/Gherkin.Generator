@@ -44,6 +44,9 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
         {{/Rows}}
         );
         {{/DataTable}}
+        {{#MissingRequiredState}}
+        #warning missing required state {{Name}}{{#Description}}: {{Description}}{{/Description}}
+        {{/MissingRequiredState}}
         await {{Owner}}.{{Method}}({{#Arguments}}{{{.}}}{{^Last}}, {{/Last}}{{/Arguments}});
         {{#ProvidesState}}
         // Provides {{Name}}{{#Description}}: {{Description}}{{/Description}}
@@ -89,6 +92,9 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
         {{#RequiresState}}
         // * Requires {{Name}}{{#ProvidedByBase}} (Provided by base){{/ProvidedByBase}}{{#Description}}: {{Description}}{{/Description}}
         {{/RequiresState}}
+        {{#MissingRequiredState}}
+        #warning missing required state {{Name}}{{#Description}}: {{.}}{{/Description}}
+        {{/MissingRequiredState}}
         {{#DataTable}}
         var {{VariableName}} = new DataTable(
             [{{#Headers}}"{{.}}"{{^Last}}, {{/Last}}{{/Headers}}],
