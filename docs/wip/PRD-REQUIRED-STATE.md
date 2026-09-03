@@ -1,5 +1,5 @@
 ---
-status: Approved # Draft | In Review | Approved | Implemented
+status: Implementation in progress # Draft | In Review | Approved | Implemented
 design_document: [Link to design document]
 issue: 25
 ---
@@ -80,11 +80,11 @@ State is only considered within the current generated test and the steps that ru
 **So that** I can detect missing state before the test is run
 
 **Acceptance Criteria**:
-- [ ] Generated tests include comments before each step listing the state it requires.
-- [ ] Generated tests include comments after each step listing the state it provides.
-- [ ] The comments use the same human-readable descriptions provided in the annotations.
-- [ ] The comments are generated in the same order the step metadata is discovered.
-- [ ] Background setup steps are included in the same analysis so their state contributions and dependencies are visible.
+- [X] Generated tests include comments before each step listing the state it requires.
+- [X] Generated tests include comments after each step listing the state it provides.
+- [X] The comments use the same human-readable descriptions provided in the annotations.
+- [X] The comments are generated in the same order the step metadata is discovered.
+- [X] Background setup steps are included in the same analysis so their state contributions and dependencies are visible.
 
 ### Story 3: Developer - Receive warnings for missing state
 **As a** developer of an application writing tests to use this library
