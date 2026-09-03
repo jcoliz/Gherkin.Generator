@@ -27,6 +27,7 @@ This PRD introduces explicit, declarative state requirements so the generator ca
 - [ ] Model shared state as scenario-scoped, not global, so the requirement is evaluated within the current generated test flow.
 - [ ] Surface state requirements and state creation directly in generated test bodies as comments and warnings.
 - [ ] Allow the generator to warn when a required state item is not provided earlier in the same scenario path.
+- [ ] Allow generated test comments to identify when a required state is satisfied by base-provided infrastructure state.
 - [ ] Ensure the feature works with standard step ordering, including Background steps and consecutive scenario steps.
 
 ### Non-Goals
@@ -85,6 +86,7 @@ State is only considered within the current generated test and the steps that ru
 - [X] The comments use the same human-readable descriptions provided in the annotations.
 - [X] The comments are generated in the same order the step metadata is discovered.
 - [X] Background setup steps are included in the same analysis so their state contributions and dependencies are visible.
+- [ ] For required state satisfied by `BaseProvides`, generated `Requires` comments append `(Provided by base)` to the specific state entry.
 
 ### Story 3: Developer - Receive warnings for missing state
 **As a** developer of an application writing tests to use this library
@@ -93,10 +95,12 @@ State is only considered within the current generated test and the steps that ru
 
 **Acceptance Criteria**:
 - [ ] The generator can determine, for each step in order, whether required state has already been provided by an earlier step in the scenario.
+- [ ] The generator captures state provided by the test infrastructure from `BaseProvides` annotations declared on the generated test base class before evaluating Background and scenario steps.
 - [ ] If required state is absent, the generated method emits a compiler warning before the step call.
 - [ ] The warning includes the missing state name and its description.
 - [ ] A step with no missing requirements emits no warning.
 - [ ] The check includes Background steps as part of the scenario preconditions.
+- [ ] A required state that is satisfied by `BaseProvides` does not emit a warning.
 
 ### Story 4: Developer - Maintain understandable step contracts in the step catalog
 **As a** developer maintaining a library of steps
@@ -136,6 +140,22 @@ public async Task UserChangesTheirPasswordOnTheProfilePage()
 public async Task UserSubmitsEmailAndWeakPasswordOnResetPage()
 ```
 
+Infrastructure-provided, scenario-start state is declared on the generated test base class:
+
+```cs
+[GeneratedTestBase(UseNamespace = "ListsWebApp.Tests.Functional.Features")]
+[BaseProvides("Tester", "primary seeded test user account available before step execution")]
+[BaseProvides("DefaultUser", "default seeded test user used for functional login")]
+public abstract class FunctionalTestBaseV4 : FunctionalTest, ITestCapabilitiesProvider
+{
+    [SetUp]
+    public async Task SetUp()
+    {
+        // Infrastructure setup
+    }
+}
+```
+
 ### Semantics
 
 1. `[Requires]` declares a state item required before the step may execute.
@@ -145,17 +165,19 @@ public async Task UserSubmitsEmailAndWeakPasswordOnResetPage()
 5. The generator evaluates state presence in step order, not by method-level isolation or global ordering.
 6. A background step contributes state available to later steps in the scenario in the same way as regular steps.
 7. Missing state is a warning condition, not a hard compile error.
+8. `BaseProvides` declares scenario-start state that is assumed present before Background and scenario steps are evaluated.
 
 ### State Flow Rules
 
 The generator must evaluate state flow using a scenario-local history model. The following rules apply:
 
-- The generated test begins with an empty state set.
+- The generated test begins with the state set declared by `BaseProvides` on the generated test base class.
 - As each step executes in order, the generator adds any `[Provides]` values to the known state set.
 - Before a step executes, the generator checks whether every `[Requires]` value is already present in the known state set.
 - If a value is absent, the later step is marked as missing that state.
 - A state can be provided multiple times; the most recent value is the active one for the current scenario, but the initial requirement is only that the state name exists in the scenario state set.
 - State names are scenario-local. They do not persist across independent scenarios.
+- If a required state is present because of `BaseProvides`, it is treated as satisfied and should not emit a warning.
 
 ### Edge Cases
 
@@ -165,6 +187,7 @@ The following behaviors should be explicitly handled:
 - A single step may provide more than one state value.
 - A state may be provided by a background step and then later required by the scenario step.
 - A step may require a state that is never defined anywhere in the scenario. This should always warn.
+- A step may require a state that is not provided by prior steps but is declared by `BaseProvides`; this is valid and does not warn.
 - A step may require a state that is defined earlier in the same scenario, but only if it was provided earlier in the actual execution order of the scenario, including Background steps. The generator must evaluate state availability in the generated execution sequence, not by source order or reflection order.
 
 ---
@@ -201,7 +224,22 @@ public sealed class ProvidesAttribute : Attribute
         Description = description;
     }
 }
+
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+public sealed class BaseProvidesAttribute : Attribute
+{
+    public string Name { get; }
+    public string? Description { get; }
+
+    public BaseProvidesAttribute(string name, string? description = null)
+    {
+        Name = name;
+        Description = description;
+    }
+}
 ```
+
+`BaseProvides` is class-level metadata on the generated test base type and represents state that exists before scenario step execution begins.
 
 ### CRIF Extension
 
@@ -213,6 +251,7 @@ public class SharedStateCrif
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsMissing { get; set; }
+    public bool ProvidedByBase { get; set; }
 }
 
 public class StepCrif
@@ -229,13 +268,15 @@ This model is intentionally lightweight. The generator will use the state metada
 The generator performs an ordered flow analysis over the scenario steps:
 
 1. Collect step metadata for every step in the generated scenario.
-2. Include Background steps in the same ordered history, because they are part of the scenario setup.
-3. Walk the steps in execution order.
-4. For each step:
+2. Capture the state provided by the base infrastructure from `BaseProvides` metadata declared on the generated test base class.
+3. Include Background steps in the same ordered history, because they are part of the scenario setup.
+4. Walk the steps in execution order.
+5. For each step:
    - Record each required state item that is not in the known state set as missing.
+    - Mark each required state item as `ProvidedByBase` when it is satisfied by `BaseProvides`.
    - Add the step's provided states to the known state set after generation or after the call, depending on intended semantics.
-5. Emit comments for the state requirements and provisions discovered for the step.
-6. Emit compiler warnings for missing state before the await call.
+6. Emit comments for the state requirements and provisions discovered for the step.
+7. Emit compiler warnings for missing state before the await call.
 
 This analysis pass is deterministic and based on the ordered step sequence already produced by the generator, not on a separate runtime state tracker.
 
@@ -254,9 +295,9 @@ public async Task LoginWithNewPasswordAfterReset()
     // Provides NewPassword: the new password submitted by the user on the Reset Page.
 
     // When user logs in with the new password
-    // Requires DefaultUser: a UserDetails object containing the username, email, and password of the created test user account.
+    // Requires DefaultUser (Provided by base): a UserDetails object containing the username, email, and password of the created test user account.
     // Requires NewPassword: the password which the user has changed their password to.
-#warning "Missing DefaultUser: a UserDetails object containing the username, email, and password of the created test user account."
+#warning "Missing NewPassword: the password which the user has changed their password to."
     await PasswordSteps.UserCanLogInWithTheNewPassword();
 }
 ```
@@ -264,6 +305,8 @@ public async Task LoginWithNewPasswordAfterReset()
 ### Warning Strategy
 
 Warnings are generated as preprocessor-style `#warning` directives inserted immediately before the step invocation. This keeps them visible in the generated file and consistent with the project’s existing compile-time validation patterns.
+
+Warnings are emitted only for state that is truly missing at that execution point. If a required state is satisfied by `BaseProvides`, no warning is generated for that state.
 
 This is a low-friction first version:
 
@@ -283,6 +326,7 @@ This feature is implemented in the generator because the flow analysis depends o
 - [X] Should duplicate state names across different step classes be allowed, or should the generator warn on ambiguous state declarations across a scenario? **A:** Duplicate names are allowed if they represent the same scenario-level state contract; the generator evaluates by name and execution order, not by declaring type alone.
 - [X] Should `Description` be required for all state entries, or should it be optional and only included in comments when present? **A:** Description is optional and is only a convenience for code review and generated comments.
 - [X] Should the generator include a summary of missing-state analysis in a separate artifact, or is generated-file warnings sufficient for the first iteration? **A:** Generated-file warnings are sufficient for the initial and final iteration.
+- [X] How should required state behave when the test infrastructure pre-seeds scenario state outside normal step execution? **A:** Infrastructure state is declared explicitly using class-level `BaseProvides`; requirements satisfied by base-provided state are marked in generated comments as `(Provided by base)` and do not emit warnings.
 
 ---
 
