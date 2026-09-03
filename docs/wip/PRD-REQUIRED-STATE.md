@@ -1,7 +1,7 @@
 ---
-status: Draft # Draft | In Review | Approved | Implemented
+status: In Review # Draft | In Review | Approved | Implemented
 design_document: [Link to design document]
-issue: [TBD]
+issue: 25
 ---
 
 # Product Requirements Document: Required State Annotations
@@ -31,6 +31,7 @@ This PRD introduces explicit, declarative state requirements so the generator ca
 
 ### Non-Goals
 
+- [ ] This feature does not define the methodology for steps to share state. That is app-specific.
 - [ ] This feature does not define a full dependency injection or runtime state framework.
 - [ ] This feature does not require a separate global state registry or persistence layer across scenarios.
 - [ ] This feature does not attempt to infer semantic correctness of the state description beyond explicit annotations.
@@ -67,8 +68,8 @@ State is only considered within the current generated test and the steps that ru
 **So that** the generator can expose shared-state flow in a reviewable and checkable way
 
 **Acceptance Criteria**:
-- [ ] `[Provides]` annotations can be added to step methods.
-- [ ] `[Requires]` annotations can be added to step methods.
+- [ ] `[Provides]` annotations can be added to step definition methods.
+- [ ] `[Requires]` annotations can be added to step definition methods.
 - [ ] Multiple state entries can be declared on the same step method.
 - [ ] A state entry includes both a name and an optional human-readable description.
 - [ ] The annotation is clearly scoped to step metadata rather than test infrastructure or feature files.
@@ -97,7 +98,7 @@ State is only considered within the current generated test and the steps that ru
 - [ ] A step with no missing requirements emits no warning.
 - [ ] The check includes Background steps as part of the scenario preconditions.
 
-### Story 4: Developer - Maintain understandable step contracts
+### Story 4: Developer - Maintain understandable step contracts in the step catalog
 **As a** developer maintaining a library of steps
 **I want** the shared-state contract to be explicit and reviewable in the source code
 **So that** I can reason about step ordering and avoid hidden coupling
@@ -143,7 +144,7 @@ public async Task UserSubmitsEmailAndWeakPasswordOnResetPage()
 4. State names are compared by exact identifier value.
 5. The generator evaluates state presence in step order, not by method-level isolation or global ordering.
 6. A background step contributes state available to later steps in the scenario in the same way as regular steps.
-7. Missing state is a warning condition, not a hard compile error, for the initial version of this feature.
+7. Missing state is a warning condition, not a hard compile error.
 
 ### State Flow Rules
 
@@ -160,11 +161,11 @@ The generator must evaluate state flow using a scenario-local history model. The
 
 The following behaviors should be explicitly handled:
 
-- A step may require a state it also provides in the same method. In that case, the generator should treat the requirement as satisfied if the provider is considered effective before the step body executes. This is a design decision and should be documented in an implementation note.
+- A step may require a state it also provides in the same method. This means the step mutates that state. The requirement is still validated against the state that existed before the step begins; the `Provides` annotation on the same step does not retroactively satisfy that precondition. If a later step requires the same state, that later requirement is satisfied by the state that this earlier step has now produced in execution order.
 - A single step may provide more than one state value.
 - A state may be provided by a background step and then later required by the scenario step.
 - A step may require a state that is never defined anywhere in the scenario. This should always warn.
-- A step may require a state that is defined earlier in the same scenario but by a step not yet considered due to ordering issues. The generator must rely on the actual execution order it generates, not on a separate runtime or reflection-based search.
+- A step may require a state that is defined earlier in the same scenario, but only if it was provided earlier in the actual execution order of the scenario, including Background steps. The generator must evaluate state availability in the generated execution sequence, not by source order or reflection order.
 
 ---
 
@@ -278,10 +279,10 @@ This feature is implemented in the generator because the flow analysis depends o
 
 ## Open Questions
 
-- [ ] Should a step that both requires and provides the same named state be treated as satisfied before execution, or as an explicit invalid contract requiring a separate warning?
-- [ ] Should duplicate state names across different step classes be allowed, or should the generator warn on ambiguous state declarations across a scenario?
-- [ ] Should `Description` be required for all state entries, or should it be optional and only included in comments when present?
-- [ ] Should the generator include a summary of missing-state analysis in a separate artifact, or is generated-file warnings sufficient for the first iteration?
+- [X] Should a step that both requires and provides the same named state be treated as satisfied before execution, or as an explicit invalid contract requiring a separate warning? **A:** The requirement is validated against the state that existed before the step runs; the step's own `Provides` does not satisfy the same-step precondition, but it does make the state available to later steps in the scenario.
+- [X] Should duplicate state names across different step classes be allowed, or should the generator warn on ambiguous state declarations across a scenario? **A:** Duplicate names are allowed if they represent the same scenario-level state contract; the generator evaluates by name and execution order, not by declaring type alone.
+- [X] Should `Description` be required for all state entries, or should it be optional and only included in comments when present? **A:** Description is optional and is only a convenience for code review and generated comments.
+- [X] Should the generator include a summary of missing-state analysis in a separate artifact, or is generated-file warnings sufficient for the first iteration? **A:** Generated-file warnings are sufficient for the initial and final iteration.
 
 ---
 
@@ -325,7 +326,7 @@ This feature is intentionally scoped to the contract between steps, not to gener
 
 When handing this off for detailed design/implementation:
 - [x] All user stories have clear acceptance criteria
-- [ ] Open questions are resolved or documented as design decisions
+- [X] Open questions are resolved or documented as design decisions
 - [x] Technical approach section indicates affected layers
 - [ ] Code patterns to follow are referenced (links to similar controllers/features)
 - [x] The PRD defines state semantics and identifies where warnings are emitted
