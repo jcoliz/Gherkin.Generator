@@ -34,7 +34,7 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
         {{#Steps}}
         // {{Keyword}} {{Text}}
         {{#RequiresState}}
-        // Requires {{Name}}{{#Description}}: {{Description}}{{/Description}}
+        // Requires {{Name}}{{#ProvidedByBase}} (Provided by base){{/ProvidedByBase}}{{#Description}}: {{Description}}{{/Description}}
         {{/RequiresState}}
         {{#DataTable}}
         var {{VariableName}} = new DataTable(
@@ -87,7 +87,7 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
         {{#Steps}}
         // {{Keyword}} {{{Text}}}
         {{#RequiresState}}
-        // * Requires {{Name}}{{#Description}}: {{Description}}{{/Description}}
+        // * Requires {{Name}}{{#ProvidedByBase}} (Provided by base){{/ProvidedByBase}}{{#Description}}: {{Description}}{{/Description}}
         {{/RequiresState}}
         {{#DataTable}}
         var {{VariableName}} = new DataTable(

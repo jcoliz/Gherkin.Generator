@@ -185,8 +185,68 @@ public class FunctionalTestGeneratorTests
         var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
 
         // Then: State metadata is rendered as review comments around the step
-        Assert.That(result, Does.Contain("// Requires DefaultUser: The authenticated user account used for this scenario"));
-        Assert.That(result, Does.Contain("// Provides SessionToken: The authentication token created during login"));
+        Assert.That(result, Does.Contain("// * Requires DefaultUser: The authenticated user account used for this scenario"));
+        Assert.That(result, Does.Contain("// * Provides SessionToken: The authentication token created during login"));
+    }
+
+    /// <summary>
+    /// Generator appends "(Provided by base)" to required state comments when flagged in CRIF.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithBaseProvidedRequires_AnnotatesReviewComments()
+    {
+        // Given: A CRIF with required state entries, one satisfied by base metadata
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Authentication",
+                Description = "Authentication state flow",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "User logs in with an existing account",
+                        Method = "UserLogsInWithAnExistingAccount",
+                        Steps =
+                        [
+                            new StepCrif
+                            {
+                                Keyword = DisplayKeyword.When,
+                                Text = "user logs in with the new password",
+                                Owner = "PasswordSteps",
+                                Method = "UserCanLogInWithTheNewPassword",
+                                RequiresState =
+                                [
+                                    new SharedStateCrif
+                                    {
+                                        Name = "DefaultUser",
+                                        Description = "The authenticated user account used for this scenario",
+                                        ProvidedByBase = true
+                                    },
+                                    new SharedStateCrif
+                                    {
+                                        Name = "SessionToken",
+                                        Description = "The authentication token created during login"
+                                    }
+                                ],
+                                Arguments = []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: Base-provided requirement is explicitly annotated
+        Assert.That(result, Does.Contain("// * Requires DefaultUser (Provided by base): The authenticated user account used for this scenario"));
+
+        // And: Non-base requirement remains unchanged
+        Assert.That(result, Does.Contain("// * Requires SessionToken: The authentication token created during login"));
     }
 
     #endregion

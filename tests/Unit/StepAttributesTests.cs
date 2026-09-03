@@ -6,6 +6,12 @@ namespace Gherkin.Generator.Tests.Unit;
 [TestFixture]
 public class StepAttributesTests
 {
+    [BaseProvides("DefaultUser", "default seeded test user")]
+    [BaseProvides("Tester")]
+    private class TestGeneratedBaseClass
+    {
+    }
+
     // Test class with step methods for attribute testing
     private class TestSteps
     {
@@ -213,6 +219,37 @@ public class StepAttributesTests
         Assert.That(usage, Is.Not.Null);
         Assert.That(usage!.AllowMultiple, Is.True);
         Assert.That(usage.ValidOn, Is.EqualTo(AttributeTargets.Method));
+    }
+
+    [Test]
+    public void BaseProvidesAttribute_AppliedToClass_MetadataIsAccessible()
+    {
+        // Given: A class decorated with BaseProvidesAttribute
+        var type = typeof(TestGeneratedBaseClass);
+
+        // When: Retrieving BaseProvides attributes
+        var attributes = type.GetCustomAttributes<BaseProvidesAttribute>().ToList();
+
+        // Then: Base-provided state metadata should be available
+        Assert.That(attributes, Has.Count.EqualTo(2));
+        Assert.That(attributes[0].Name, Is.EqualTo("DefaultUser"));
+        Assert.That(attributes[0].Description, Is.EqualTo("default seeded test user"));
+        Assert.That(attributes[1].Name, Is.EqualTo("Tester"));
+        Assert.That(attributes[1].Description, Is.Null);
+    }
+
+    [Test]
+    public void BaseProvidesAttribute_AttributeUsage_AllowsMultipleOnClass()
+    {
+        // Given: BaseProvidesAttribute type
+
+        // When: Getting AttributeUsage
+        var usage = typeof(BaseProvidesAttribute).GetCustomAttribute<AttributeUsageAttribute>();
+
+        // Then: Should allow multiple and only target classes
+        Assert.That(usage, Is.Not.Null);
+        Assert.That(usage!.AllowMultiple, Is.True);
+        Assert.That(usage.ValidOn, Is.EqualTo(AttributeTargets.Class));
     }
 
     [Test]

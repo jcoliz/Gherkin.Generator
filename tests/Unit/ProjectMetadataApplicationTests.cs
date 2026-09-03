@@ -162,6 +162,56 @@ public class ProjectMetadataApplicationTests
         Assert.That(crif.BaseClass, Is.Empty);
     }
 
+    [Test]
+    public void Convert_WithBaseProvidesState_MarksMatchingRequiresAsProvidedByBase()
+    {
+        // Given: A feature with a matched step
+        var gherkinText = """
+            Feature: Shopping Cart
+              Scenario: Add item
+                Given I have a cart
+            """;
+        var gherkinDoc = ParseGherkin(gherkinText);
+
+        // And: Step metadata with multiple requirements
+        var stepMetadata = new StepMetadataCollection();
+        stepMetadata.Add(new StepMetadata
+        {
+            NormalizedKeyword = NormalizedKeyword.Given,
+            Text = "I have a cart",
+            Method = "GivenIHaveACart",
+            Class = "CartSteps",
+            Namespace = "MyApp.Tests.Steps",
+            Parameters = [],
+            RequiresState =
+            [
+                new SharedStateCrif { Name = "DefaultUser", Description = "default seeded test user" },
+                new SharedStateCrif { Name = "SessionToken", Description = "authenticated session" }
+            ],
+            ProvidesState = []
+        });
+
+        // And: Project metadata with one base-provided state
+        var projectMetadata = new ProjectMetadata
+        {
+            BaseProvidesState =
+            [
+                new SharedStateCrif { Name = "DefaultUser", Description = "default seeded test user" }
+            ]
+        };
+
+        // When: We convert the feature with project metadata
+        var converter = new GherkinToCrifConverter(stepMetadata);
+        var crif = converter.Convert(gherkinDoc, "ShoppingCart", projectMetadata);
+        var requires = crif.Rules[0].Scenarios[0].Steps[0].RequiresState;
+
+        // Then: Matching requires state should be marked as base-provided
+        Assert.That(requires.First(r => r.Name == "DefaultUser").ProvidedByBase, Is.True);
+
+        // And: Non-matching requires state should not be marked
+        Assert.That(requires.First(r => r.Name == "SessionToken").ProvidedByBase, Is.False);
+    }
+
     private static Gherkin.Ast.GherkinDocument ParseGherkin(string gherkinText)
     {
         var parser = new Parser();

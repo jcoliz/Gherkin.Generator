@@ -70,6 +70,7 @@ public static class StepMethodAnalyzer
                 {
                     metadata.DefaultTestBase = result.Value.TestBase;
                     metadata.GeneratedNamespace = result.Value.GeneratedNamespace;
+                    metadata.BaseProvidesState = result.Value.BaseProvidesState;
                     return metadata; // Found it, no need to continue searching
                 }
             }
@@ -83,8 +84,8 @@ public static class StepMethodAnalyzer
     /// </summary>
     /// <param name="classDecl">The class declaration syntax node.</param>
     /// <param name="semanticModel">Semantic model for symbol resolution.</param>
-    /// <returns>Tuple with GeneratedTestBaseInfo and generated namespace if attribute found; otherwise, null.</returns>
-    private static (GeneratedTestBaseInfo TestBase, string GeneratedNamespace)? FindGeneratedTestBase(ClassDeclarationSyntax classDecl, SemanticModel semanticModel)
+    /// <returns>Tuple with GeneratedTestBaseInfo, generated namespace, and base-provided state if attribute found; otherwise, null.</returns>
+    private static (GeneratedTestBaseInfo TestBase, string GeneratedNamespace, List<SharedStateCrif> BaseProvidesState)? FindGeneratedTestBase(ClassDeclarationSyntax classDecl, SemanticModel semanticModel)
     {
         var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
         if (classSymbol == null)
@@ -116,7 +117,55 @@ public static class StepMethodAnalyzer
             FullName = fullName
         };
 
-        return (testBase, generatedNamespace);
+        var baseProvidesState = ExtractBaseProvidesState(classSymbol);
+
+        return (testBase, generatedNamespace, baseProvidesState);
+    }
+
+    /// <summary>
+    /// Extracts [BaseProvides] declarations from a generated test base class symbol.
+    /// </summary>
+    /// <param name="classSymbol">The generated test base class symbol.</param>
+    /// <returns>List of base-provided state declarations.</returns>
+    private static List<SharedStateCrif> ExtractBaseProvidesState(INamedTypeSymbol classSymbol)
+    {
+        return classSymbol.GetAttributes()
+            .Where(a => a.AttributeClass?.Name == "BaseProvidesAttribute" || a.AttributeClass?.Name == "BaseProvides")
+            .Select(CreateSharedStateFromAttribute)
+            .Where(s => s != null)
+            .Select(s => s!)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Creates shared-state metadata from an attribute with (name, optional description) constructor arguments.
+    /// </summary>
+    /// <param name="attribute">Attribute data to parse.</param>
+    /// <returns>Parsed shared-state metadata, or null if invalid.</returns>
+    private static SharedStateCrif? CreateSharedStateFromAttribute(AttributeData attribute)
+    {
+        if (attribute.ConstructorArguments.Length == 0)
+        {
+            return null;
+        }
+
+        var name = attribute.ConstructorArguments[0].Value as string;
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        string? description = null;
+        if (attribute.ConstructorArguments.Length > 1)
+        {
+            description = attribute.ConstructorArguments[1].Value as string;
+        }
+
+        return new SharedStateCrif
+        {
+            Name = name,
+            Description = description
+        };
     }
 
     /// <summary>

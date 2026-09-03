@@ -397,6 +397,11 @@ public class SharedStateCrif
     /// Human-readable description of the state item.
     /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    /// Whether this required state is satisfied by BaseProvides metadata.
+    /// </summary>
+    public bool ProvidedByBase { get; set; }
 }
 
 /// <summary>
@@ -571,6 +576,11 @@ public class ProjectMetadata
     /// or defaults to the namespace of the decorated class if not specified.
     /// </remarks>
     public string GeneratedNamespace { get; set; } = string.Empty;
+
+    /// <summary>
+    /// State names seeded by test infrastructure via [BaseProvides] on the generated test base class.
+    /// </summary>
+    public List<SharedStateCrif> BaseProvidesState { get; set; } = [];
 }
 
 /// <summary>

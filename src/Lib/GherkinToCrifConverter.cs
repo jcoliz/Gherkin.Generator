@@ -56,6 +56,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             TagProcessor.ApplyProjectDefaults(crif, projectMetadata);
             ProcessBackground(feature.Feature, crif);
             ProcessFeatureChildren(feature.Feature.Children, crif);
+            MarkBaseProvidedRequirements(crif, projectMetadata);
             AddUtilsNamespaceIfNeeded(crif);
         }
 
@@ -418,6 +419,56 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         });
 
         scenarioCrif.Steps.AddRange(steps);
+    }
+
+    /// <summary>
+    /// Marks required state entries as base-provided when they match [BaseProvides] names.
+    /// </summary>
+    /// <param name="crif">The CRIF object containing generated steps.</param>
+    /// <param name="projectMetadata">Project metadata containing base-provided state names.</param>
+    private static void MarkBaseProvidedRequirements(FeatureCrif crif, ProjectMetadata? projectMetadata)
+    {
+        if (projectMetadata?.BaseProvidesState == null || projectMetadata.BaseProvidesState.Count == 0)
+        {
+            return;
+        }
+
+        var baseProvidedNames = new HashSet<string>(
+            projectMetadata.BaseProvidesState
+                .Select(s => s.Name)
+                .Where(n => !string.IsNullOrWhiteSpace(n)),
+            StringComparer.Ordinal);
+
+        if (baseProvidedNames.Count == 0)
+        {
+            return;
+        }
+
+        if (crif.Background != null)
+        {
+            MarkBaseProvidedRequirements(crif.Background.Steps, baseProvidedNames);
+        }
+
+        foreach (var scenario in crif.Rules.SelectMany(r => r.Scenarios))
+        {
+            MarkBaseProvidedRequirements(scenario.Steps, baseProvidedNames);
+        }
+    }
+
+    /// <summary>
+    /// Marks required state entries as base-provided when matched by name.
+    /// </summary>
+    /// <param name="steps">Steps to inspect.</param>
+    /// <param name="baseProvidedNames">Scenario-start state names from [BaseProvides].</param>
+    private static void MarkBaseProvidedRequirements(IEnumerable<StepCrif> steps, HashSet<string> baseProvidedNames)
+    {
+        foreach (var step in steps)
+        {
+            foreach (var requiredState in step.RequiresState)
+            {
+                requiredState.ProvidedByBase = baseProvidedNames.Contains(requiredState.Name);
+            }
+        }
     }
 }
 
