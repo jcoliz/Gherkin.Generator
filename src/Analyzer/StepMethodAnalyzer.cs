@@ -149,8 +149,7 @@ public static class StepMethodAnalyzer
             return null;
         }
 
-        var name = attribute.ConstructorArguments[0].Value as string;
-        if (string.IsNullOrWhiteSpace(name))
+        if (attribute.ConstructorArguments[0].Value is not string name || string.IsNullOrWhiteSpace(name))
         {
             return null;
         }
