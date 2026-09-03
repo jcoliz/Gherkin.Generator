@@ -314,6 +314,34 @@ public class AccountSteps
 
 The generator includes these as review comments in the generated code, making the execution flow easier to understand when a scenario depends on earlier setup steps. This helps clarify the ordering and data dependencies without introducing a runtime state framework.
 
+If a required state is known to be seeded by the generated test base class, the generated `Requires` comment appends `(Provided by base)` for that specific state entry.
+
+### Base-Provided State Metadata
+
+Use the `BaseProvides` attribute on the class decorated with `GeneratedTestBase` to declare scenario-start state that your test infrastructure provides before step methods run.
+
+```csharp
+[GeneratedTestBase(UseNamespace = "MyApp.Tests.Features")]
+[BaseProvides("DefaultUser", "default seeded user for functional tests")]
+[BaseProvides("Tester", "primary seeded account for administrative operations")]
+public abstract class FunctionalTestBase : NUnitTestBase
+{
+  [SetUp]
+  public async Task SetUp()
+  {
+    // Infrastructure setup that creates base-provided state
+  }
+}
+```
+
+When a step requires one of these names, generated output marks it inline:
+
+```csharp
+// * Requires DefaultUser (Provided by base): default seeded user for functional tests
+```
+
+In this version, `BaseProvides` is used to improve generated comment clarity for state flow review.
+
 ### Step Parameters
 
 Capture values from step text using placeholders:
