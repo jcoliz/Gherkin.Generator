@@ -270,27 +270,28 @@ public static class StepMethodAnalyzer
             return null;
         }
 
-        var arguments = attribute.ArgumentList?.Arguments;
-        if (arguments == null || arguments.Count == 0)
+        var argumentList = attribute.ArgumentList;
+        if (argumentList == null || argumentList.Arguments.Count == 0)
         {
             return null;
         }
 
-        var stateName = GetStringLiteral(arguments[0].Expression);
+        var stateName = GetStringLiteral(argumentList.Arguments[0].Expression);
         if (string.IsNullOrWhiteSpace(stateName))
         {
             return null;
         }
 
+        var stateNameText = stateName ?? string.Empty;
         string? description = null;
-        if (arguments.Count > 1)
+        if (argumentList.Arguments.Count > 1)
         {
-            description = GetStringLiteral(arguments[1].Expression);
+            description = GetStringLiteral(argumentList.Arguments[1].Expression);
         }
 
         return new SharedStateCrif
         {
-            Name = stateName,
+            Name = stateNameText,
             Description = description
         };
     }
