@@ -1,5 +1,5 @@
 ---
-status: In Review # Draft | In Review | Approved | Implemented
+status: Approved # Draft | In Review | Approved | Implemented
 design_document: [Link to design document]
 issue: 25
 ---
@@ -68,11 +68,11 @@ State is only considered within the current generated test and the steps that ru
 **So that** the generator can expose shared-state flow in a reviewable and checkable way
 
 **Acceptance Criteria**:
-- [ ] `[Provides]` annotations can be added to step definition methods.
-- [ ] `[Requires]` annotations can be added to step definition methods.
-- [ ] Multiple state entries can be declared on the same step method.
-- [ ] A state entry includes both a name and an optional human-readable description.
-- [ ] The annotation is clearly scoped to step metadata rather than test infrastructure or feature files.
+- [X] `[Provides]` annotations can be added to step definition methods.
+- [X] `[Requires]` annotations can be added to step definition methods.
+- [X] Multiple state entries can be declared on the same step method.
+- [X] A state entry includes both a name and an optional human-readable description.
+- [X] These attributes are declarative metadata attached to step methods for generator analysis. They are not feature-file annotations, test-framework infrastructure, or runtime execution directives.
 
 ### Story 2: Developer - Review state flow in generated tests
 **As a** developer of an application writing tests to use this library
