@@ -61,6 +61,7 @@ This shows exactly how Gherkin scenarios are translated into C# test methods.
 5. **Data Tables** - Passing structured data to steps
 6. **Multiple Step Classes** - Organizing steps by domain (Application vs ShoppingCart)
 7. **Step Context** - Sharing state through the test base class
+8. **Base-provided state metadata** - Using `BaseProvides` on the generated test base so matching `Requires` comments render with `(Provided by base)`
 
 ## Known Limitations
 

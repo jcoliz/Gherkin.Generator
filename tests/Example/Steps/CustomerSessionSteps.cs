@@ -22,10 +22,12 @@ public class CustomerSessionSteps
     /// Loads the customer profile for the active scenario.
     /// </summary>
     [Given("the customer profile is loaded")]
+    [Requires("DefaultUser", "Default seeded user context available before scenario steps")]
     [Provides("CustomerProfile", "The customer profile loaded for this scenario")]
     public async Task LoadCustomerProfile()
     {
-        _context.CurrentUserType = _context.CurrentUserType ?? "customer";
+        Assert.That(_context.DefaultUser, Is.Not.Null.And.Not.Empty);
+        _context.CurrentUserType = _context.CurrentUserType ?? _context.DefaultUser;
         await Task.CompletedTask;
     }
 

@@ -6,8 +6,14 @@ namespace Gherkin.Generator.Tests.Example;
 /// Base class for functional tests with shopping cart capabilities.
 /// </summary>
 [GeneratedTestBase(UseNamespace = "Gherkin.Generator.Tests.Example.Features")]
+[BaseProvides("DefaultUser", "Default seeded user context available before scenario steps")]
 public abstract class FunctionalTestBase
 {
+    /// <summary>
+    /// Gets the default user identity seeded by test setup.
+    /// </summary>
+    public string? DefaultUser { get; private set; }
+
     /// <summary>
     /// Gets the shopping cart instance for the current test.
     /// </summary>
@@ -27,6 +33,15 @@ public abstract class FunctionalTestBase
     /// Gets the current logged-in user type.
     /// </summary>
     public string? CurrentUserType { get; set; }
+
+    /// <summary>
+    /// Seeds infrastructure state available before scenario steps run.
+    /// </summary>
+    [SetUp]
+    public void SetUp()
+    {
+        DefaultUser = "customer";
+    }
 
     /// <summary>
     /// Launches the application.
@@ -59,5 +74,6 @@ public abstract class FunctionalTestBase
         IsApplicationRunning = false;
         IsLoggedIn = false;
         CurrentUserType = null;
+        DefaultUser = null;
     }
 }
