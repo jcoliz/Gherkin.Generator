@@ -22,13 +22,14 @@ This PRD introduces explicit, declarative state requirements so the generator ca
 
 ### Goals
 
-- [ ] Allow step methods to declare what shared state they require before they can run.
-- [ ] Allow step methods to declare what shared state they provide after they run.
-- [ ] Model shared state as scenario-scoped, not global, so the requirement is evaluated within the current generated test flow.
-- [ ] Surface state requirements and state creation directly in generated test bodies as comments and warnings.
+- [X] Allow step methods to declare what shared state they require before they can run.
+- [X] Allow step methods to declare what shared state they provide after they run.
+- [X] Model shared state as scenario-scoped, not global, so the requirement is evaluated within the current generated test flow.
+- [X] Surface state requirements and state creation directly in generated test bodies as comments.
 - [ ] Allow the generator to warn when a required state item is not provided earlier in the same scenario path.
-- [ ] Allow generated test comments to identify when a required state is satisfied by base-provided infrastructure state.
+- [X] Allow generated test comments to identify when a required state is satisfied by base-provided infrastructure state.
 - [ ] Ensure the feature works with standard step ordering, including Background steps and consecutive scenario steps.
+- [ ] Include state mutations in the step catalog.
 
 ### Non-Goals
 
@@ -86,7 +87,7 @@ State is only considered within the current generated test and the steps that ru
 - [X] The comments use the same human-readable descriptions provided in the annotations.
 - [X] The comments are generated in the same order the step metadata is discovered.
 - [X] Background setup steps are included in the same analysis so their state contributions and dependencies are visible.
-- [ ] For required state satisfied by `BaseProvides`, generated `Requires` comments append `(Provided by base)` to the specific state entry.
+- [X] For required state satisfied by `BaseProvides`, generated `Requires` comments append `(Provided by base)` to the specific state entry.
 
 ### Story 3: Developer - Receive warnings for missing state
 **As a** developer of an application writing tests to use this library
