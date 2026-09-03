@@ -360,6 +360,16 @@ public class StepCrif
     public string Method { get; set; } = string.Empty;
 
     /// <summary>
+    /// List of state names that this step requires before executing.
+    /// </summary>
+    public List<SharedStateCrif> RequiresState { get; set; } = [];
+
+    /// <summary>
+    /// List of state names that this step provides after executing.
+    /// </summary>
+    public List<SharedStateCrif> ProvidesState { get; set; } = [];
+
+    /// <summary>
     /// List of arguments to pass to the method (already formatted as C# code).
     /// </summary>
     public List<ArgumentCrif> Arguments { get; set; } = [];
@@ -371,6 +381,22 @@ public class StepCrif
     {
         get; set;
     }
+}
+
+/// <summary>
+/// Represents a single shared state requirement or provision for a step.
+/// </summary>
+public class SharedStateCrif
+{
+    /// <summary>
+    /// Name of the shared state item.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Human-readable description of the state item.
+    /// </summary>
+    public string? Description { get; set; }
 }
 
 /// <summary>

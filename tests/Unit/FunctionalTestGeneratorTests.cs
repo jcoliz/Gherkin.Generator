@@ -129,6 +129,66 @@ public class FunctionalTestGeneratorTests
         Assert.That(result, Does.Contain("await NavigationSteps.GivenLaunchedSite();"));
     }
 
+    /// <summary>
+    /// Generator includes required and provided state comments in generated scenario steps.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithStepStateMetadata_ProducesReviewComments()
+    {
+        // Given: A CRIF with a step that requires and provides shared state
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Authentication",
+                Description = "Authentication state flow",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "User logs in with an existing account",
+                        Method = "UserLogsInWithAnExistingAccount",
+                        Steps =
+                        [
+                            new StepCrif
+                            {
+                                Keyword = DisplayKeyword.When,
+                                Text = "user logs in with the new password",
+                                Owner = "PasswordSteps",
+                                Method = "UserCanLogInWithTheNewPassword",
+                                RequiresState =
+                                [
+                                    new SharedStateCrif
+                                    {
+                                        Name = "DefaultUser",
+                                        Description = "The authenticated user account used for this scenario"
+                                    }
+                                ],
+                                ProvidesState =
+                                [
+                                    new SharedStateCrif
+                                    {
+                                        Name = "SessionToken",
+                                        Description = "The authentication token created during login"
+                                    }
+                                ],
+                                Arguments = []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: State metadata is rendered as review comments around the step
+        Assert.That(result, Does.Contain("// Requires DefaultUser: The authenticated user account used for this scenario"));
+        Assert.That(result, Does.Contain("// Provides SessionToken: The authentication token created during login"));
+    }
+
     #endregion
 
     #region DataTable Tests

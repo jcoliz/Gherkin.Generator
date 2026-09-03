@@ -556,6 +556,16 @@ public class StepMetadata
     public List<StepParameter> Parameters { get; set; } = [];
 
     /// <summary>
+    /// State names required before this step can run.
+    /// </summary>
+    public List<SharedStateCrif> RequiresState { get; set; } = [];
+
+    /// <summary>
+    /// State names provided after this step completes.
+    /// </summary>
+    public List<SharedStateCrif> ProvidesState { get; set; } = [];
+
+    /// <summary>
     /// File name (without directory) of the source file declaring this step, e.g. "ManageSteps.cs".
     /// </summary>
     public string SourceFile { get; set; } = string.Empty;

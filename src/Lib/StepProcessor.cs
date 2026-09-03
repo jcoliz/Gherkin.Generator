@@ -171,6 +171,16 @@ internal class StepProcessor
     {
         step.Owner = matchedStep.Class;
         step.Method = matchedStep.Method;
+        step.RequiresState = matchedStep.RequiresState.Select(s => new SharedStateCrif
+        {
+            Name = s.Name,
+            Description = s.Description
+        }).ToList();
+        step.ProvidesState = matchedStep.ProvidesState.Select(s => new SharedStateCrif
+        {
+            Name = s.Name,
+            Description = s.Description
+        }).ToList();
 
         AddClassAndNamespace(crif, matchedStep);
         ExtractStepArguments(step, matchedStep);
