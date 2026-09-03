@@ -87,7 +87,7 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
         {{#Steps}}
         // {{Keyword}} {{{Text}}}
         {{#RequiresState}}
-        // Requires {{Name}}{{#Description}}: {{Description}}{{/Description}}
+        // * Requires {{Name}}{{#Description}}: {{Description}}{{/Description}}
         {{/RequiresState}}
         {{#DataTable}}
         var {{VariableName}} = new DataTable(
@@ -99,7 +99,7 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
         {{/DataTable}}
         await {{Owner}}.{{Method}}({{#Arguments}}{{{.}}}{{^Last}}, {{/Last}}{{/Arguments}});
         {{#ProvidesState}}
-        // Provides {{Name}}{{#Description}}: {{Description}}{{/Description}}
+        // * Provides {{Name}}{{#Description}}: {{Description}}{{/Description}}
         {{/ProvidesState}}
 
         {{/Steps}}
