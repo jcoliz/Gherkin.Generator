@@ -7,6 +7,7 @@ Complete guide for using Gherkin.Generator to create behavior-driven tests with 
 - [Getting Started](#getting-started)
 - [Writing Feature Files](#writing-feature-files)
 - [Authoring Step Definitions](#authoring-step-definitions)
+  - [Scenario State Metadata](#scenario-state-metadata)
 - [Customizing Templates](#customizing-templates)
 - [Advanced Features](#advanced-features)
   - [Test Categories](#test-categories)
@@ -286,6 +287,32 @@ public class NavigationSteps
 ```
 
 **Available attributes:** `[Given]`, `[When]`, `[Then]`
+
+### Scenario State Metadata
+
+Use the `Requires` and `Provides` attributes to document the scenario-local state that a step depends on or creates. This is a lightweight metadata feature for generated-test review and validation; it does not define the Gherkin binding, does not change the feature file, and does not configure the test infrastructure.
+
+```csharp
+public class AccountSteps
+{
+    [Given("a customer exists")]
+    [Provides("Customer", "the customer created for this scenario")]
+    public async Task GivenACustomerExists()
+    {
+        // Create customer setup state
+    }
+
+    [When("the customer signs in")]
+    [Requires("Customer", "the customer created for this scenario")]
+    [Provides("Session", "the authenticated session for the customer")]
+    public async Task WhenTheCustomerSignsIn()
+    {
+        // Perform sign-in and establish a session
+    }
+}
+```
+
+The generator includes these as review comments in the generated code, making the execution flow easier to understand when a scenario depends on earlier setup steps. This helps clarify the ordering and data dependencies without introducing a runtime state framework.
 
 ### Step Parameters
 
