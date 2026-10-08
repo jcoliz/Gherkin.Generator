@@ -70,3 +70,37 @@ public async Task TheCartShouldBe(string string1)
 - [ ] For steps with no namespace (global), don't add a using
 - [ ] For steps with no namespace (global), warn the user
 - [ ] Can we pack in the default template and install it in user's Templates folder? Also when they update, it would bring the latest. They could use it, or they could copy to a new file and customize it.
+
+- [ ] Bug: Don't parse numbers inside of strings
+
+The following unimplemented step: "Then the Aisle suggestions include "Aisle 01"
+
+Produced the following step call inside the test
+
+        // Then the Aisle suggestions include "Aisle 01"
+        await this.TheAisleSuggestionsInclude(01, "Aisle 01");
+
+And produced this unimplemented step:
+
+    /// <summary>
+    /// Then the Aisle suggestions include {string1}
+    /// </summary>
+    [Then("the Aisle suggestions include {string1}")]
+    public async Task TheAisleSuggestionsInclude(string string1, int value1)
+    {
+        throw new NotImplementedException();
+    }
+
+Expected:
+
+        // Then the Aisle suggestions include "Aisle 01"
+        await this.TheAisleSuggestionsInclude("Aisle 01");
+
+And:
+
+    public async Task TheAisleSuggestionsInclude(string string1)
+    {
+        throw new NotImplementedException();
+    }
+
+Note that the SUMMARY and the ATTRIBUTE usage are correct.
