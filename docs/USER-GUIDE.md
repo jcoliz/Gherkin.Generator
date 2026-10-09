@@ -236,6 +236,7 @@ When using the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.c
 - `@explicit` or `@explicit:reason` - Mark scenario as explicit (requires manual execution)
 - `@category:name` - Add NUnit `[Category]` attribute (can use multiple times)
 - `@order:n` - Add NUnit `[Order]` attribute for test execution order
+- Any other scenario tags are preserved in the generated XML remarks comments for review
 
 **Example with feature-level overrides:**
 
@@ -264,6 +265,33 @@ Scenario: Verify transaction in list
   When I view the transactions list
   Then I should see the transaction
 ```
+
+**Example with unrecognized tags preserved in remarks:**
+
+```gherkin
+@explicit:wip @pri:2
+Scenario: Marking an item as needed shows its typical quantity
+  Given an item is in the pantry
+  When I mark the item as needed
+  Then I should see its typical quantity
+```
+
+Generates:
+
+```csharp
+/// <summary>
+/// Marking an item as needed shows its typical quantity
+/// </summary>
+/// <remarks>
+/// @pri:2
+/// </remarks>
+[Explicit("wip")]
+[Test]
+public async Task MarkingAnItemAsNeededShowsItsTypicalQuantity()
+{
+```
+
+The generator consumes `@explicit:wip`, so it becomes the NUnit attribute. The unrecognized `@pri:2` tag remains visible in the remarks block.
 
 **Best practice:** Avoid feature-level tags unless you need feature-specific overrides. Use the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute for project-wide defaults.
 

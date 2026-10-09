@@ -49,6 +49,7 @@ Scenario: Clear cart
 Rule: Generating Recommendations
 
 @explicit:flaky-test
+@priority:low
 Scenario: Generate recommendations based on cart contents
   Given the cart contains:
     | Item   | Quantity |

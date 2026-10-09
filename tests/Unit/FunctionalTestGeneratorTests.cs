@@ -668,6 +668,50 @@ public class FunctionalTestGeneratorTests
         Assert.That(result, Does.Contain("/// </remarks>"));
     }
 
+    /// <summary>
+    /// Generator renders unrecognized scenario tags inside remarks while recognized tags still map to attributes.
+    /// </summary>
+    [Test]
+    public void GenerateFromFile_WithUnrecognizedScenarioTagInRemarks_ProducesRemarksAndExplicitAttribute()
+    {
+        // Given: A CRIF with an explicit reason and an unrecognized tag captured in remarks
+        var crif = CreateMinimalCrif();
+        crif.Rules =
+        [
+            new RuleCrif
+            {
+                Name = "Test",
+                Description = "Test",
+                Scenarios =
+                [
+                    new ScenarioCrif
+                    {
+                        Name = "Marked test",
+                        Method = "MarkedTest",
+                        IsExplicit = true,
+                        ExplicitReason = "wip",
+                        Remarks = new RemarksCrif
+                        {
+                            Lines =
+                            [
+                                "@pri:2"
+                            ]
+                        },
+                        Steps = []
+                    }
+                ]
+            }
+        ];
+
+        // When: Generating from file
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        // Then: Unrecognized tag is rendered in remarks and explicit remains an attribute
+        Assert.That(result, Does.Contain("/// <remarks>"));
+        Assert.That(result, Does.Contain("/// @pri:2"));
+        Assert.That(result, Does.Contain("[Explicit(\"wip\")]"));
+    }
+
     #endregion
 
     #region Explicit Tag Tests

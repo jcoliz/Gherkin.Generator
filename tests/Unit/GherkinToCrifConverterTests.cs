@@ -857,6 +857,58 @@ public class GherkinToCrifConverterTests
     }
 
     [Test]
+    public void Convert_ScenarioWithUnrecognizedTag_AppendsTagToRemarks()
+    {
+        // Given: A scenario with recognized and unrecognized tags
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            @explicit:wip @pri:2
+            Scenario: Create new transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Only unrecognized tags are appended to remarks
+        var scenario = crif.Rules[0].Scenarios[0];
+        Assert.That(scenario.IsExplicit, Is.True);
+        Assert.That(scenario.ExplicitReason, Is.EqualTo("wip"));
+        Assert.That(scenario.Remarks, Is.Not.Null);
+        Assert.That(scenario.Remarks!.Lines, Is.EqualTo(new[] { "@pri:2" }));
+    }
+
+    [Test]
+    public void Convert_ScenarioWithDescriptionAndUnrecognizedTag_PreservesDescriptionThenAppendsTag()
+    {
+        // Given: A scenario with description and an unrecognized tag
+        var gherkin = """
+            Feature: Transaction Management
+
+            Rule: Transaction Creation
+
+            @pri:2
+            Scenario: Create new transaction
+              This is a detailed description
+
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Existing remarks are preserved and tag is appended
+        var scenario = crif.Rules[0].Scenarios[0];
+        Assert.That(scenario.Remarks, Is.Not.Null);
+        Assert.That(scenario.Remarks!.Lines, Is.EqualTo(new[] { "This is a detailed description", "@pri:2" }));
+    }
+
+    [Test]
     public void Convert_WithFileName_SetsFileNameProperty()
     {
         // Given: A minimal Gherkin feature

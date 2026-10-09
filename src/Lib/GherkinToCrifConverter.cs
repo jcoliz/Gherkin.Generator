@@ -263,6 +263,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         ProcessExplicitTag(scenario, scenarioCrif);
         ProcessCategoryTags(scenario, scenarioCrif);
         ProcessOrderTag(scenario, scenarioCrif);
+        ProcessUnrecognizedScenarioTags(scenario, scenarioCrif);
         ProcessScenarioOutlineExamples(scenario, scenarioCrif);
         ProcessScenarioSteps(scenario, scenarioCrif);
 
@@ -338,6 +339,40 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
                 scenarioCrif.Order = order;
             }
         }
+    }
+
+    /// <summary>
+    /// Appends scenario tags that are not consumed by generator metadata to remarks.
+    /// </summary>
+    /// <param name="scenario">The Gherkin scenario.</param>
+    /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
+    private static void ProcessUnrecognizedScenarioTags(Scenario scenario, ScenarioCrif scenarioCrif)
+    {
+        var unrecognizedTags = scenario.Tags
+            .Select(tag => tag.Name)
+            .Where(tag => !IsRecognizedScenarioTag(tag))
+            .ToList();
+
+        if (!unrecognizedTags.Any())
+        {
+            return;
+        }
+
+        scenarioCrif.Remarks ??= new RemarksCrif();
+        scenarioCrif.Remarks.Lines.AddRange(unrecognizedTags);
+    }
+
+    /// <summary>
+    /// Returns whether the generator consumes the scenario tag as test metadata.
+    /// </summary>
+    /// <param name="tag">The raw tag name including the leading @.</param>
+    /// <returns>True when the tag is handled directly by the generator.</returns>
+    private static bool IsRecognizedScenarioTag(string tag)
+    {
+        return tag == "@explicit"
+            || tag.StartsWith("@explicit:")
+            || tag.StartsWith("@category:")
+            || tag.StartsWith("@order:");
     }
 
     /// <summary>
