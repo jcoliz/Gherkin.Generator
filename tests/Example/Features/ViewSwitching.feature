@@ -3,6 +3,8 @@ Feature: View Switching
   I want to keep my search when changing views
   So that I can continue where I left off
 
+These steps will be unimplemented. This feature helps test the fix for issue #26.
+
 Scenario Outline: Retains search when changing views
   Given an existing item
   And user is on the <View> view
