@@ -461,4 +461,48 @@ public class UnmatchedStepTests
         // And: Should NOT contain the literal quoted string in the attribute
         Assert.That(result, Does.Not.Contain("[Then(\"the cart should be \"empty\"\")]"));
     }
+
+    [Test]
+    public void Generate_WithQuotedStringContainingNumber_DoesNotExtractIntegerParameter()
+    {
+        // Given: An empty step metadata collection
+        var stepMetadata = new StepMetadataCollection();
+        var converter = new GherkinToCrifConverter(stepMetadata);
+
+        // And: A Gherkin feature with an unmatched step containing digits inside a quoted string
+        var gherkin = """
+            Feature: Aisle Suggestions
+
+            Scenario: Include aisle with leading zero
+              Then the Aisle suggestions include "Aisle 01"
+            """;
+        var feature = GherkinTestHelpers.ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = converter.Convert(feature);
+
+        // Then: Unimplemented step should include only one string parameter
+        Assert.That(crif.Unimplemented, Has.Count.EqualTo(1));
+        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("the Aisle suggestions include {string1}"));
+        Assert.That(crif.Unimplemented[0].Parameters, Has.Count.EqualTo(1));
+        Assert.That(crif.Unimplemented[0].Parameters[0].Type, Is.EqualTo("string"));
+        Assert.That(crif.Unimplemented[0].Parameters[0].Name, Is.EqualTo("string1"));
+
+        // And: Step invocation arguments should contain only the quoted string
+        var step = crif.Rules[0].Scenarios[0].Steps[0];
+        Assert.That(step.Arguments, Has.Count.EqualTo(1));
+        Assert.That(step.Arguments[0].Value, Is.EqualTo("\"Aisle 01\""));
+
+        // And: Generated code should pass only the string argument and generate a string-only stub
+        crif.Namespace = "Test.Namespace";
+        crif.FileName = "AisleSuggestions";
+        crif.BaseClass = "TestBase";
+
+        var templatePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "templates", "Default.mustache");
+        var result = FunctionalTestGenerator.GenerateStringFromFile(templatePath, crif);
+
+        Assert.That(result, Does.Contain("await this.TheAisleSuggestionsInclude(\"Aisle 01\");"));
+        Assert.That(result, Does.Contain("public async Task TheAisleSuggestionsInclude(string string1)"));
+        Assert.That(result, Does.Not.Contain("public async Task TheAisleSuggestionsInclude(string string1, int value1)"));
+    }
 }

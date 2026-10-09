@@ -145,10 +145,11 @@ internal static class StepArgumentExtractor
     public static void ExtractIntegerParameters(StepCrif step)
     {
         var regex = new Regex(@"\b(\d+)\b");
-        var matches = regex.Matches(step.Text);
+        var matches = regex.Matches(step.Text)
+            .Cast<Match>()
+            .Where(match => !IsInsideQuotedString(step.Text, match.Index));
 
         var integerArguments = matches
-            .Cast<Match>()
             .Select(match => new ArgumentCrif
             {
                 Value = match.Groups[1].Value,
@@ -176,6 +177,21 @@ internal static class StepArgumentExtractor
             });
 
         step.Arguments.AddRange(stringArguments);
+    }
+
+    /// <summary>
+    /// Determines whether a position falls inside a quoted string segment.
+    /// </summary>
+    /// <param name="text">The source text.</param>
+    /// <param name="index">The 0-based index to check.</param>
+    /// <returns>True when the index is inside quotes; otherwise false.</returns>
+    private static bool IsInsideQuotedString(string text, int index)
+    {
+        var quoteCountBeforeIndex = text
+            .Take(index)
+            .Count(c => c == '"');
+
+        return quoteCountBeforeIndex % 2 == 1;
     }
 
     /// <summary>

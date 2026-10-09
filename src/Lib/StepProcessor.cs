@@ -399,7 +399,12 @@ internal class StepProcessor
     /// </summary>
     private static void CollectIntegerMatches(string stepText, Regex integerRegex, List<(int Position, string Type, string Value)> allMatches)
     {
-        var integerMatches = integerRegex.Matches(stepText).Cast<Match>().ToList();
+        var integerMatches = integerRegex
+            .Matches(stepText)
+            .Cast<Match>()
+            .Where(match => !IsInsideQuotedString(stepText, match.Index))
+            .ToList();
+
         for (var i = 0; i < integerMatches.Count; i++)
         {
             allMatches.Add((integerMatches[i].Index, "int", $"value{i + 1}"));
@@ -483,7 +488,11 @@ internal class StepProcessor
         
         // Replace integers with placeholders
         var integerRegex = new Regex(@"\b(\d+)\b");
-        var integerMatches = integerRegex.Matches(text).Cast<Match>().ToList();
+        var integerMatches = integerRegex
+            .Matches(text)
+            .Cast<Match>()
+            .Where(match => !IsInsideQuotedString(text, match.Index))
+            .ToList();
         for (var i = integerMatches.Count - 1; i >= 0; i--)
         {
             var match = integerMatches[i];
@@ -504,5 +513,20 @@ internal class StepProcessor
         }
         
         return patternText;
+    }
+
+    /// <summary>
+    /// Determines whether a position falls inside a quoted string segment.
+    /// </summary>
+    /// <param name="text">The source text.</param>
+    /// <param name="index">The 0-based index to check.</param>
+    /// <returns>True when the index is inside quotes; otherwise false.</returns>
+    private static bool IsInsideQuotedString(string text, int index)
+    {
+        var quoteCountBeforeIndex = text
+            .Take(index)
+            .Count(c => c == '"');
+
+        return quoteCountBeforeIndex % 2 == 1;
     }
 }
