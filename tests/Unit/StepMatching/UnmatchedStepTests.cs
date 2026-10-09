@@ -201,6 +201,7 @@ public class UnmatchedStepTests
         // And: Steps with placeholders should have arguments matching the parameter
         Assert.That(scenario.Steps[0].Arguments, Has.Count.EqualTo(1), "Step 'I have <amount> dollars' should have 1 argument");
         Assert.That(scenario.Steps[0].Arguments[0].Value, Is.EqualTo("amount"), "Step argument should match parameter name");
+        Assert.That(scenario.Steps[0].Method, Is.EqualTo("IHaveDollars"), "Scenario outline placeholders should not leak into method names");
         
         // And: Steps without placeholders should have no arguments
         Assert.That(scenario.Steps[1].Arguments, Has.Count.EqualTo(0), "Step 'I create an account' should have no arguments");
@@ -208,6 +209,7 @@ public class UnmatchedStepTests
         // And: Step with placeholder should have argument
         Assert.That(scenario.Steps[2].Arguments, Has.Count.EqualTo(1), "Step 'the balance should be <amount>' should have 1 argument");
         Assert.That(scenario.Steps[2].Arguments[0].Value, Is.EqualTo("amount"), "Step argument should match parameter name");
+        Assert.That(scenario.Steps[2].Method, Is.EqualTo("TheBalanceShouldBe"), "Scenario outline placeholders should not leak into method names");
 
         // And: Usings should include Gherkin.Generator.Utils namespace
         Assert.That(crif.Usings, Contains.Item("Gherkin.Generator.Utils"));

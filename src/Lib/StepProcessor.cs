@@ -292,7 +292,8 @@ internal class StepProcessor
     private static string ConvertToMethodNameWithoutParameters(string text)
     {
         // Remove integers and quoted strings from the text before converting to method name
-        var textWithoutParameters = Regex.Replace(text, @"\b\d+\b", "");
+        var textWithoutParameters = Regex.Replace(text, @"<(\w+)>", "");
+        textWithoutParameters = Regex.Replace(textWithoutParameters, @"\b\d+\b", "");
         textWithoutParameters = Regex.Replace(textWithoutParameters, @"""[^""]*""", "");
         return ConvertToMethodName(textWithoutParameters);
     }
