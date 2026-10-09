@@ -66,3 +66,14 @@ Scenario: Generate recommendations with empty cart
   Given the cart is empty
   When I request recommendations
   Then the recommendations should be "empty"
+
+# This tests the fix for issue #32
+# Bug: Don't parse numbers inside of strings
+
+# I am hiding it now, so the test will pass against the old library.
+# Once the library is updated, this scenario can be unhidden to publicly verify the fix.
+@hidden
+Scenario: No spurious or incorrect recommendations with empty cart
+  Given the cart is empty
+  When I request recommendations
+  Then the recommendations should not include "Super 01"
