@@ -181,10 +181,10 @@ public class UnmatchedStepTests
         // Then: All steps should be in Unimplemented list
         Assert.That(crif.Unimplemented, Has.Count.EqualTo(3));
         
-        // And: Text should preserve scenario outline placeholders
-        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("I have <amount> dollars"));
+        // And: Text should convert scenario outline placeholders to step-definition syntax
+        Assert.That(crif.Unimplemented[0].Text, Is.EqualTo("I have {amount} dollars"));
         Assert.That(crif.Unimplemented[1].Text, Is.EqualTo("I create an account"));
-        Assert.That(crif.Unimplemented[2].Text, Is.EqualTo("the balance should be <amount>"));
+        Assert.That(crif.Unimplemented[2].Text, Is.EqualTo("the balance should be {amount}"));
 
         // And: Scenario should be marked as explicit
         var scenario = crif.Rules[0].Scenarios[0];

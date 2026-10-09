@@ -468,6 +468,17 @@ internal class StepProcessor
     private static string GeneratePatternText(string text)
     {
         var patternText = text;
+
+        // Normalize scenario outline placeholders from Gherkin syntax to step-definition syntax.
+        var placeholderRegex = new Regex(@"<(\w+)>");
+        var placeholderMatches = placeholderRegex.Matches(text).Cast<Match>().ToList();
+        for (var i = placeholderMatches.Count - 1; i >= 0; i--)
+        {
+            var match = placeholderMatches[i];
+            patternText = patternText.Substring(0, match.Index)
+                + $"{{{match.Groups[1].Value}}}"
+                + patternText.Substring(match.Index + match.Length);
+        }
         
         // Replace integers with placeholders
         var integerRegex = new Regex(@"\b(\d+)\b");
