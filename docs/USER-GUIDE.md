@@ -10,6 +10,7 @@ Complete guide for using Gherkin.Generator to create behavior-driven tests with 
   - [Scenario State Metadata](#scenario-state-metadata)
 - [Customizing Templates](#customizing-templates)
 - [Advanced Features](#advanced-features)
+  - [Hidden Scenarios](#hidden-scenarios)
   - [Test Categories](#test-categories)
   - [Test Ordering](#test-ordering)
   - [Step Catalog](#step-catalog)
@@ -233,6 +234,7 @@ When using the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.c
 - `@using:` - Add using directives (can use multiple times)
 
 **Scenario-level tags (on individual scenarios):**
+- `@hidden` - Skip test generation for that scenario entirely
 - `@explicit` or `@explicit:reason` - Mark scenario as explicit (requires manual execution)
 - `@category:name` - Add NUnit `[Category]` attribute (can use multiple times)
 - `@order:n` - Add NUnit `[Order]` attribute for test execution order
@@ -291,7 +293,7 @@ public async Task MarkingAnItemAsNeededShowsItsTypicalQuantity()
 {
 ```
 
-The generator consumes `@explicit:wip`, so it becomes the NUnit attribute. The unrecognized `@pri:2` tag remains visible in the remarks block.
+The generator consumes recognized tags such as `@hidden`, `@explicit:wip`, `@category:name`, and `@order:n`. In this example, `@explicit:wip` becomes the NUnit attribute, while the unrecognized `@pri:2` tag remains visible in the remarks block.
 
 **Best practice:** Avoid feature-level tags unless you need feature-specific overrides. Use the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute for project-wide defaults.
 
@@ -641,6 +643,24 @@ public class {{FileName}}_Tests : {{BaseClass}}
 **Reference**: See the complete default template at [`templates/Default.mustache`](../templates/Default.mustache) in the repository.
 
 ## Advanced Features
+
+### Hidden Scenarios
+
+Use `@hidden` when you want to keep a scenario in the feature file without generating any test method for it.
+
+```gherkin
+@hidden
+Scenario: Generate recommendations with empty cart
+  Given the cart is empty
+  When I request recommendations
+  Then the recommendations should be "empty"
+```
+
+Behavior:
+
+- No generated test method is emitted for the scenario
+- The scenario does not appear in the generated test fixture at all
+- This is useful for work-in-progress scenarios, temporarily disabled examples, or cases you want to keep documented without running in the test suite
 
 ### Unimplemented Steps
 
