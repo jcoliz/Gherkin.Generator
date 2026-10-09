@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 
 namespace Gherkin.Generator.Utils;
@@ -107,4 +109,90 @@ public static class DataTableExtensions
 
         return table.Select(row => row[0]).ToList().AsReadOnly();
     }
+
+    /// <summary>
+    /// Ensures that all required columns are present in the table.
+    /// </summary>
+    public static void RequireColumns(this DataTable table, params string[] requiredColumns)
+    {
+        var missing = requiredColumns.Where(c => !table.HasColumn(c)).ToArray();
+        if (missing.Length == 0)
+            return;
+
+        throw new ArgumentException(
+            $"Missing required column(s): {string.Join(", ", missing)}. Available columns: {string.Join(", ", table.Headers)}");
+    }
+
+    /// <summary>
+    /// Gets a required string value from a row.
+    /// </summary>
+    public static string GetRequired(this DataTableRow row, string columnName)
+    {
+        if (!row.TryGetValue(columnName, out var value) || string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"Column '{columnName}' is required and must have a value.");
+
+        // Null-forgiving operator is used because we have already checked for null or whitespace.
+        return value!;
+    }
+
+    /// <summary>
+    /// Gets an optional string value from a row.
+    /// </summary>
+    public static string? GetOptional(this DataTableRow row, string columnName)
+    {
+        if (!row.TryGetValue(columnName, out var value) || string.IsNullOrWhiteSpace(value))
+            return null;
+
+        return value;
+    }
+
+    /// <summary>
+    /// Gets a required value from a row, converted to <typeparamref name="T"/>.
+    /// </summary>
+    /// <remarks>
+    /// Conversion is culture-invariant and supports anything with a <see cref="TypeConverter"/>:
+    /// numbers, bool, enums, Guid, DateTime, TimeSpan, etc.
+    /// </remarks>
+    /// <exception cref="ArgumentException">Column is missing, blank, or cannot be converted.</exception>
+    public static T GetRequired<T>(this DataTableRow row, string columnName)
+    {
+        var value = row.GetRequired(columnName);
+        return Convert<T>(value, columnName);
+    }
+
+    /// <summary>
+    /// Gets an optional value from a row, converted to <typeparamref name="T"/>.
+    /// </summary>
+    /// <remarks>
+    /// Returns null when the column is missing or blank. Use <c>GetOptional(columnName)</c>
+    /// (non-generic) for optional strings.
+    /// <para>
+    /// This overload is intentionally constrained to value types. The generic conversion path is for
+    /// scalar values such as <see cref="int"/>, <see cref="bool"/>, <see cref="Guid"/>,
+    /// <see cref="DateTime"/>, and enums. String values are handled by the non-generic
+    /// <c>GetOptional(string)</c> overload instead.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentException">Value is present but cannot be converted.</exception>
+    public static T? GetOptional<T>(this DataTableRow row, string columnName) where T : struct
+    {
+        var value = row.GetOptional(columnName);
+        return value is null ? null : Convert<T>(value, columnName);
+    }
+
+    private static T Convert<T>(string value, string columnName)
+    {
+        // Most TypeConverters reject surrounding whitespace, so we normalize before conversion.
+        // String values are handled by the non-generic overloads; this path is intended for scalar types.
+        try
+        {
+            var converter = TypeDescriptor.GetConverter(typeof(T));
+            return (T)converter.ConvertFromString(null, CultureInfo.InvariantCulture, value.Trim())!;
+        }
+        catch (Exception ex) when (ex is NotSupportedException or FormatException or ArgumentException or OverflowException)
+        {
+            throw new ArgumentException(
+                $"Column '{columnName}' value '{value}' cannot be converted to {typeof(T).Name}.", ex);
+        }
+    }    
 }

@@ -286,4 +286,61 @@ public class DataTableExtensionsTests
         Assert.That(list, Does.Contain("bob"));
         Assert.That(list, Does.Contain("charlie"));
     }
+
+    [Test]
+    public void GetRequired_GenericValue_TrimsWhitespaceBeforeConversion()
+    {
+        // Given: A row whose numeric value is padded with whitespace
+        var row = new DataTable(
+            ["Count"],
+            ["  42  "]
+        ).First();
+
+        // When: Converting to a numeric type
+        var count = row.GetRequired<int>("Count");
+
+        // Then: The value should be parsed successfully after trimming
+        Assert.That(count, Is.EqualTo(42));
+    }
+
+    [Test]
+    public void GetOptional_GenericValue_ReturnsNullForBlankAndParsesTrimmedValue()
+    {
+        // Given: a row with both blank and padded values
+        var table = new DataTable(
+            ["Value"],
+            [""],
+            ["  7 "]
+        );
+
+        // When: Reading the values as nullable integers
+        var blank = table[0].GetOptional<int>("Value");
+        var value = table[1].GetOptional<int>("Value");
+
+        // Then: Blank values return null and trimmed values still convert
+        Assert.That(blank, Is.Null);
+        Assert.That(value, Is.EqualTo(7));
+    }
+
+    [Test]
+    public void GetRequired_GenericEnum_TrimsWhitespaceBeforeConversion()
+    {
+        // Given: A row whose enum value contains whitespace
+        var row = new DataTable(
+            ["Status"],
+            ["  Active  "]
+        ).First();
+
+        // When: Converting to an enum
+        var status = row.GetRequired<StatusValue>("Status");
+
+        // Then: Enum conversion still succeeds after trimming
+        Assert.That(status, Is.EqualTo(StatusValue.Active));
+    }
+
+    private enum StatusValue
+    {
+        Active,
+        Inactive
+    }
 }
