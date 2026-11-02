@@ -43,6 +43,7 @@ Scenario: Clear cart
     | Item   | Quantity |
     | Widget | 2        |
     | Gadget | 1        |
+    | Bits & Bobs | 10        |
   When I clear the cart
   Then the cart should be "empty"
 
