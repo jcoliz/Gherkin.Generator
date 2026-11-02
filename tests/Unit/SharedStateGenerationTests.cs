@@ -60,10 +60,10 @@ public class SharedStateGenerationTests
             .Single(tree => tree.FilePath.EndsWith("ShoppingCart.feature.g.cs"))
             .GetText().ToString();
 
-        Assert.That(generated, Does.Contain("// Provides ApplicationIsRunning"));
-        Assert.That(generated, Does.Contain("// Requires LoggedInAs: authenticated user"));
-        Assert.That(generated, Does.Contain("// Provides LoggedInAs: authenticated user"));
-        Assert.That(generated, Does.Contain("// Provides Session"));
+        Assert.That(generated, Does.Contain("// * Provides ApplicationIsRunning"));
+        Assert.That(generated, Does.Contain("// * Requires LoggedInAs: authenticated user"));
+        Assert.That(generated, Does.Contain("// * Provides LoggedInAs: authenticated user"));
+        Assert.That(generated, Does.Contain("// * Provides Session"));
         Assert.That(generated, Does.Contain("// * Requires LoggedInAs: authenticated user"));
         Assert.That(generated, Does.Contain("// * Provides LoggedInAs: authenticated user"));
         Assert.That(generated, Does.Contain("// * Provides Session"));
