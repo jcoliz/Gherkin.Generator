@@ -217,29 +217,18 @@ public static class StepMethodAnalyzer
         var requiresState = new List<SharedStateCrif>();
         var providesState = new List<SharedStateCrif>();
 
-        foreach (var attributeList in methodDecl.AttributeLists)
+        foreach (var attribute in methodSymbol.GetAttributes())
         {
-            foreach (var attribute in attributeList.Attributes)
+            var attributeName = NormalizeAttributeName(attribute.AttributeClass?.Name ?? string.Empty);
+            if (attributeName != "Requires" && attributeName != "Provides")
             {
-                var attributeName = attribute.Name.ToString();
-                var normalizedAttributeName = NormalizeAttributeName(attributeName);
+                continue;
+            }
 
-                if (normalizedAttributeName == "Requires")
-                {
-                    var state = TryParseSharedStateAttribute(attribute);
-                    if (state != null)
-                    {
-                        requiresState.Add(state);
-                    }
-                }
-                else if (normalizedAttributeName == "Provides")
-                {
-                    var state = TryParseSharedStateAttribute(attribute);
-                    if (state != null)
-                    {
-                        providesState.Add(state);
-                    }
-                }
+            var state = CreateSharedStateFromAttribute(attribute);
+            if (state != null)
+            {
+                (attributeName == "Requires" ? requiresState : providesState).Add(state);
             }
         }
 
@@ -305,56 +294,6 @@ public static class StepMethodAnalyzer
         }
 
         return attributeName;
-    }
-
-    /// <summary>
-    /// Tries to parse a shared-state annotation into a state metadata record.
-    /// </summary>
-    private static SharedStateCrif? TryParseSharedStateAttribute(AttributeSyntax attribute)
-    {
-        var normalizedName = NormalizeAttributeName(attribute.Name.ToString());
-        if (normalizedName != "Requires" && normalizedName != "Provides")
-        {
-            return null;
-        }
-
-        var argumentList = attribute.ArgumentList;
-        if (argumentList == null || argumentList.Arguments.Count == 0)
-        {
-            return null;
-        }
-
-        var stateName = GetStringLiteral(argumentList.Arguments[0].Expression);
-        if (string.IsNullOrWhiteSpace(stateName))
-        {
-            return null;
-        }
-
-        var stateNameText = stateName ?? string.Empty;
-        string? description = null;
-        if (argumentList.Arguments.Count > 1)
-        {
-            description = GetStringLiteral(argumentList.Arguments[1].Expression);
-        }
-
-        return new SharedStateCrif
-        {
-            Name = stateNameText,
-            Description = description
-        };
-    }
-
-    /// <summary>
-    /// Extracts a string literal expression value from an attribute argument.
-    /// </summary>
-    private static string? GetStringLiteral(ExpressionSyntax expression)
-    {
-        if (expression is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression))
-        {
-            return literal.Token.ValueText;
-        }
-
-        return null;
     }
 
     /// <summary>

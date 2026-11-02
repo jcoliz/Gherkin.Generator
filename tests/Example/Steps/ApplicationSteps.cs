@@ -22,6 +22,7 @@ public class ApplicationSteps
     /// Launches the application for testing.
     /// </summary>
     [Given("the application is running")]
+    [Provides("ApplicationIsRunning")]
     public async Task ApplicationIsRunning()
     {
         Console.WriteLine("test: {0}", TestContext.CurrentContext.Test.Name);
@@ -33,6 +34,7 @@ public class ApplicationSteps
     /// </summary>
     /// <param name="userType">The type of user to log in as.</param>
     [Given("I am logged in as {userType}")]
+    [Provides(ObjectStoreKeys.LoggedInAs)]
     public async Task LoggedInAs(string userType)
     {
         await _context.LoginAsAsync(userType);

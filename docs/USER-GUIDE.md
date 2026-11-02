@@ -344,6 +344,8 @@ public class AccountSteps
 
 The generator includes these as review comments in the generated code, making the execution flow easier to understand when a scenario depends on earlier setup steps. This helps clarify the ordering and data dependencies without introducing a runtime state framework.
 
+State names and optional descriptions accept any compile-time string expression, including `const string` fields and `nameof(...)`, not just string literals. For example, `[Provides(ObjectStoreKeys.LoggedInAs)]` emits a `Provides` comment using the constant's value. This applies to `Requires`, `Provides`, and `BaseProvides`.
+
 If a required state is known to be seeded by the generated test base class, the generated `Requires` comment appends `(Provided by base)` for that specific state entry.
 
 ### Base-Provided State Metadata
