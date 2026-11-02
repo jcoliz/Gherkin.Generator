@@ -470,6 +470,11 @@ public class HeaderCellCrif
     public string Value { get; set; } = string.Empty;
 
     /// <summary>
+    /// Cell value formatted as a quoted, escaped C# string literal.
+    /// </summary>
+    public string CSharpLiteral => CSharpStringLiteral.Format(Value);
+
+    /// <summary>
     /// Whether this is the last header cell (for comma placement).
     /// </summary>
     public bool Last
@@ -511,6 +516,11 @@ public class DataCellCrif
     /// Cell value.
     /// </summary>
     public string Value { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Cell value formatted as a quoted, escaped C# string literal.
+    /// </summary>
+    public string CSharpLiteral => CSharpStringLiteral.Format(Value);
 
     /// <summary>
     /// Whether this is the last cell in the row (for comma placement).

@@ -34,13 +34,13 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
         {{#Steps}}
         // {{Keyword}} {{Text}}
         {{#RequiresState}}
-        // Requires {{Name}}{{#ProvidedByBase}} (Provided by base){{/ProvidedByBase}}{{#Description}}: {{Description}}{{/Description}}
+        // * Requires {{Name}}{{#ProvidedByBase}} (Provided by base){{/ProvidedByBase}}{{#Description}}: {{Description}}{{/Description}}
         {{/RequiresState}}
         {{#DataTable}}
         var {{VariableName}} = new DataTable(
-            [{{#Headers}}"{{.}}"{{^Last}}, {{/Last}}{{/Headers}}],
+            [{{#Headers}}{{{CSharpLiteral}}}{{^Last}}, {{/Last}}{{/Headers}}],
         {{#Rows}}
-            [{{#Cells}}"{{.}}"{{^Last}}, {{/Last}}{{/Cells}}]{{^Last}},{{/Last}}
+            [{{#Cells}}{{{CSharpLiteral}}}{{^Last}}, {{/Last}}{{/Cells}}]{{^Last}},{{/Last}}
         {{/Rows}}
         );
         {{/DataTable}}
@@ -49,7 +49,7 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
         {{/MissingRequiredState}}
         await {{Owner}}.{{Method}}({{#Arguments}}{{{.}}}{{^Last}}, {{/Last}}{{/Arguments}});
         {{#ProvidesState}}
-        // Provides {{Name}}{{#Description}}: {{Description}}{{/Description}}
+        // * Provides {{Name}}{{#Description}}: {{Description}}{{/Description}}
         {{/ProvidesState}}
 
         {{/Steps}}
@@ -97,9 +97,9 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
         {{/MissingRequiredState}}
         {{#DataTable}}
         var {{VariableName}} = new DataTable(
-            [{{#Headers}}"{{.}}"{{^Last}}, {{/Last}}{{/Headers}}],
+            [{{#Headers}}{{{CSharpLiteral}}}{{^Last}}, {{/Last}}{{/Headers}}],
         {{#Rows}}
-            [{{#Cells}}"{{.}}"{{^Last}}, {{/Last}}{{/Cells}}]{{^Last}},{{/Last}}
+            [{{#Cells}}{{{CSharpLiteral}}}{{^Last}}, {{/Last}}{{/Cells}}]{{^Last}},{{/Last}}
         {{/Rows}}
         );
         {{/DataTable}}

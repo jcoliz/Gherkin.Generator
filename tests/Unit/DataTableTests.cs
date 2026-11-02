@@ -1,4 +1,6 @@
 using Gherkin.Generator.Lib;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Gherkin.Generator.Tests.Unit;
 
@@ -8,6 +10,66 @@ namespace Gherkin.Generator.Tests.Unit;
 [TestFixture]
 public class DataTableTests : StepMatchingTestsBase
 {
+    [TestCase("")]
+    [TestCase("\0\a\b\f\n\r\t\v\u001f\u0085\u2028\u2029")]
+    public void CellCSharpLiteral_PreservesEmptyAndControlCharacterValues(string value)
+    {
+        var header = new HeaderCellCrif { Value = value };
+        var cell = new DataCellCrif { Value = value };
+        var expression = SyntaxFactory.ParseExpression(cell.CSharpLiteral);
+
+        Assert.That(expression.GetDiagnostics(), Is.Empty);
+        Assert.That(expression, Is.TypeOf<LiteralExpressionSyntax>());
+        Assert.That(((LiteralExpressionSyntax)expression).Token.ValueText, Is.EqualTo(value));
+        Assert.That(header.CSharpLiteral, Is.EqualTo(cell.CSharpLiteral));
+        Assert.That(header.ToString(), Is.EqualTo(value));
+        Assert.That(cell.ToString(), Is.EqualTo(value));
+    }
+
+    [Test]
+    public void Generate_WithSpecialCharactersInDataTable_PreservesCellValues(
+        [Values(false, true)] bool inBackground,
+        [Values("Coffee & Tea", "<tag>", "\"quoted\"", @"C:\temp", "first\nsecond", "A | B", "O'Brien", "&amp;")] string value)
+    {
+        var metadata = new StepMetadataCollection();
+        metadata.Add(new StepMetadata
+        {
+            NormalizedKeyword = NormalizedKeyword.Given,
+            Text = "I have data",
+            Method = "IHaveData",
+            Class = "DataSteps",
+            Namespace = "TestSteps",
+            Parameters = [new StepParameter { Type = "DataTable", Name = "table" }]
+        });
+        var gherkinValue = value.Replace("\\", "\\\\").Replace("\n", "\\n").Replace("|", "\\|");
+        var section = inBackground ? "Background:" : "Scenario: Table values";
+        var gherkin = $"""
+            Feature: Table values
+            {section}
+              Given I have data
+                | {gherkinValue} | Other |
+                | {gherkinValue} | Second |
+            """;
+        if (inBackground)
+        {
+            gherkin += "\nScenario: Uses background\n  Given I have data";
+        }
+
+        var crif = new GherkinToCrifConverter(metadata).Convert(ParseGherkin(gherkin));
+        crif.Namespace = "TestNamespace";
+        crif.FileName = "TableValues";
+        crif.BaseClass = "TestBase";
+        var result = FunctionalTestGenerator.GenerateStringFromFile("Default.mustache", crif);
+        var tree = CSharpSyntaxTree.ParseText(result);
+
+        Assert.That(tree.GetDiagnostics(), Is.Empty, result);
+        var rows = tree.GetRoot().DescendantNodes().OfType<CollectionExpressionSyntax>().ToList();
+        Assert.That(rows, Has.Count.EqualTo(2));
+        Assert.That(rows.Select(row => row.DescendantNodes().OfType<LiteralExpressionSyntax>()
+            .Select(cell => cell.Token.ValueText).ToArray()),
+            Is.EqualTo(new[] { new[] { value, "Other" }, new[] { value, "Second" } }));
+    }
+
     [Test]
     public void Convert_WithDataTableStep_ExtractsDataTableAndMatchesStep()
     {
