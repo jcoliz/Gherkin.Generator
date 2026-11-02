@@ -6,7 +6,7 @@ namespace Gherkin.Generator.Tests.Example;
 /// Base class for functional tests with shopping cart capabilities.
 /// </summary>
 [GeneratedTestBase(UseNamespace = "Gherkin.Generator.Tests.Example.Features")]
-[BaseProvides("DefaultUser", "Default seeded user context available before scenario steps")]
+[BaseProvides(ObjectStoreKeys.DefaultUser, "Default seeded user context available before scenario steps")]
 public abstract class FunctionalTestBase
 {
     /// <summary>

@@ -22,8 +22,8 @@ public class CustomerSessionSteps
     /// Loads the customer profile for the active scenario.
     /// </summary>
     [Given("the customer profile is loaded")]
-    [Requires("DefaultUser", "Default seeded user context available before scenario steps")]
-    [Provides("CustomerProfile", "The customer profile loaded for this scenario")]
+    [Requires(ObjectStoreKeys.DefaultUser, "Default seeded user context available before scenario steps")]
+    [Provides(ObjectStoreKeys.CustomerProfile, "The customer profile loaded for this scenario")]
     public async Task LoadCustomerProfile()
     {
         Assert.That(_context.DefaultUser, Is.Not.Null.And.Not.Empty);
@@ -35,8 +35,8 @@ public class CustomerSessionSteps
     /// Requests the summary for the customer account.
     /// </summary>
     [When("the customer requests the account summary")]
-    [Requires("CustomerProfile", "The customer profile must already be loaded")]
-    [Provides("AccountSummary", "The account summary produced for the current customer")]
+    [Requires(ObjectStoreKeys.CustomerProfile, "The customer profile must already be loaded")]
+    [Provides(ObjectStoreKeys.AccountSummary, "The account summary produced for the current customer")]
     public async Task RequestAccountSummary()
     {
         await Task.CompletedTask;
@@ -47,7 +47,7 @@ public class CustomerSessionSteps
     /// </summary>
     /// <param name="expectedStatus">The expected summary status.</param>
     [Then("the account summary should show {expectedStatus}")]
-    [Requires("AccountSummary", "The generated account summary must already exist")]
+    [Requires(ObjectStoreKeys.AccountSummary, "The generated account summary must already exist")]
     public async Task AccountSummaryShouldShow(string expectedStatus)
     {
         Assert.That(expectedStatus, Is.EqualTo("ready"));
