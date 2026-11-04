@@ -7,6 +7,7 @@ Background:
   Given the application is running
   And I am logged in as customer
 
+@category:adding
 Rule: Adding Items
 
 @category:smoke
@@ -24,6 +25,7 @@ Examples:
   | 2        | Widget |
   | 5        | Gadget |
 
+@category:removing
 Rule: Removing Items
 
 @order:1
@@ -47,6 +49,7 @@ Scenario: Clear cart
   When I clear the cart
   Then the cart should be "empty"
 
+@category:recommendations
 Rule: Generating Recommendations
 
 @explicit:flaky-test

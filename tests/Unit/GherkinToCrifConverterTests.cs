@@ -245,6 +245,37 @@ public class GherkinToCrifConverterTests
     }
 
     [Test]
+    public void Convert_RuleTagsAreInheritedByAllScenarios()
+    {
+        // Given: A rule with functional and unrecognized tags
+        var gherkin = """
+            Feature: Transaction Management
+
+            @explicit @priority:medium
+            Rule: Transaction Creation
+
+            Scenario: Create first transaction
+              Given I am logged in
+
+            Scenario: Create second transaction
+              Given I am logged in
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        // When: Feature is converted to CRIF
+        var crif = _converter.Convert(feature);
+
+        // Then: Both scenarios receive the functional tag and inherited remark
+        Assert.That(crif.Rules[0].Scenarios, Has.Count.EqualTo(2));
+        foreach (var scenario in crif.Rules[0].Scenarios)
+        {
+            Assert.That(scenario.IsExplicit, Is.True);
+            Assert.That(scenario.ExplicitReason, Is.Null);
+            Assert.That(scenario.Remarks!.Lines, Contains.Item("@priority:medium"));
+        }
+    }
+
+    [Test]
     public void Convert_ScenarioWithExplicitReasonTag_ExtractsReason()
     {
         // Given: A scenario with @explicit:reason tag (using underscores since tags cannot contain spaces)

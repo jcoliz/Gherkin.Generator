@@ -149,7 +149,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
             else if (child is Scenario scenario)
             {
                 defaultRule ??= CreateDefaultRule(crif);
-                ProcessScenarioInRule(scenario, defaultRule, crif);
+                ProcessScenarioInRule(scenario, defaultRule, crif, []);
             }
         }
     }
@@ -170,7 +170,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         rule.Children
             .OfType<Scenario>()
             .ToList()
-            .ForEach(scenario => ProcessScenarioInRule(scenario, ruleCrif, crif));
+            .ForEach(scenario => ProcessScenarioInRule(scenario, ruleCrif, crif, rule.Tags));
 
         crif.Rules.Add(ruleCrif);
     }
@@ -197,15 +197,21 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <param name="scenario">The scenario to process.</param>
     /// <param name="ruleCrif">The rule to add the scenario to.</param>
     /// <param name="crif">The CRIF object for tracking unimplemented steps.</param>
-    private void ProcessScenarioInRule(Scenario scenario, RuleCrif ruleCrif, FeatureCrif crif)
+    private void ProcessScenarioInRule(
+        Scenario scenario,
+        RuleCrif ruleCrif,
+        FeatureCrif crif,
+        IEnumerable<Tag> inheritedTags)
     {
+        var tags = inheritedTags.Concat(scenario.Tags).ToList();
+
         // Skip hidden scenarios
-        if (scenario.Tags.Any(t => t.Name == "@hidden"))
+        if (tags.Any(t => t.Name == "@hidden"))
         {
             return;
         }
 
-        var scenarioCrif = ConvertScenario(scenario);
+        var scenarioCrif = ConvertScenario(scenario, tags);
         ruleCrif.Scenarios.Add(scenarioCrif);
         
         var hasUnmatchedSteps = _stepProcessor.TrackUnimplementedSteps(crif, scenarioCrif.Steps);
@@ -251,7 +257,7 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// </summary>
     /// <param name="scenario">The Gherkin scenario.</param>
     /// <returns>Scenario in CRIF format.</returns>
-    private ScenarioCrif ConvertScenario(Scenario scenario)
+    private ScenarioCrif ConvertScenario(Scenario scenario, IEnumerable<Tag> tags)
     {
         var scenarioCrif = new ScenarioCrif
         {
@@ -260,10 +266,10 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
         };
 
         ProcessScenarioDescription(scenario, scenarioCrif);
-        ProcessExplicitTag(scenario, scenarioCrif);
-        ProcessCategoryTags(scenario, scenarioCrif);
-        ProcessOrderTag(scenario, scenarioCrif);
-        ProcessUnrecognizedScenarioTags(scenario, scenarioCrif);
+        ProcessExplicitTag(tags, scenarioCrif);
+        ProcessCategoryTags(tags, scenarioCrif);
+        ProcessOrderTag(tags, scenarioCrif);
+        ProcessUnrecognizedScenarioTags(tags, scenarioCrif);
         ProcessScenarioOutlineExamples(scenario, scenarioCrif);
         ProcessScenarioSteps(scenario, scenarioCrif);
 
@@ -290,11 +296,11 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <summary>
     /// Processes explicit tag and extracts optional reason.
     /// </summary>
-    /// <param name="scenario">The Gherkin scenario.</param>
+    /// <param name="tags">Tags applied to the scenario, including inherited rule tags.</param>
     /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
-    private static void ProcessExplicitTag(Scenario scenario, ScenarioCrif scenarioCrif)
+    private static void ProcessExplicitTag(IEnumerable<Tag> tags, ScenarioCrif scenarioCrif)
     {
-        var explicitTag = scenario.Tags.FirstOrDefault(t => t.Name == "@explicit" || t.Name.StartsWith("@explicit:"));
+        var explicitTag = tags.FirstOrDefault(t => t.Name == "@explicit" || t.Name.StartsWith("@explicit:"));
         if (explicitTag != null)
         {
             scenarioCrif.IsExplicit = true;
@@ -308,11 +314,11 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <summary>
     /// Processes category tags and extracts category names.
     /// </summary>
-    /// <param name="scenario">The Gherkin scenario.</param>
+    /// <param name="tags">Tags applied to the scenario, including inherited rule tags.</param>
     /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
-    private static void ProcessCategoryTags(Scenario scenario, ScenarioCrif scenarioCrif)
+    private static void ProcessCategoryTags(IEnumerable<Tag> tags, ScenarioCrif scenarioCrif)
     {
-        var categoryTags = scenario.Tags.Where(t => t.Name.StartsWith("@category:"));
+        var categoryTags = tags.Where(t => t.Name.StartsWith("@category:"));
         foreach (var tag in categoryTags)
         {
             var value = tag.Name.Substring("@category:".Length);
@@ -326,11 +332,11 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <summary>
     /// Processes order tag and extracts the integer value.
     /// </summary>
-    /// <param name="scenario">The Gherkin scenario.</param>
+    /// <param name="tags">Tags applied to the scenario, including inherited rule tags.</param>
     /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
-    private static void ProcessOrderTag(Scenario scenario, ScenarioCrif scenarioCrif)
+    private static void ProcessOrderTag(IEnumerable<Tag> tags, ScenarioCrif scenarioCrif)
     {
-        var orderTags = scenario.Tags.Where(t => t.Name.StartsWith("@order:"));
+        var orderTags = tags.Where(t => t.Name.StartsWith("@order:"));
         foreach (var tag in orderTags)
         {
             var value = tag.Name.Substring("@order:".Length);
@@ -344,11 +350,11 @@ public class GherkinToCrifConverter(StepMetadataCollection stepMetadata)
     /// <summary>
     /// Appends scenario tags that are not consumed by generator metadata to remarks.
     /// </summary>
-    /// <param name="scenario">The Gherkin scenario.</param>
+    /// <param name="tags">Tags applied to the scenario, including inherited rule tags.</param>
     /// <param name="scenarioCrif">The scenario CRIF to populate.</param>
-    private static void ProcessUnrecognizedScenarioTags(Scenario scenario, ScenarioCrif scenarioCrif)
+    private static void ProcessUnrecognizedScenarioTags(IEnumerable<Tag> tags, ScenarioCrif scenarioCrif)
     {
-        var unrecognizedTags = scenario.Tags
+        var unrecognizedTags = tags
             .Select(tag => tag.Name)
             .Where(tag => !IsRecognizedScenarioTag(tag))
             .ToList();
