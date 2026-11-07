@@ -37,6 +37,37 @@ public class GherkinToCrifConverterTests
     }
 
     [Test]
+    public void Convert_FeatureWithCategoryAndExplicitTags_ExtractsFixtureMetadata()
+    {
+        var gherkin = """
+            @category:1982 @explicit:reason
+            Feature: Transaction Splits
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        var crif = _converter.Convert(feature);
+
+        Assert.That(crif.Categories, Is.EqualTo(["1982"]));
+        Assert.That(crif.IsExplicit, Is.True);
+        Assert.That(crif.ExplicitReason, Is.EqualTo("reason"));
+    }
+
+    [Test]
+    public void Convert_FeatureWithExplicitTagWithoutReason_ExtractsFixtureMetadata()
+    {
+        var gherkin = """
+            @explicit
+            Feature: Transaction Splits
+            """;
+        var feature = ParseGherkin(gherkin);
+
+        var crif = _converter.Convert(feature);
+
+        Assert.That(crif.IsExplicit, Is.True);
+        Assert.That(crif.ExplicitReason, Is.Null);
+    }
+
+    [Test]
     public void Convert_FeatureWithDescription_ExtractsDescription()
     {
         // Given: A feature with description

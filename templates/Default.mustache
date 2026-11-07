@@ -22,6 +22,12 @@ namespace {{Namespace}};
 /// {{.}}
 {{/DescriptionLines}}
 /// </remarks>
+{{#IsExplicit}}
+[Explicit{{#ExplicitReason}}("{{.}}"){{/ExplicitReason}}]
+{{/IsExplicit}}
+{{#Categories}}
+[Category("{{.}}")]
+{{/Categories}}
 public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
 {
     {{#Background}}

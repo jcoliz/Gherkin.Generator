@@ -15,6 +15,43 @@ public class FunctionalTestGeneratorTests
         _templatePath = "Default.mustache";
     }
 
+    #region Feature Tag Tests
+
+    [Test]
+    public void GenerateFromFile_WithFeatureCategoryAndExplicit_ProducesFixtureAttributes()
+    {
+        var crif = CreateMinimalCrif();
+        crif.Categories = ["1982"];
+        crif.IsExplicit = true;
+        crif.ExplicitReason = "reason";
+
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        var classIndex = result.IndexOf("public partial class");
+        Assert.That(result, Does.Contain("[Explicit(\"reason\")]"));
+        Assert.That(result, Does.Contain("[Category(\"1982\")]"));
+        Assert.That(result.IndexOf("[Explicit(\"reason\")]"), Is.LessThan(classIndex));
+        Assert.That(result.IndexOf("[Category(\"1982\")]"), Is.LessThan(classIndex));
+
+        crif.ExplicitReason = null;
+        result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, crif);
+
+        Assert.That(result, Does.Contain("[Explicit]"));
+        Assert.That(result, Does.Not.Contain("[Explicit("));
+    }
+
+    [Test]
+    public void GenerateFromFile_WithoutFeatureTags_DoesNotProduceFixtureAttributes()
+    {
+        var result = FunctionalTestGenerator.GenerateStringFromFile(_templatePath, CreateMinimalCrif());
+
+        Assert.That(result, Does.Not.Contain("[Explicit"));
+        Assert.That(result, Does.Not.Contain("[Category("));
+        Assert.That(result, Does.Contain("public partial class"));
+    }
+
+    #endregion
+
     #region Basic Template Tests
 
     /// <summary>
@@ -1250,4 +1287,3 @@ public class FunctionalTestGeneratorTests
 
     #endregion
 }
-

@@ -4,12 +4,12 @@ using Gherkin.Ast;
 namespace Gherkin.Generator.Lib;
 
 /// <summary>
-/// Processes Gherkin feature tags to extract metadata like namespace, base class, and using directives.
+/// Processes Gherkin feature tags to extract fixture metadata and configuration.
 /// </summary>
 internal static class TagProcessor
 {
     /// <summary>
-    /// Processes feature-level tags for namespace, base class, and using directives.
+    /// Processes feature-level tags for fixture attributes and class configuration.
     /// </summary>
     /// <param name="tags">Collection of feature tags.</param>
     /// <param name="crif">The CRIF object to populate.</param>
@@ -28,6 +28,22 @@ internal static class TagProcessor
             else if (tag.Name.StartsWith("@using:"))
             {
                 ProcessUsingTag(tag, crif);
+            }
+            else if (tag.Name == "@explicit" || tag.Name.StartsWith("@explicit:"))
+            {
+                crif.IsExplicit = true;
+                if (tag.Name.StartsWith("@explicit:"))
+                {
+                    crif.ExplicitReason = tag.Name.Substring("@explicit:".Length);
+                }
+            }
+            else if (tag.Name.StartsWith("@category:"))
+            {
+                var category = tag.Name.Substring("@category:".Length);
+                if (!string.IsNullOrEmpty(category))
+                {
+                    crif.Categories.Add(category);
+                }
             }
         }
     }

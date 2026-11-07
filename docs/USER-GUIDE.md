@@ -96,6 +96,7 @@ The `obj/` directory is typically in `.gitignore`, which is appropriate since ge
 The [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute identifies your test base class and provides configuration options:
 
 **Key benefits:**
+
 - **Centralized configuration** - Set namespace and base class once, not in every feature file
 - **Cleaner feature files** - No need for `@namespace` and `@baseclass` tags
 - **Type safety** - Compiler-verified base class reference
@@ -119,6 +120,7 @@ public class FunctionalTestBase
 ```
 
 **The `UseNamespace` parameter:**
+
 - Sets the namespace for all generated test classes
 - If omitted, uses the base class's namespace (e.g., `MyApp.Tests`)
 - Can be overridden per-feature using `@namespace:` tag in specific feature files
@@ -229,16 +231,27 @@ Examples:
 When using the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute, feature tags are **optional** and only needed to override defaults.
 
 **Feature-level tags (on the `Feature:` line):**
+
 - `@namespace:` - Override the default namespace for this feature only
 - `@baseclass:` - Override the default base class (supports fully-qualified names)
 - `@using:` - Add using directives (can use multiple times)
+- `@explicit` or `@explicit:reason` - Mark the generated test fixture as explicit
+- `@category:name` - Add an NUnit `[Category]` attribute to the generated test fixture (can use multiple times)
+
+**Rule- and scenario-level tags (on a `Rule:` or individual scenarios):**
+
+- `@explicit` or `@explicit:reason` - Mark each scenario in the rule, or the tagged scenario, as explicit
+- `@category:name` - Add an NUnit `[Category]` attribute to each scenario in the rule, or to the tagged scenario (can use multiple times)
 
 **Scenario-level tags (on individual scenarios):**
+
 - `@hidden` - Skip test generation for that scenario entirely
 - `@explicit` or `@explicit:reason` - Mark scenario as explicit (requires manual execution)
 - `@category:name` - Add NUnit `[Category]` attribute (can use multiple times)
 - `@order:n` - Add NUnit `[Order]` attribute for test execution order
 - Any other scenario tags are preserved in the generated XML remarks comments for review
+
+At feature scope, `@explicit` and `@category:name` produce attributes on the generated test fixture. At rule scope, these tags are inherited by the rule's scenarios and produce attributes on each generated test method. Scenario-level tags apply only to that scenario.
 
 **Example with feature-level overrides:**
 
@@ -246,6 +259,21 @@ When using the [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.c
 @namespace:MyApp.Tests.Integration
 @using:System.Collections.Generic
 Feature: User Login
+```
+
+**Example with fixture-level tags:**
+
+```gherkin
+@explicit:manual_review @category:1982
+Feature: Transaction Splits
+```
+
+Generates fixture attributes:
+
+```csharp
+[Explicit("manual_review")]
+[Category("1982")]
+public partial class TransactionSplits_Feature_Tests : FunctionalTestBase
 ```
 
 **Example with scenario-level tags:**
@@ -267,6 +295,27 @@ Scenario: Verify transaction in list
   When I view the transactions list
   Then I should see the transaction
 ```
+
+Tags on a rule apply to all scenarios in that rule:
+
+```gherkin
+Feature: Transaction Management
+
+@explicit:wip @category:smoke
+Rule: Transaction Creation
+
+Scenario: Create a new transaction
+  Given I am logged in
+  When I create a transaction
+  Then the transaction is saved
+
+Scenario: Verify transaction in list
+  Given I am logged in
+  When I view the transactions list
+  Then I should see the transaction
+```
+
+Both generated test methods in this rule receive `[Explicit("wip")]` and `[Category("smoke")]`. Rules do not generate separate test fixtures.
 
 **Example with unrecognized tags preserved in remarks:**
 
@@ -387,6 +436,7 @@ public async Task WhenINavigateTo(string page)
 ```
 
 **Placeholder rules:**
+
 - Matches single words: `Savings`
 - Matches hyphenated words: `Ski-Village`
 - Matches quoted phrases: `"Ski Village"`
@@ -517,6 +567,7 @@ public class NavigationSteps
 ```
 
 **Benefits:**
+
 - **Testability** - Step classes can be unit tested with mocked capabilities
 - **Flexibility** - Multiple test base classes can implement the same interface
 - **Clarity** - Interface explicitly declares what capabilities steps need
@@ -541,6 +592,7 @@ The generator includes an embedded Default.mustache template that works automati
 ### Using the Default Template
 
 No action needed! The generator uses an embedded template automatically. This ensures:
+
 - **Zero setup** - Works immediately after package installation
 - **Version synchronization** - Template always matches generator version
 - **No manual updates** - Package upgrades automatically include template updates
@@ -597,6 +649,7 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
 ### Available Template Variables
 
 **Feature-level:**
+
 - `Namespace` - Test class namespace
 - `FileName` - Feature file name (without extension)
 - `FeatureName` - Human-readable feature name
@@ -604,6 +657,7 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
 - `Usings` - List of using directives
 
 **Scenario-level:**
+
 - `Name` - Scenario name
 - `Method` - PascalCase method name
 - `IsExplicit` - Boolean for `[Explicit]` attribute
@@ -614,6 +668,7 @@ public partial class {{FileName}}_Feature_Tests : {{BaseClass}}
 - `Parameters` - Method parameters
 
 **Step-level:**
+
 - `Keyword` - Given/When/Then/And/But
 - `Text` - Step description
 - `Owner` - Step class instance
@@ -709,6 +764,7 @@ The catalog groups steps by declaring source file, with one table per file, list
 Before writing a new step, search this file for existing bindings you can reuse instead of creating a near-duplicate.
 
 **Notes:**
+
 - No configuration is required — the catalog is generated automatically for every test project that references `Gherkin.Generator`.
 - Aliased steps (multiple `[Given]`/`[When]`/`[Then]` attributes on one method) each get their own row, since the catalog describes which phrases can be matched, not which methods implement them.
 - Only steps visible in your project's own source are included; steps declared in an already-compiled referenced assembly are not discoverable by the generator and won't appear.
@@ -716,7 +772,7 @@ Before writing a new step, search this file for existing bindings you can reuse 
 
 ### Explicit Tests
 
-Mark scenarios that require manual execution or special setup:
+Mark a scenario, a rule's scenarios, or an entire feature fixture as requiring manual execution or special setup:
 
 ```gherkin
 @explicit
@@ -739,7 +795,7 @@ public async Task PerformanceTest()
 
 ### Test Categories
 
-Organize tests into categories for selective execution using `@category:name` tags:
+Organize tests into categories for selective execution using `@category:name` tags on scenarios, rules, or features. Scenario and rule tags categorize test methods; feature tags categorize the entire test fixture:
 
 ```gherkin
 @category:smoke
@@ -832,6 +888,7 @@ public async Task SecondTestToRun()
 ```
 
 **Notes:**
+
 - Ordered tests run before unordered tests
 - Tests with the same order value run in an unspecified order relative to each other
 - Non-integer values (e.g., `@order:abc`) are silently ignored
@@ -860,33 +917,39 @@ Scenario outlines support only one examples table per scenario. For multiple tes
 ### Build Errors
 
 **Error:** "No matching step definition"
+
 - **Cause:** Step in feature file doesn't match any step method
 - **Solution:** Check step text matches exactly (case-insensitive), or implement missing step
 
 **Error:** "Duplicate step definitions"
+
 - **Cause:** Multiple step methods match the same step text
 - **Solution:** Make step patterns more specific or remove duplicates
 
 ### Step Matching Issues
 
 **Problem:** Parameterized step not matching
+
 - **Check:** Use placeholders `{name}` in step attribute
 - **Check:** Parameter types match (string, int, etc.)
 - **Check:** Quoted phrases for values with spaces
 
 **Problem:** Data table not working
+
 - **Check:** Method accepts `DataTable` parameter
 - **Check:** Table has header row in feature file
 
 ### Generated Code Issues
 
 **Problem:** Generated code doesn't compile
+
 - **Check:** [`[GeneratedTestBase]`](../src/Utils/GeneratedTestBaseAttribute.cs) attribute configured correctly
 - **Check:** `UseNamespace` parameter matches your desired namespace
 - **Check:** Base class exists and is accessible
 - **Check:** Using directives include required namespaces (add with `@using:` tags if needed)
 
 **Problem:** Step methods not found at runtime
+
 - **Check:** Step classes are instantiated properly
 - **Check:** Constructor accepts correct context type
 
@@ -921,6 +984,7 @@ See [`tests/Example`](../tests/Example/) for a complete, working shopping cart e
 The example builds and all tests pass. It's a great starting point for understanding how all the pieces fit together.
 
 **Key files:**
+
 - [`Features/ShoppingCart.feature`](../tests/Example/Features/ShoppingCart.feature) - Clean Gherkin scenarios (no tags needed!)
 - [`FunctionalTestBase.cs`](../tests/Example/FunctionalTestBase.cs) - Test base class with `[GeneratedTestBase]` attribute
 - [`Steps/ShoppingCartSteps.cs`](../tests/Example/Steps/ShoppingCartSteps.cs) - Shopping cart step definitions

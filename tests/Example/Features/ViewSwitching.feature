@@ -1,3 +1,4 @@
+@category:in-progress
 Feature: View Switching
   As a customer
   I want to keep my search when changing views

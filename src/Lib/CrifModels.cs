@@ -120,6 +120,27 @@ public class FeatureCrif
     public string BaseClass { get; set; } = string.Empty;
 
     /// <summary>
+    /// Whether the generated test fixture should be marked with [Explicit].
+    /// </summary>
+    /// <remarks>
+    /// Set by a feature tag: `@explicit` or `@explicit:reason`.
+    /// </remarks>
+    public bool IsExplicit { get; set; }
+
+    /// <summary>
+    /// Optional reason for why the test fixture is marked explicit.
+    /// </summary>
+    public string? ExplicitReason { get; set; }
+
+    /// <summary>
+    /// List of NUnit category names for the test fixture.
+    /// </summary>
+    /// <remarks>
+    /// Set by `@category:name` tags on the feature. Multiple categories are supported.
+    /// </remarks>
+    public List<string> Categories { get; set; } = [];
+
+    /// <summary>
     /// List of step class names required by the test (e.g., "NavigationSteps", "AuthSteps").
     /// </summary>
     /// <remarks>

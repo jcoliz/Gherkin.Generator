@@ -1,3 +1,4 @@
+@category:basics
 Feature: Shopping Cart
   As a customer
   I want to add items to my cart
