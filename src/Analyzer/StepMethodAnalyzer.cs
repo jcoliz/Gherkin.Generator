@@ -183,8 +183,9 @@ public static class StepMethodAnalyzer
         var className = classSymbol.Name;
         var namespaceName = classSymbol.ContainingNamespace?.ToDisplayString() ?? string.Empty;
 
-        // Find all method declarations in the class
-        var methodDeclarations = classDecl.DescendantNodes().OfType<MethodDeclarationSyntax>();
+        // Find only methods declared directly in this class. DescendantNodes would
+        // also discover methods from nested classes and analyze them twice.
+        var methodDeclarations = classDecl.Members.OfType<MethodDeclarationSyntax>();
 
         foreach (var methodDecl in methodDeclarations)
         {
