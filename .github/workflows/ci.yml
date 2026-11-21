@@ -26,7 +26,7 @@ jobs:
       run: dotnet build --no-restore --configuration Release
       
     - name: Run unit tests with coverage
-      run: dotnet test tests/Unit --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+      run: dotnet test tests/Unit --no-build --configuration Release --verbosity normal --settings tests/Unit/coverlet.runsettings --collect:"XPlat Code Coverage"
       
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v7
