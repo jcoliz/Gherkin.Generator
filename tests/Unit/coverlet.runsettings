@@ -5,7 +5,7 @@
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
           <Format>cobertura</Format>
-          <Include>[Gherkin.Generator.Utils]*,[Gherkin.Generator.Lib]*</Include>
+          <Include>[Gherkin.Generator]*,[Gherkin.Generator.Utils]*,[Gherkin.Generator.Lib]*</Include>
           <Exclude/>
         </Configuration>
       </DataCollector>
