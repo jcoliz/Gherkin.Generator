@@ -17,34 +17,59 @@ internal static class TagProcessor
     {
         foreach (var tag in tags)
         {
-            if (tag.Name.StartsWith("@namespace:"))
-            {
-                ProcessNamespaceTag(tag, crif);
-            }
-            else if (tag.Name.StartsWith("@baseclass:"))
-            {
-                ProcessBaseClassTag(tag, crif);
-            }
-            else if (tag.Name.StartsWith("@using:"))
-            {
-                ProcessUsingTag(tag, crif);
-            }
-            else if (tag.Name == "@explicit" || tag.Name.StartsWith("@explicit:"))
-            {
-                crif.IsExplicit = true;
-                if (tag.Name.StartsWith("@explicit:"))
-                {
-                    crif.ExplicitReason = tag.Name.Substring("@explicit:".Length);
-                }
-            }
-            else if (tag.Name.StartsWith("@category:"))
-            {
-                var category = tag.Name.Substring("@category:".Length);
-                if (!string.IsNullOrEmpty(category))
-                {
-                    crif.Categories.Add(category);
-                }
-            }
+            ProcessFeatureTag(tag, crif);
+        }
+    }
+
+    private static void ProcessFeatureTag(Tag tag, FeatureCrif crif)
+    {
+        if (tag.Name.StartsWith("@namespace:"))
+        {
+            ProcessNamespaceTag(tag, crif);
+            return;
+        }
+
+        if (tag.Name.StartsWith("@baseclass:"))
+        {
+            ProcessBaseClassTag(tag, crif);
+            return;
+        }
+
+        if (tag.Name.StartsWith("@using:"))
+        {
+            ProcessUsingTag(tag, crif);
+            return;
+        }
+
+        if (tag.Name == "@explicit" || tag.Name.StartsWith("@explicit:"))
+        {
+            ProcessExplicitTag(tag, crif);
+            return;
+        }
+
+        ProcessCategoryTag(tag, crif);
+    }
+
+    private static void ProcessExplicitTag(Tag tag, FeatureCrif crif)
+    {
+        crif.IsExplicit = true;
+        if (tag.Name.StartsWith("@explicit:"))
+        {
+            crif.ExplicitReason = tag.Name.Substring("@explicit:".Length);
+        }
+    }
+
+    private static void ProcessCategoryTag(Tag tag, FeatureCrif crif)
+    {
+        if (!tag.Name.StartsWith("@category:"))
+        {
+            return;
+        }
+
+        var category = tag.Name.Substring("@category:".Length);
+        if (!string.IsNullOrEmpty(category))
+        {
+            crif.Categories.Add(category);
         }
     }
 
