@@ -214,66 +214,91 @@ public static class StepMethodAnalyzer
         if (methodSymbol == null)
             return;
 
-        var methodName = methodSymbol.Name;
-        var requiresState = new List<SharedStateCrif>();
-        var providesState = new List<SharedStateCrif>();
+        var requiresState = ExtractMethodState(methodSymbol, "Requires");
+        var providesState = ExtractMethodState(methodSymbol, "Provides");
 
-        foreach (var attribute in methodSymbol.GetAttributes())
+        foreach (var attribute in methodDecl.AttributeLists.SelectMany(list => list.Attributes))
         {
-            var attributeName = NormalizeAttributeName(attribute.AttributeClass?.Name ?? string.Empty);
-            if (attributeName != "Requires" && attributeName != "Provides")
+            var metadata = CreateStepMetadata(
+                attribute,
+                methodSymbol,
+                className,
+                namespaceName,
+                sourceFile,
+                requiresState,
+                providesState);
+
+            if (metadata != null)
             {
-                continue;
-            }
-
-            var state = CreateSharedStateFromAttribute(attribute);
-            if (state != null)
-            {
-                (attributeName == "Requires" ? requiresState : providesState).Add(state);
-            }
-        }
-
-        // Get all attributes on the method
-        foreach (var attributeList in methodDecl.AttributeLists)
-        {
-            foreach (var attribute in attributeList.Attributes)
-            {
-                var attributeName = attribute.Name.ToString();
-
-                // Check if this is a step attribute
-                if (!IsStepAttribute(attributeName))
-                    continue;
-
-                // Normalize keyword (remove "Attribute" suffix if present)
-                var normalizedKeyword = NormalizeKeywordToEnum(attributeName);
-                if (normalizedKeyword == null)
-                    continue;
-
-                // Get the step text from the attribute argument
-                var stepText = GetStepTextFromAttribute(attribute);
-                if (string.IsNullOrEmpty(stepText))
-                    continue;
-
-                // Get method parameters
-                var parameters = GetMethodParameters(methodSymbol);
-
-                // Create step metadata
-                var metadata = new StepMetadata
-                {
-                    NormalizedKeyword = normalizedKeyword.Value,
-                    Text = stepText,
-                    Method = methodName,
-                    Class = className,
-                    Namespace = namespaceName,
-                    Parameters = parameters,
-                    RequiresState = requiresState.Select(s => new SharedStateCrif { Name = s.Name, Description = s.Description }).ToList(),
-                    ProvidesState = providesState.Select(s => new SharedStateCrif { Name = s.Name, Description = s.Description }).ToList(),
-                    SourceFile = sourceFile
-                };
-
                 collection.Add(metadata);
             }
         }
+    }
+
+    /// <summary>
+    /// Extracts valid shared-state declarations of the specified kind from a method symbol.
+    /// </summary>
+    private static List<SharedStateCrif> ExtractMethodState(IMethodSymbol methodSymbol, string stateName)
+    {
+        return methodSymbol.GetAttributes()
+            .Where(attribute => NormalizeAttributeName(attribute.AttributeClass?.Name ?? string.Empty) == stateName)
+            .Select(CreateSharedStateFromAttribute)
+            .OfType<SharedStateCrif>()
+            .ToList();
+    }
+
+    /// <summary>
+    /// Creates step metadata from an attribute when it represents a valid step declaration.
+    /// </summary>
+    private static StepMetadata? CreateStepMetadata(
+        AttributeSyntax attribute,
+        IMethodSymbol methodSymbol,
+        string className,
+        string namespaceName,
+        string sourceFile,
+        List<SharedStateCrif> requiresState,
+        List<SharedStateCrif> providesState)
+    {
+        var attributeName = attribute.Name.ToString();
+        if (!IsStepAttribute(attributeName))
+        {
+            return null;
+        }
+
+        var normalizedKeyword = NormalizeKeywordToEnum(attributeName);
+        if (normalizedKeyword == null)
+        {
+            return null;
+        }
+
+        var stepText = GetStepTextFromAttribute(attribute);
+        if (string.IsNullOrEmpty(stepText))
+        {
+            return null;
+        }
+
+        return new StepMetadata
+        {
+            NormalizedKeyword = normalizedKeyword.Value,
+            Text = stepText,
+            Method = methodSymbol.Name,
+            Class = className,
+            Namespace = namespaceName,
+            Parameters = GetMethodParameters(methodSymbol),
+            RequiresState = CloneSharedState(requiresState),
+            ProvidesState = CloneSharedState(providesState),
+            SourceFile = sourceFile
+        };
+    }
+
+    /// <summary>
+    /// Copies shared-state metadata so each generated step has independent state entries.
+    /// </summary>
+    private static List<SharedStateCrif> CloneSharedState(IEnumerable<SharedStateCrif> state)
+    {
+        return state
+            .Select(item => new SharedStateCrif { Name = item.Name, Description = item.Description })
+            .ToList();
     }
 
     /// <summary>
