@@ -109,7 +109,7 @@ Given these constraints, we employ a multi-layered testing approach:
 
 **Purpose:** Validate that a deployed/packaged version of the generator actually works in a real project
 
-**Current Status:** Uses the generator to create tests from its feature files. However, it references the currently-released version from NuGet, not the in-development version. This means it validates that the generator works in general, but cannot test changes made to the generator until those changes are packaged and deployed.
+**Current Status:** Uses the generator to create tests from its feature files and normally references the released version from NuGet. To test in-development changes, temporarily reference a locally packed pre-release version using the workflow below; publishing to NuGet is not required for this validation.
 
 **Testing Workflow:**
 1. Example project references a published/packaged version of the generator
@@ -117,9 +117,9 @@ Given these constraints, we employ a multi-layered testing approach:
 3. Run the generated tests to validate behavior
 4. Tests pass, confirming the generator works end-to-end
 
-**The Problem:** To test changes to the generator itself, we must:
+**The Requirement:** To test changes to the generator itself end to end, we must:
 1. Make changes to the generator code
-2. Package the new version (local or published)
+2. Package the new version locally or publish it
 3. Update Example project to reference the new package version
 4. Build Example project to trigger generation with the new version
 5. Run the generated tests to validate the changes
@@ -140,27 +140,23 @@ Since we cannot easily test the generator in-place, our testing workflow follows
 1. **Write/modify generator code** in [`src/Analyzer/`](../../src/Analyzer/) or [`src/Lib/`](../../src/Lib/)
 2. **Write/update unit tests** in [`tests/Unit/`](../../tests/Unit/) to cover the changes
 3. **Run unit tests** to validate correctness: `dotnet test tests/Unit`
-4. **Iterate** until unit tests pass
+4. **Collect and inspect coverage** with `.\scripts\Collect-CodeCoverage.ps1`. Every non-generated method with executable lines must have at least 90% line coverage.
+5. **Resolve complexity warnings** so there are zero cyclomatic-complexity warnings.
+6. **Iterate** until the tests pass and both quality thresholds are met.
 
-This gives us confidence that the generator logic is correct without requiring packaging.
+Unit tests validate generator logic, but they do not replace package-based validation against the Example project.
 
-### Before Release
+### Before Committing an Unreleased Feature
 
-Currently, we rely on unit tests to validate generator changes. The Example project continues to use the stable published version.
+Use the local pre-release package workflow below to test generator changes end to end. The package script temporarily updates the Example project; undo that package injection and remove any temporary Example feature, template, or test changes before committing the unreleased feature. Do not commit `local-packages` or pre-release package references.
 
-This workflow is documented in more detail in [`RELEASE-WORKFLOW.md`](../RELEASE-WORKFLOW.md).
+After that feature is published to NuGet, update the Example project to demonstrate the released functionality and commit that as a separate follow-up change. See [`RELEASE-WORKFLOW.md`](../RELEASE-WORKFLOW.md).
 
 ### In CI/CD
 
-Our CI/CD pipeline could be improved to:
-1. Build the solution
-2. Run unit tests (fast validation)
-3. Pack the generator
-4. Update Example project to use the packed version
-5. Build Example project (triggering generation)
-6. Run Example tests (end-to-end validation)
+The CI workflow restores and builds the solution, runs unit tests with coverage collection, and uploads the Cobertura report. CI coverage collection does not replace the required local report review for the per-method coverage threshold, and the CI workflow does not perform the local pre-release package validation.
 
-This would ensure that every commit produces a working, deployable generator.
+Run the local package validation script when changing generator behavior or package output, as described below.
 
 ## Pre-Release Testing with a Local Package Feed
 
@@ -204,8 +200,9 @@ This script:
    dotnet test tests/Example
    ```
 
-If all tests pass, the pre-release bits are validated end-to-end and the same artifacts can be
-republished under the intended release version with no code changes.
+If all tests pass, the pre-release bits are validated end to end. Do not commit the temporary
+Example package reference or temporary Example changes used to exercise unreleased functionality.
+Undo the package injection with the script below and inspect the final diff before committing.
 
 ### Undoing the Validation
 
@@ -215,27 +212,30 @@ republished under the intended release version with no code changes.
 
 This reverts `tests/Example/Gherkin.Generator.Tests.Example.csproj` to its committed state via
 `git checkout`, deletes `./local-packages`, and restores the Example project against its committed
-package version—returning the repository to a clean state.
+package version. Check the working tree first: the script uses `git checkout` on the Example project
+file, so do not run it if that file contains pre-existing work you need to keep. Also manually remove
+any temporary feature, template, or test changes added to the Example project for the pre-release
+validation. Confirm the final diff contains none of those temporary changes.
 
-## Why Can't Example Tests Validate In-Development Generator Changes?
+## Why Must Example Tests Use a Package?
 
-The Example project DOES use the generator to create tests from feature files. However, it can only test against packaged/deployed versions of the generator, not the in-development version.
+The Example project uses the generator to create tests from feature files. It cannot reliably validate the generator through a project reference, so in-development changes must first be packed and injected as a local NuGet package. The local package can be tested without publishing it.
 
-**The Limitation:** To test changes made to the generator itself requires packaging infrastructure for every development iteration. This creates a validation gap:
+**The Constraint:** Testing changes made to the generator itself requires packaging the changed code for the consumer build:
 
 - We make changes to the generator code
 - Unit tests validate the logic is correct
-- But we cannot easily verify the changes work end-to-end until we package and deploy them
-- Only after packaging can the Example project test against the new version
+- We package the changed code locally
+- The Example project tests the local package end to end
 
-**Current Approach:** The Example project references a stable published version of the generator. This validates that the generator works end-to-end, but cannot catch regressions or validate new features until after they're packaged.
+**Current Approach:** During development, temporarily inject a local pre-release package into the Example project to validate changes end to end. Restore the Example project to its committed state before committing unreleased functionality. Once the version is published to NuGet, update the Example project to demonstrate that released feature in a separate follow-up change.
 
 **Our Strategy:**
-1. **During development:** Rely on comprehensive unit tests for fast validation
-2. **Before release:** Package the generator and update Example project to test the new version
-3. **After validation passes:** Publish the tested version as a release
+1. **During development:** Use unit tests, inspect per-method coverage, and resolve cyclomatic-complexity warnings
+2. **Before committing unreleased generator changes:** Test the packed build with the local Example workflow, then undo temporary Example changes
+3. **After publishing to NuGet:** Add or update Example tests for the released functionality and commit that separately
 
-This acknowledges that thorough end-to-end testing requires packaging infrastructure, which is appropriate for pre-release validation but too heavyweight for rapid development iteration.
+This keeps end-to-end validation tied to the actual NuGet package layout while keeping unreleased package and Example-project changes out of feature commits.
 
 ## Summary
 
@@ -247,8 +247,8 @@ This acknowledges that thorough end-to-end testing requires packaging infrastruc
 
 Our testing strategy prioritizes:
 1. **Fast feedback** via comprehensive unit tests
-2. **Deployment validation** via Example project testing before release
-3. **Production confidence** via pre-release testing (future)
+2. **Packaged end-to-end validation** via a local pre-release package and the Example project
+3. **A published-feature example** via Example project updates after publication
 
 This approach acknowledges the reality that **source generators are not normal libraries** and adapts our testing strategy accordingly.
 

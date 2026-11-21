@@ -93,6 +93,12 @@ git push origin 0.0.1
 
 ### 6. Update Example Test
 
+Do this only after the release has been published to NuGet. During development, use
+[`Test-PreReleasePackage.ps1`](../scripts/Test-PreReleasePackage.ps1) for local end-to-end
+validation, then undo the temporary package injection and remove temporary Example changes before
+committing the unreleased feature. After publication, update the Example project to demonstrate the
+released functionality and commit those changes separately.
+
 1. **Update latest template**: Copy latest template into example project
    ```powershell
    Copy-Item templates/Default.mustache tests/Example/Templates/Default.mustache

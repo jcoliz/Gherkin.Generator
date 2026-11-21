@@ -57,14 +57,6 @@ dotnet pack src/Analyzer -c Release
 4. **Build solution** to ensure no compilation errors: `dotnet build`
 5. **Commit changes** following [Commit Conventions](COMMIT-CONVENTIONS.md)
 
-## Project Rules
-
-See [`.roorules`](../.roorules) for detailed development conventions including:
-- Test documentation with Gherkin-style comments (Given/When/Then)
-- Source-generated regex patterns
-- XML documentation requirements
-- Test execution patterns
-
 ## Key Conventions
 
 ### Test Documentation
@@ -109,6 +101,42 @@ public class GherkinToCrifConverter(ILogger? logger = null)
 }
 ```
 
+Tests should describe behavior and requirements, not implementation details. Use one primary action per test where practical and add tests for behavior changes and regressions. Run the relevant tests after modifying tests or production behavior. For required coverage, complexity, and package-based validation thresholds, follow the project-wide [agent instructions](../AGENTS.md) and [testing approach](TESTING-APPROACH.md).
+
+Use NUnit's `[Explicit("reason")]` for tests that should not run by default because they require special infrastructure or manual verification; do not use `[Ignore]` for this purpose.
+
+### Production Regexes
+
+Prefer source-generated regular expressions in production code using `[GeneratedRegex]` on a partial method. Ordinary regexes are acceptable in test code when they improve readability.
+
+### XML Documentation
+
+- Add XML `<summary>` documentation to public and internal APIs, classes, and record types. Document parameters and meaningful return values; document exceptions the method intentionally throws.
+- Document primary-constructor parameters in the type's XML comments. Positional record properties do not need duplicate property comments.
+- Test methods marked with `[Test]` do not need XML comments; test fixture types and test helpers do.
+- Document private methods when their purpose or behavior is not obvious. Logger-message methods do not need comments.
+- Use clear, consistent descriptions for common parameters, such as "Logger for diagnostic output."
+
+### PowerShell Scripts
+
+- Include comment-based help with a synopsis, description, examples, and prerequisites; document parameters and relevant links where applicable.
+- Use `[CmdletBinding()]`, validate parameters, and set `$ErrorActionPreference = "Stop"`.
+- Resolve paths from `$PSScriptRoot`; use `Push-Location`/`Pop-Location` with `try/finally` when changing directories.
+- Check `$LASTEXITCODE` after external commands and report failures explicitly. Keep helper functions before the main script body.
+- Use PascalCase approved verb-noun names for scripts and functions. Add new scripts to [`scripts/README.md`](../scripts/README.md).
+- Follow existing script patterns in [`scripts/`](../scripts/).
+
+### Documentation and Planning
+
+- Put drafts, proposals, architecture plans, and investigation notes in [`docs/wip/`](wip/); keep finalized project documentation in `docs/` or the relevant project directory.
+- Do not add a new top-level directory without first asking the user.
+- Use YAML frontmatter for planning documents that need status, dates, or other metadata. Keep it relevant to the document type.
+- Keep [`docs/USER-GUIDE.md`](USER-GUIDE.md) current as both the user-facing guide and functional specification.
+
+### Commit Messages
+
+Follow [Commit Conventions](COMMIT-CONVENTIONS.md) for message format, scopes, and examples.
+
 ## Architecture
 
 ### Generation Pipeline
@@ -143,7 +171,7 @@ Source generators can be challenging to debug. Options:
 
 ## Contributing
 
-1. **Follow conventions** documented in [`.roorules`](../.roorules)
+1. **Follow conventions** documented in this guide
 2. **Maintain test coverage** - Add unit tests for all new functionality
 3. **Update documentation** - Keep README and docs in sync with changes
 4. **Use commit conventions** - Follow [Commit Conventions](COMMIT-CONVENTIONS.md)
