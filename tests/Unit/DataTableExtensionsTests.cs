@@ -323,6 +323,89 @@ public class DataTableExtensionsTests
     }
 
     [Test]
+    public void RequireColumns_AllRequiredColumnsPresent_DoesNotThrow()
+    {
+        var table = new DataTable(
+            ["Name", "Value", "Status"],
+            ["Alice", "42", "Active"]
+        );
+
+        Assert.DoesNotThrow(() => table.RequireColumns("Name", "Value"));
+    }
+
+    [Test]
+    public void RequireColumns_MissingColumns_ThrowsArgumentExceptionWithDetails()
+    {
+        var table = new DataTable(
+            ["Name", "Status"],
+            ["Alice", "Active"]
+        );
+
+        var ex = Assert.Throws<ArgumentException>(() => table.RequireColumns("Name", "Missing", "OtherMissing"));
+
+        Assert.That(ex!.Message, Does.Contain("Missing required column(s): Missing, OtherMissing"));
+        Assert.That(ex.Message, Does.Contain("Available columns: Name, Status"));
+    }
+
+    [Test]
+    public void GetRequired_StringMissingColumn_ThrowsArgumentException()
+    {
+        var row = new DataTable(["Name"], ["Alice"]).First();
+
+        var ex = Assert.Throws<ArgumentException>(() => row.GetRequired("Missing"));
+
+        Assert.That(ex!.Message, Does.Contain("Column 'Missing' is required"));
+    }
+
+    [TestCase("")]
+    [TestCase("   ")]
+    public void GetRequired_StringBlankValue_ThrowsArgumentException(string value)
+    {
+        var row = new DataTable(["Name"], [value]).First();
+
+        var ex = Assert.Throws<ArgumentException>(() => row.GetRequired("Name"));
+
+        Assert.That(ex!.Message, Does.Contain("Column 'Name' is required"));
+    }
+
+    [Test]
+    public void GetOptional_StringMissingOrBlankColumn_ReturnsNull()
+    {
+        var table = new DataTable(
+            ["Name", "Value"],
+            ["Alice", ""],
+            ["Bob", "   "]
+        );
+
+        Assert.That(table[0].GetOptional("Missing"), Is.Null);
+        Assert.That(table[0].GetOptional("Value"), Is.Null);
+        Assert.That(table[1].GetOptional("Value"), Is.Null);
+    }
+
+    [Test]
+    public void GetRequired_GenericInvalidValue_ThrowsArgumentExceptionWithConversionDetails()
+    {
+        var row = new DataTable(["Count"], ["not-a-number"]).First();
+
+        var ex = Assert.Throws<ArgumentException>(() => row.GetRequired<int>("Count"));
+
+        Assert.That(ex!.Message, Does.Contain("Column 'Count' value 'not-a-number'"));
+        Assert.That(ex.Message, Does.Contain("cannot be converted to Int32"));
+        Assert.That(ex.InnerException, Is.Not.Null);
+    }
+
+    [Test]
+    public void GetOptional_GenericInvalidValue_ThrowsArgumentExceptionWithConversionDetails()
+    {
+        var row = new DataTable(["Count"], ["12x"]).First();
+
+        var ex = Assert.Throws<ArgumentException>(() => row.GetOptional<int>("Count"));
+
+        Assert.That(ex!.Message, Does.Contain("Column 'Count' value '12x'"));
+        Assert.That(ex.Message, Does.Contain("cannot be converted to Int32"));
+    }
+
+    [Test]
     public void GetRequired_GenericEnum_TrimsWhitespaceBeforeConversion()
     {
         // Given: A row whose enum value contains whitespace
